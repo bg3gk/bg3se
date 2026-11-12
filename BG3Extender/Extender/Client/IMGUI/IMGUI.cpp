@@ -887,6 +887,10 @@ void WindowBase::EndDrawingWindow()
     LastSize = glm::vec2(size.x, size.y);
     auto pos = ImGui::GetWindowPos();
     LastPosition = glm::vec2(pos.x, pos.y);
+    LastScroll = glm::vec2(ImGui::GetScrollX(), ImGui::GetScrollY());
+    LastScrollMax = glm::vec2(ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY());
+    Focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+    Hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
 }
 
 void WindowBase::ProcessRenderSettings(DrawingContext& context)
@@ -929,8 +933,8 @@ void WindowBase::ProcessRenderSettings(DrawingContext& context)
     }
 
     if (req_.BgAlpha) {
+        // Not reset: ImGui wants the alpha every frame, so a one-shot request would only last one frame
         ImGui::SetNextWindowBgAlpha(*req_.BgAlpha);
-        req_.BgAlpha = {};
     }
 }
 

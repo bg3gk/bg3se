@@ -352,6 +352,12 @@ public:
     GuiWindowFlags Flags{ 0 };
     glm::vec2 LastSize{ 0.0f, 0.0f };
     glm::vec2 LastPosition{ 0.0f, 0.0f };
+    // Scroll offset and its maximum as of the last frame the window was drawn, in pixels
+    glm::vec2 LastScroll{ 0.0f, 0.0f };
+    glm::vec2 LastScrollMax{ 0.0f, 0.0f };
+    // Whether the window (or one of its children) had focus / was under the mouse in that frame
+    bool Focused{ false };
+    bool Hovered{ false };
 
 protected:
     WindowRenderRequests req_;

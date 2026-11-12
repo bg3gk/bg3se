@@ -119,6 +119,10 @@ P_FUN(SetBgAlpha, extui::Window::SetBgAlpha)
 P_BITMASK(Flags)
 P_RO(LastSize)
 P_RO(LastPosition)
+P_RO(LastScroll)
+P_RO(LastScrollMax)
+P_RO(Focused)
+P_RO(Hovered)
 END_CLS()
 
 
