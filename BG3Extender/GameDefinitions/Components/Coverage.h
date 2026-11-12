@@ -1296,6 +1296,201 @@ DEFINE_TAG_COMPONENT(eoc::aigrid, SubgridProximityForceRefreshRequestComponent, 
 
 END_NS()
 
+BEGIN_NS(eoc::analytics)
+
+struct EventCombatTurnComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnalyticsEventCombatTurn, "eoc::analytics::EventCombatTurnComponent")
+
+    // the game's own member name: macOS FieldMeta m_CharacterHandle
+    // (ls::ID<ecs::EntityHandleTraits>), position 1 of 9 in the macOS serializer TypeList;
+    // serializer bg3.exe+0x9E52B0 writes an entity (bg3.exe+0x4017090) at +0x0 in the same order
+    EntityHandle CharacterHandle;
+    // the game's own member name: macOS FieldMeta m_Faction (ls::Guid), position 2 of 9 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9E52B0 writes 16 bytes at +0x8 in the same
+    // order
+    Guid Faction;
+    // the game's own member name: macOS FieldMeta m_CombatId (ls::STDString), position 3 of 9 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x9E52B0 writes a string
+    // (bg3.exe+0x4016480) at +0x18 in the same order
+    STDString CombatId;
+    // the game's own member name: macOS FieldMeta m_CombatGroupId (ls::STDString), position 4 of 9
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9E52B0 writes a string at +0x30 in
+    // the same order
+    STDString CombatGroupId;
+    // the game's own member name: macOS FieldMeta m_CombatTurn (int), position 5 of 9 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x9E52B0 writes 4 bytes at +0x48 in the same order
+    int32_t CombatTurn;
+    // the game's own member name: macOS FieldMeta m_CombatTeam (ls::STDString), position 6 of 9 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x9E52B0 writes a string at +0x50 in the
+    // same order
+    STDString CombatTeam;
+    // the game's own member name: macOS FieldMeta m_ActionLeft (int), position 7 of 9 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x9E52B0 writes 4 bytes at +0x68 in the same order
+    int32_t ActionLeft;
+    // the game's own member name: macOS FieldMeta m_BonusActionLeft (int), position 8 of 9 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9E52B0 writes 4 bytes at +0x6C in the same
+    // order
+    int32_t BonusActionLeft;
+    // the game's own member name: macOS FieldMeta m_MovementLeft (double), position 9 of 9 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9E52B0 writes 8 bytes at +0x70 in the same
+    // order
+    double MovementLeft;
+};
+
+struct EventInventoryAddedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnalyticsEventInventoryAdded, "eoc::analytics::EventInventoryAddedComponent")
+
+    // the game's own member name: macOS FieldMeta m_OwnerUUID (ls::Guid), position 1 of 10 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes 16 bytes at +0x0 in the same
+    // order
+    Guid OwnerUUID;
+    // the game's own member name: macOS FieldMeta m_OriginalOwnerUUID (ls::Guid), position 2 of 10
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes 16 bytes at +0x10 in
+    // the same order
+    Guid OriginalOwnerUUID;
+    // the game's own member name: macOS FieldMeta m_RootId (ls::FixedString), position 3 of 10 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes a FixedString at +0x20 in
+    // the same order
+    FixedString RootId;
+    // the game's own member name: macOS FieldMeta m_ChangedEntityName (ls::FixedString), position
+    // 4 of 10 in the macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes a FixedString
+    // at +0x24 in the same order
+    FixedString ChangedEntityName;
+    // the game's own member name: macOS FieldMeta m_StatsName (ls::FixedString), position 5 of 10
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes a FixedString at +0x28
+    // in the same order
+    FixedString StatsName;
+    // the game's own member name: macOS FieldMeta m_Amount (int), position 6 of 10 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x9ED3D0 writes 4 bytes at +0x2C in the same order
+    int32_t Amount;
+    // the game's own member name: macOS FieldMeta m_Category (ls::FixedString), position 7 of 10
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes a FixedString at +0x30
+    // in the same order
+    FixedString Category;
+    // the game's own member name: macOS FieldMeta m_Value (int), position 8 of 10 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x9ED3D0 writes 4 bytes at +0x34 in the same order
+    int32_t Value;
+    // the game's own member name: macOS FieldMeta m_Rarity (ls::FixedString), position 9 of 10 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes a FixedString at +0x38 in
+    // the same order
+    FixedString Rarity;
+    // the game's own member name: macOS FieldMeta m_EntityType (ls::FixedString), position 10 of
+    // 10 in the macOS serializer TypeList; serializer bg3.exe+0x9ED3D0 writes a FixedString at
+    // +0x3C in the same order
+    FixedString EntityType;
+};
+
+struct EventInventoryRemovedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnalyticsEventInventoryRemoved, "eoc::analytics::EventInventoryRemovedComponent")
+
+    // the game's own member name: macOS FieldMeta m_OwnerUUID (ls::Guid), position 1 of 9 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9EDEE0 writes 16 bytes at +0x0 in the same
+    // order
+    Guid OwnerUUID;
+    // the game's own member name: macOS FieldMeta m_RootId (ls::FixedString), position 2 of 9 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x9EDEE0 writes a FixedString at +0x10 in
+    // the same order
+    FixedString RootId;
+    // the game's own member name: macOS FieldMeta m_ChangedEntityName (ls::FixedString), position
+    // 3 of 9 in the macOS serializer TypeList; serializer bg3.exe+0x9EDEE0 writes a FixedString at
+    // +0x14 in the same order
+    FixedString ChangedEntityName;
+    // the game's own member name: macOS FieldMeta m_StatsName (ls::FixedString), position 4 of 9
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9EDEE0 writes a FixedString at +0x18
+    // in the same order
+    FixedString StatsName;
+    // the game's own member name: macOS FieldMeta m_Amount (int), position 5 of 9 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x9EDEE0 writes 4 bytes at +0x1C in the same order
+    int32_t Amount;
+    // the game's own member name: macOS FieldMeta m_Category (ls::FixedString), position 6 of 9 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x9EDEE0 writes a FixedString at +0x20 in
+    // the same order
+    FixedString Category;
+    // the game's own member name: macOS FieldMeta m_Value (int), position 7 of 9 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x9EDEE0 writes 4 bytes at +0x24 in the same order
+    int32_t Value;
+    // the game's own member name: macOS FieldMeta m_Rarity (ls::FixedString), position 8 of 9 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x9EDEE0 writes a FixedString at +0x28 in
+    // the same order
+    FixedString Rarity;
+    // the game's own member name: macOS FieldMeta m_EntityType (ls::FixedString), position 9 of 9
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9EDEE0 writes a FixedString at +0x2C
+    // in the same order
+    FixedString EntityType;
+};
+
+struct EventSpellUseData
+{
+    // unknown: bg3.exe+0xAD7570 writes 16 bytes at +0
+    Guid field_0;
+    // unknown: bg3.exe+0xAD7570 writes 16 bytes at +0x10
+    Guid field_10;
+    // unknown: bg3.exe+0xAD7570 serializes a FixedString at +0x20
+    FixedString field_20;
+    // unknown: 4 bytes at +0x24
+    int32_t field_24;
+    // unknown: 1 byte at +0x28
+    uint8_t field_28;
+    // unknown: 4 bytes at +0x2C
+    int32_t field_2C;
+    // unknown: 4 bytes at +0x30
+    int32_t field_30;
+};
+
+struct EventSpellUseComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnalyticsEventSpellUse, "eoc::analytics::EventSpellUseComponent")
+
+    // the game's own member name: macOS FieldMeta m_Data (eoc::analytics::EventSpellUseData),
+    // position 1 of 11 in the macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes a
+    // nested struct (bg3.exe+0xAD7570, 0x34 bytes of data) at +0x0 in the same order
+    EventSpellUseData Data;
+    // the game's own member name: macOS FieldMeta m_TargetUUID (ls::Guid), position 2 of 11 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes 16 bytes at +0x38 in the same
+    // order
+    Guid TargetUUID;
+    // the game's own member name: macOS FieldMeta m_Cost (ls::STDString), position 3 of 11 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes a string at +0x48 in the same
+    // order
+    STDString Cost;
+    // the game's own member name: macOS FieldMeta m_TargetType (ls::FixedString), position 4 of 11
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes a FixedString at +0x60
+    // in the same order
+    FixedString TargetType;
+    // the game's own member name: macOS FieldMeta m_TargetPos (Vector3f), position 5 of 11 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes 12 bytes at +0x64 in the same
+    // order
+    glm::vec3 TargetPos;
+    // the game's own member name: macOS FieldMeta m_TargetIsPlayer (bool), position 6 of 11 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes 1 byte at +0x70 in the same
+    // order
+    bool TargetIsPlayer;
+    // the game's own member name: macOS FieldMeta m_IsSpell (bool), position 7 of 11 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x9EBA70 writes 1 byte at +0x71 in the same order
+    bool IsSpell;
+    // the game's own member name: macOS FieldMeta m_CasterIsPlayer (bool), position 8 of 11 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes 1 byte at +0x72 in the same
+    // order
+    bool CasterIsPlayer;
+    // the game's own member name: macOS FieldMeta m_HasActionCost (bool), position 9 of 11 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes 1 byte at +0x73 in the same
+    // order
+    bool HasActionCost;
+    // the game's own member name: macOS FieldMeta m_HasBonusActionCost (bool), position 10 of 11
+    // in the macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes 1 byte at +0x74 in the
+    // same order
+    bool HasBonusActionCost;
+    // the game's own member name: macOS FieldMeta m_ObjectUsedUUID (ls::STDString), position 11 of
+    // 11 in the macOS serializer TypeList; serializer bg3.exe+0x9EBA70 writes a string at +0x78 in
+    // the same order
+    STDString ObjectUsedUUID;
+};
+
+END_NS()
+
 BEGIN_NS(eoc::animation)
 
 struct BlueprintRefreshedEventOneFrameComponent : public BaseComponent
@@ -1313,6 +1508,23 @@ END_NS()
 BEGIN_NS(eoc::bounds)
 
 DEFINE_ONEFRAME_TAG_COMPONENT(eoc::bounds, SizeChangedEventOneFrameComponent, BoundsSizeChangedEvent)
+
+END_NS()
+
+BEGIN_NS(eoc::camera)
+
+struct MoveComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(CameraMove, "eoc::camera::MoveComponent")
+
+    // the game's own member name: Windows type name ls::FieldMeta<class ls::DynamicArray<class
+    // net::UserID,struct ls::TaggedAllocator<int> > eoc::camera::MoveComponent::*,0>; macOS
+    // ls::FieldMeta<ls::DynamicArray<net::UserID,ls::TaggedAllocator<int> >
+    // eoc::camera::MoveComponent::*, &eoc::camera::MoveComponent::m_WaitForUserIds>. Registered
+    // size 16 = one DynamicArray; net::UserID is 4 bytes (Script Extender UserId). macOS default
+    // ctor zeroes 16 bytes.
+    Array<UserId> WaitForUserIds;
+};
 
 END_NS()
 
@@ -1342,6 +1554,24 @@ struct BehaviourComponent : public BaseComponent
 };
 
 DEFINE_TAG_COMPONENT(eoc::crowds, IsFadingComponent, CrowdsIsFading)
+
+END_NS()
+
+BEGIN_NS(eoc::dialog)
+
+struct DialoguePrivacySingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(DialogDialoguePrivacy, "eoc::dialog::DialoguePrivacySingletonComponent")
+
+    // the game's own member name: Windows type name ls::FieldMeta<class ls::HashMap<unsigned
+    // int,bool,struct ls::HashTableOpsDefault>
+    // eoc::dialog::DialoguePrivacySingletonComponent::*,0>; macOS
+    // ls::FieldMeta<ls::HashMap<unsigned int,bool,ls::HashTableOpsDefault>
+    // eoc::dialog::DialoguePrivacySingletonComponent::*,
+    // &eoc::dialog::DialoguePrivacySingletonComponent::m_DialogsPrivacy>. Registered size 64 = one
+    // HashMap (key: dialog instance id).
+    HashMap<uint32_t, bool> DialogsPrivacy;
+};
 
 END_NS()
 
@@ -1497,6 +1727,19 @@ END_NS()
 
 BEGIN_NS(eoc::notification)
 
+struct DestinationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationDestination, "eoc::notification::DestinationComponent")
+
+    // the game's own member name: Windows type name ls::FieldMeta<class ls::HashSet<class
+    // net::UserID,struct ls::HashTableOpsDefault> eoc::notification::DestinationComponent::*,0>;
+    // macOS ls::FieldMeta<ls::HashSet<net::UserID,ls::HashTableOpsDefault>
+    // eoc::notification::DestinationComponent::*,
+    // &eoc::notification::DestinationComponent::m_Users>. Registered size 48 = one HashSet.
+    // Serializer bg3.exe+0x98A620.
+    HashSet<UserId> Users;
+};
+
 struct EnterPhotoModeFailedNotificationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationEnterPhotoModeFailedNotification, "eoc::notification::EnterPhotoModeFailedNotificationComponent")
@@ -1507,6 +1750,20 @@ struct EnterPhotoModeFailedNotificationComponent : public BaseComponent
     uint8_t field_0;
 };
 
+struct InventoryMembersCreatedNotificationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationInventoryMembersCreated, "eoc::notification::InventoryMembersCreatedNotificationComponent")
+
+    // the game's own member name: Windows type name ls::FieldMeta<class ls::DynamicArray<class
+    // ls::Guid,struct ls::TaggedAllocator<int> >
+    // eoc::notification::InventoryMembersCreatedNotificationComponent::*,0>; macOS
+    // ls::FieldMeta<ls::DynamicArray<ls::Guid,ls::TaggedAllocator<int> >
+    // eoc::notification::InventoryMembersCreatedNotificationComponent::*,
+    // &eoc::notification::InventoryMembersCreatedNotificationComponent::m_CreatedMembers>.
+    // Registered size 16. Serializer bg3.exe+0x8FE900.
+    Array<Guid> CreatedMembers;
+};
+
 struct PerformFailedComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationPerformFailed, "eoc::notification::PerformFailedComponent")
@@ -1515,6 +1772,23 @@ struct PerformFailedComponent : public BaseComponent
     // build (address 101BE210C) stores it (strb wzr, [x23]; default zero). What the byte means is
     // not established.
     uint8_t field_0;
+};
+
+struct ProfileShownTutorialsUpdateNotificationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationProfileShownTutorialsUpdate, "eoc::notification::ProfileShownTutorialsUpdateNotificationComponent")
+
+    // unknown: Serializer bg3.exe+0x99F950 calls ecs::sync::Serialize(FixedString) on +0; macOS
+    // default ctor stores -1 at +0 (null FixedString). Not named by a FieldMeta symbol (profile
+    // id?).
+    FixedString field_0;
+    // the game's own member name: Windows type name ls::FieldMeta<class ls::HashSet<class
+    // ls::Guid,struct ls::HashTableOpsDefault>
+    // eoc::notification::ProfileShownTutorialsUpdateNotificationComponent::*,8>; macOS
+    // ls::FieldMeta<ls::HashSet<ls::Guid, ls::HashTableOpsDefault>
+    // eoc::notification::ProfileShownTutorialsUpdateNotificationComponent::*,
+    // &eoc::notification::ProfileShownTutorialsUpdateNotificationComponent::m_ShownTutorials>
+    HashSet<Guid> ShownTutorials;
 };
 
 struct ReposeResultComponent : public BaseComponent
@@ -1531,6 +1805,43 @@ END_NS()
 
 BEGIN_NS(eoc::platform)
 
+struct TransformData
+{
+    // inferred: bg3.exe+0xA91580 reads 0x28 bytes at +0; macOS default 0 for +0..+0xC
+    glm::vec3 Position;
+    // inferred: macOS default stores 1.0f at the first float (+0xC) and 0 in the other three - an
+    // identity quaternion (w first in memory)
+    glm::quat Rotation;
+    // inferred: macOS default stores 1.0f to all three floats (+0x1C d8, +0x24 w22=1.0) - unit
+    // scale
+    glm::vec3 Scale;
+    // unknown: bg3.exe+0xA91580 reads 1 byte at +0x28
+    bool field_28;
+};
+
+struct PlatformComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(Platform, "eoc::platform::PlatformComponent")
+
+    // unknown: Not replicated; macOS default ctor stores 0xFFC0000000000000 (null EntityHandle) at
+    // +0
+    EntityHandle field_0;
+    // the game's own member name: Toolkit EoCClient.dll: ls::FieldMeta<bool
+    // eoc::platform::PlatformComponent::*,8>; macOS ls::FieldMeta<bool
+    // eoc::platform::PlatformComponent::*, &eoc::platform::PlatformComponent::m_Destroyed>;
+    // replication reader bg3.exe+0x919460 reads 1 byte to +8
+    bool Destroyed;
+    // the game's own member name: Toolkit ls::FieldMeta<struct eoc::platform::TransformData
+    // eoc::platform::PlatformComponent::*,12>; macOS ls::FieldMeta<eoc::platform::TransformData
+    // eoc::platform::PlatformComponent::*, &eoc::platform::PlatformComponent::m_TransformData>;
+    // bg3.exe+0x919460 reads it via bg3.exe+0xA91580 (0x28 bytes + 1 byte)
+    TransformData TransformData;
+    // unknown: Not replicated; macOS default ctor zeroes +0x38..0x48
+    uint64_t field_38;
+    // unknown: Not replicated; zero default
+    uint64_t field_40;
+};
+
 DEFINE_TAG_COMPONENT(eoc::platform, DestructionParticipantComponent, PlatformDestructionParticipant)
 DEFINE_TAG_COMPONENT(eoc::platform, MovablePlatformComponent, PlatformMovablePlatform)
 DEFINE_TAG_COMPONENT(eoc::platform, MovementPausedComponent, PlatformMovementPaused)
@@ -1538,6 +1849,44 @@ DEFINE_TAG_COMPONENT(eoc::platform, MovementPausedComponent, PlatformMovementPau
 END_NS()
 
 BEGIN_NS(eoc::ready_check)
+
+struct UserComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ReadyCheckUser, "eoc::ready_check::UserComponent")
+
+    // the game's own member name: macOS FieldMeta m_UserId (net::UserID), position 1 of 8 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x927B90 writes a UserID (bg3.exe+0x4016D50);
+    // macOS default 0xFFFF0000 at +0x0 in the same order
+    UserId UserId;
+    // the game's own member name: macOS FieldMeta m_Context (ls::FixedString), position 2 of 8 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x927B90 writes a FixedString at +0x4 in
+    // the same order
+    FixedString Context;
+    // the game's own member name: macOS FieldMeta m_TranslatedString (ls::TranslatedString),
+    // position 3 of 8 in the macOS serializer TypeList; serializer bg3.exe+0x927B90 writes the
+    // handle version (u16 +0xC) and handle FixedString (+8) of a 16-byte TranslatedString at +0x8
+    // in the same order
+    TranslatedString TranslatedString;
+    // the game's own member name: macOS FieldMeta m_MessageType (eoc::ready_check::EMessageType
+    // (no SE enum)), position 4 of 8 in the macOS serializer TypeList; serializer bg3.exe+0x927B90
+    // writes 4 bytes at +0x18 in the same order
+    uint32_t MessageType;
+    // the game's own member name: macOS FieldMeta m_ResponseType (eoc::ready_check::EResponseType
+    // (no SE enum)), position 5 of 8 in the macOS serializer TypeList; serializer bg3.exe+0x927B90
+    // writes 4 bytes at +0x1C in the same order
+    uint32_t ResponseType;
+    // the game's own member name: macOS FieldMeta m_TransactionId (ls::Guid), position 6 of 8 in
+    // the macOS serializer TypeList; serializer bg3.exe+0x927B90 writes 16 bytes at +0x20 in the
+    // same order
+    Guid TransactionId;
+    // the game's own member name: macOS FieldMeta m_Result (ls::Optional<bool>), position 7 of 8
+    // in the macOS serializer TypeList; serializer bg3.exe+0x927B90 writes an optional bool
+    // (bg3.exe+0xA96120); macOS default strh 0 at +0x30 at +0x30 in the same order
+    std::optional<bool> Result;
+    // the game's own member name: macOS FieldMeta m_Timer (float), position 8 of 8 in the macOS
+    // serializer TypeList; serializer bg3.exe+0x927B90 writes 4 bytes at +0x34 in the same order
+    float Timer;
+};
 
 DEFINE_TAG_COMPONENT(eoc::ready_check, BlockedComponent, ReadyCheckBlocked)
 
@@ -1575,6 +1924,41 @@ struct PortalComponent : public BaseComponent
     bool IsOpen;
 };
 
+struct RoomPortalConnection
+{
+    // unknown: bg3.exe+0xA986E0 writes 16 bytes at +0
+    Guid field_0;
+    // unknown: entity at +0x10 (bg3.exe+0x4017090)
+    EntityHandle field_10;
+    // unknown: entity at +0x18
+    EntityHandle field_18;
+};
+
+struct RoomStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(RoomPortalRoomState, "eoc::room_portal::RoomStateComponent")
+
+    // the game's own member name: Toolkit EoCClient.dll: ls::FieldMeta<bool
+    // eoc::room_portal::RoomStateComponent::*,0>; macOS ls::FieldMeta<bool
+    // eoc::room_portal::RoomStateComponent::*,
+    // &eoc::room_portal::RoomStateComponent::m_HasBeenVisible>. Offsets 0/1 assigned by macOS
+    // FieldMeta order (HasBeenVisible before IsRoomVisible).
+    bool HasBeenVisible;
+    // the game's own member name: Toolkit ls::FieldMeta<bool
+    // eoc::room_portal::RoomStateComponent::*,1>; macOS ls::FieldMeta<bool
+    // eoc::room_portal::RoomStateComponent::*,
+    // &eoc::room_portal::RoomStateComponent::m_IsRoomVisible> (order assumption)
+    bool IsRoomVisible;
+    // the game's own member name: Windows type name ls::FieldMeta<class ls::DynamicArray<struct
+    // eoc::room_portal::Connection,struct ls::TaggedAllocator<int> >
+    // eoc::room_portal::RoomStateComponent::*,8>; macOS
+    // ls::FieldMeta<ls::DynamicArray<eoc::room_portal::Connection, ls::TaggedAllocator<int> >
+    // eoc::room_portal::RoomStateComponent::*,
+    // &eoc::room_portal::RoomStateComponent::m_RoomConnections>. Serializer bg3.exe+0x92D130 ->
+    // bg3.exe+0xA986E0, element stride 0x20.
+    Array<RoomPortalConnection> RoomConnections;
+};
+
 END_NS()
 
 BEGIN_NS(eoc::script)
@@ -1587,6 +1971,58 @@ END_NS()
 BEGIN_NS(eoc::sneak)
 
 DEFINE_TAG_COMPONENT(eoc::sneak, IsSneakingComponent, SneakIsSneaking)
+
+END_NS()
+
+BEGIN_NS(eoc::sound)
+
+struct DistantSoundInfo
+{
+    // the game's own member name: macOS FieldMeta m_Name (ls::FixedString) of
+    // eoc::sound::DistantSoundInfo; bg3.exe+0xAD1930 writes a FixedString at +0x0 in TypeList
+    // order
+    FixedString Name;
+    // the game's own member name: macOS FieldMeta m_Level (ls::FixedString) of
+    // eoc::sound::DistantSoundInfo; bg3.exe+0xAD1930 writes a FixedString at +0x4 in TypeList
+    // order
+    FixedString Level;
+    // the game's own member name: macOS FieldMeta m_InitSound (ls::FixedString) of
+    // eoc::sound::DistantSoundInfo; bg3.exe+0xAD1930 writes a FixedString at +0x8 in TypeList
+    // order
+    FixedString InitSound;
+    // the game's own member name: macOS FieldMeta m_EntityUUID (ls::Guid) of
+    // eoc::sound::DistantSoundInfo; bg3.exe+0xAD1930 writes 16 bytes at +0x10 in TypeList order
+    Guid EntityUUID;
+    // the game's own member name: macOS FieldMeta m_Switches (ls::HashMap<ls::FixedString,
+    // ls::FixedString>) of eoc::sound::DistantSoundInfo; bg3.exe+0xAD1930 writes count +0x4C, keys
+    // +0x40, values +0x50 (HashMap 0x20..0x60) at +0x20 in TypeList order
+    HashMap<FixedString, FixedString> Switches;
+    // the game's own member name: macOS FieldMeta m_ActivationRange (float) of
+    // eoc::sound::DistantSoundInfo; bg3.exe+0xAD1930 writes 4 bytes (written before Switches, as
+    // in the TypeList) at +0x60 in TypeList order
+    float ActivationRange;
+    // the game's own member name: macOS FieldMeta m_UseOcclusion (bool) of
+    // eoc::sound::DistantSoundInfo; bg3.exe+0xAD1930 writes 1 byte at +0x64 in TypeList order
+    bool UseOcclusion;
+};
+
+struct DistantSoundStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(SoundDistantSoundState, "eoc::sound::DistantSoundStateComponent")
+
+    // the game's own member name: macOS FieldMeta m_Info (eoc::sound::DistantSoundInfo), position
+    // 1 of 3 in the macOS serializer TypeList; serializer bg3.exe+0x9D7420 writes the info struct
+    // via bg3.exe+0xAD1930 at +0x0 in the same order
+    DistantSoundInfo Info;
+    // the game's own member name: macOS FieldMeta m_Position (Vector3f), position 2 of 3 in the
+    // macOS serializer TypeList; serializer bg3.exe+0x9D7420 writes 12 bytes at +0x68 in the same
+    // order
+    glm::vec3 Position;
+    // the game's own member name: macOS FieldMeta m_State (eoc::sound::EDistantSoundState (no SE
+    // enum)), position 3 of 3 in the macOS serializer TypeList; serializer bg3.exe+0x9D7420 writes
+    // 4 bytes at +0x74 in the same order
+    uint32_t State;
+};
 
 END_NS()
 
@@ -2825,15 +3261,32 @@ static_assert(sizeof(bg3se::ecl::unsheath::VisualStateComponent) == 8);
 static_assert(sizeof(bg3se::eoc::WeaponSetChangedEventOneFrameComponent) == 2);
 static_assert(sizeof(bg3se::eoc::MusicalInstrumentComponent) == 1);
 static_assert(sizeof(bg3se::eoc::ai::swarm::ExecutingActionComponent) == 1);
+static_assert(sizeof(bg3se::eoc::analytics::EventCombatTurnComponent) == 120);
+static_assert(sizeof(bg3se::eoc::analytics::EventInventoryAddedComponent) == 64);
+static_assert(sizeof(bg3se::eoc::analytics::EventInventoryRemovedComponent) == 48);
+static_assert(sizeof(bg3se::eoc::analytics::EventSpellUseComponent) == 144);
+static_assert(sizeof(bg3se::eoc::analytics::EventSpellUseData) == 56);
 static_assert(sizeof(bg3se::eoc::animation::BlueprintRefreshedEventOneFrameComponent) == 1);
+static_assert(sizeof(bg3se::eoc::camera::MoveComponent) == 16);
 static_assert(sizeof(bg3se::eoc::crowds::BehaviourComponent) == 1);
+static_assert(sizeof(bg3se::eoc::dialog::DialoguePrivacySingletonComponent) == 64);
 static_assert(sizeof(bg3se::eoc::item::ISDoorClosedComponent) == 8);
 static_assert(sizeof(bg3se::eoc::item::ISDoorOpenedComponent) == 8);
 static_assert(sizeof(bg3se::eoc::legacy::entity::InUseByActionStateComponent) == 1);
+static_assert(sizeof(bg3se::eoc::notification::DestinationComponent) == 48);
 static_assert(sizeof(bg3se::eoc::notification::EnterPhotoModeFailedNotificationComponent) == 1);
+static_assert(sizeof(bg3se::eoc::notification::InventoryMembersCreatedNotificationComponent) == 16);
 static_assert(sizeof(bg3se::eoc::notification::PerformFailedComponent) == 1);
+static_assert(sizeof(bg3se::eoc::notification::ProfileShownTutorialsUpdateNotificationComponent) == 56);
 static_assert(sizeof(bg3se::eoc::notification::ReposeResultComponent) == 1);
+static_assert(sizeof(bg3se::eoc::platform::PlatformComponent) == 72);
+static_assert(sizeof(bg3se::eoc::platform::TransformData) == 44);
+static_assert(sizeof(bg3se::eoc::ready_check::UserComponent) == 56);
 static_assert(sizeof(bg3se::eoc::room_portal::PortalComponent) == 24);
+static_assert(sizeof(bg3se::eoc::room_portal::RoomStateComponent) == 24);
+static_assert(sizeof(bg3se::eoc::room_portal::RoomPortalConnection) == 32);
+static_assert(sizeof(bg3se::eoc::sound::DistantSoundStateComponent) == 120);
+static_assert(sizeof(bg3se::eoc::sound::DistantSoundInfo) == 104);
 static_assert(sizeof(bg3se::eoc::spell::LastUsedLimbComponent) == 1);
 static_assert(sizeof(bg3se::eoc::spell::SpellInvalidationLockedComponent) == 1);
 static_assert(sizeof(bg3se::eoc::timeline::ActorVisualDataComponent) == 8);
