@@ -993,6 +993,21 @@ END_NS()
 
 BEGIN_NS(eoc)
 
+struct WeaponSetChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(WeaponSetChangedEvent, "eoc::WeaponSetChangedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1A6D600 (size 2, default 0x0202 = Unknown,Unknown).
+    // bg3.exe+0x2B89760 (server): compares the requested set with the byte of
+    // eoc::WeaponSetComponent, stores the new one into the component and writes old (component
+    // value before) here. WeaponSetType is uint8_t (Melee=0, Ranged=1, Unknown=2).
+    // bg3.exe+0x1A6D200 (client) copies both bytes from a replicated 2-byte record.
+    WeaponSetType OldWeaponSet;
+    // inferred: Same place in bg3.exe+0x2B89760: the value just written to
+    // eoc::WeaponSetComponent.
+    WeaponSetType NewWeaponSet;
+};
+
 struct MusicalInstrumentComponent : public BaseComponent
 {
     DEFINE_COMPONENT(MusicalInstrument, "eoc::stats::MusicalInstrumentComponent")
@@ -1859,6 +1874,34 @@ END_NS()
 
 BEGIN_NS(esv::unsheath)
 
+struct CombatJoiningComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerUnsheathCombatJoining, "esv::unsheath::CombatJoiningComponent")
+
+    // inferred: Creator bg3.exe+0x32E3DB0 (size 4, default 0). bg3.exe+0x32E2DE0
+    // (esv::unsheath::CombatSystem) writes 0x41000000 (8.0 s) right after creating/refreshing it,
+    // then every tick subtracts the frame time (GameTime+8, scaled by an optional per-entity time
+    // factor; 0 while paused) and removes the component when the value is <= 0. The resolver
+    // bg3.exe+0x32F1AD0 only tests presence (bg3.exe+0x32E4280) and adds reason 6 with the
+    // preferred melee/ranged state. The same system reads it back through bg3.exe+0x32E4350 as
+    // float and compares with 0.
+    float Timer;
+};
+
+struct CombatLeavingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerUnsheathCombatLeaving, "esv::unsheath::CombatLeavingComponent")
+
+    // inferred: Creator bg3.exe+0x32E3F10 (size 4, default 0). bg3.exe+0x32E2DE0
+    // (esv::unsheath::CombatSystem) writes 0x41000000 (8.0 s) right after creating/refreshing it,
+    // then every tick subtracts the frame time (GameTime+8, scaled by an optional per-entity time
+    // factor; 0 while paused) and removes the component when the value is <= 0. The resolver
+    // bg3.exe+0x32F1AD0 tests presence through the query helper bg3.exe+0x32F4310 and adds reason
+    // 7 with Sheathed. The same system reads it back through bg3.exe+0x32E4620 as float (<= 0
+    // forces a re-evaluation).
+    float Timer;
+};
+
 struct ConsumingComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerUnsheathConsuming, "esv::unsheath::ConsumingComponent")
@@ -1896,6 +1939,37 @@ struct EquipmentChangedOneFrameComponent : public BaseComponent
     // inferred: Same place: copy of StateComponent+0x8 (OffHandWeapon) before the update. Capture:
     // null handle.
     EntityHandle OldOffHandWeapon;
+};
+
+struct ResurrectComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerUnsheathResurrect, "esv::unsheath::ResurrectComponent")
+
+    // inferred: Creator bg3.exe+0x32EB590 (size 4, default 0). bg3.exe+0x32EAF90
+    // (esv::unsheath::ResurrectSystem) writes 0x40900000 (4.5 s) right after creating/refreshing
+    // it, then every tick subtracts the frame time (GameTime+8, scaled by an optional per-entity
+    // time factor; 0 while paused) and removes the component when the value is <= 0. The resolver
+    // bg3.exe+0x32F1AD0 tests presence only and adds reason 0x1B with Sheathed.
+    float Timer;
+};
+
+struct SpellAnimationConcludedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerUnsheathSpellAnimationConcluded, "esv::unsheath::SpellAnimationConcludedComponent")
+
+    // inferred: Creator bg3.exe+0x32EF230 (size 0x40): FixedString -1 at +0, byte 0x17 at +8
+    // (SpellSourceType::Sentinel), two zero Guids at +0x10/+0x20, FixedString -1 at +0x30 - the
+    // default SpellId of Script Extender (Base/ExposedTypes.h, 0x38 bytes: OriginatorPrototype,
+    // SourceType, Source, ProgressionSource, Prototype). bg3.exe+0x32ECA80 creates it when
+    // esv::unsheath::SpellAnimationLifetimeComponent is removed and copies that component's
+    // SpellId (FUN_1407a2480 for the first 0x30 bytes, then the Prototype FixedString at +0x30
+    // with ref counting from the 0x50-byte Lifetime element).
+    SpellId Spell;
+    // inferred: bg3.exe+0x32ECA80 writes 0x40400000 (3.0 s) on creation (another path copies a
+    // float from +0xA0 of a spell cast record), then subtracts the frame time every tick at +0x38
+    // and queues the entity for removal at <= 0. Read by the resolver through bg3.exe+0x32F4790
+    // (it looks the spell up by Prototype at +0x30).
+    float Timer;
 };
 
 struct StateChangedEventOneFrameComponent : public BaseComponent
@@ -2178,6 +2252,7 @@ static_assert(sizeof(bg3se::ecl::timeline::TimelineThothRunResult) == 24);
 static_assert(sizeof(bg3se::ecl::timeline::RenderFrameVisibilityRequestsComponent) == 16);
 static_assert(sizeof(bg3se::ecl::timeline::TimelineRenderFrameVisibilityRequest) == 16);
 static_assert(sizeof(bg3se::ecl::unsheath::VisualStateComponent) == 8);
+static_assert(sizeof(bg3se::eoc::WeaponSetChangedEventOneFrameComponent) == 2);
 static_assert(sizeof(bg3se::eoc::MusicalInstrumentComponent) == 1);
 static_assert(sizeof(bg3se::eoc::room_portal::PortalComponent) == 24);
 static_assert(sizeof(bg3se::eoc::timeline::ActorVisualDataComponent) == 8);
@@ -2185,9 +2260,13 @@ static_assert(sizeof(bg3se::eoc::timeline::steering::TimelineSteeringComponent) 
 static_assert(sizeof(bg3se::esv::ServerTimelineActorDataComponent) == 40);
 static_assert(sizeof(bg3se::esv::ServerTimelineDataComponent) == 24);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundStateProxyComponent) == 24);
+static_assert(sizeof(bg3se::esv::unsheath::CombatJoiningComponent) == 4);
+static_assert(sizeof(bg3se::esv::unsheath::CombatLeavingComponent) == 4);
 static_assert(sizeof(bg3se::esv::unsheath::ConsumingComponent) == 4);
 static_assert(sizeof(bg3se::esv::unsheath::DefaultChangedOneFrameComponent) == 4);
 static_assert(sizeof(bg3se::esv::unsheath::EquipmentChangedOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::unsheath::ResurrectComponent) == 4);
+static_assert(sizeof(bg3se::esv::unsheath::SpellAnimationConcludedComponent) == 64);
 static_assert(sizeof(bg3se::esv::unsheath::StateChangedEventOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::ls::ClusterContentComponent) == 48);
 static_assert(sizeof(bg3se::ls::CopyParentVisibilityComponent) == 8);
