@@ -32,6 +32,137 @@ struct ActiveTurnComponent : public BaseComponent
     uint8_t field_9;
 };
 
+// Born in dialogues (tree1-3 situations): basic game-object visuals faded when a dialogue scene
+// hides them. Same fade-view template as ecl::TimelineFadeView0Component.
+struct BasicGOVisualFadeView0Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientBasicGOVisualFadeView0, "ecl::BasicGOVisualFadeView0Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h, see its comments).
+    // Creator bg3.exe+0x18F07E0 writes 0 here. Live: 10 live instances (dialogue scenes, tree1-3
+    // labels): +0 0, +4 4.0, +8/+9 0/0 or 1/0, +A 1, +C 0.0, +10 Active 0 or 1 (upper bytes
+    // garbage).
+    float TargetValue;
+    // unknown: bg3.exe+0x18F07E0 writes 4.0 (0x40800000). Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F07E0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h). Live 0.
+    bool Immediate;
+    // unknown: bg3.exe+0x18F07E0 writes 0. Live 0 (one View1 sample 1).
+    bool field_9;
+    // unknown: bg3.exe+0x18F07E0 writes 1. Live 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F07E0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F07E0 writes 1; meaning from TimelineFadeView0. Live 1.
+    bool Active;
+};
+
+// Born when a dialogue attached characters to the scene (DEN_DevilishOx, DEN_HarpyMeal). Same
+// fade-view template as ecl::TimelineFadeView0Component.
+struct CharacterAttachToSceneFadeView0Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterAttachToSceneFadeView0, "ecl::CharacterAttachToSceneFadeView0Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h, see its comments).
+    // Creator bg3.exe+0x18F11F0 writes 0 here. Live: 2 live instances (dialogues DEN_DevilishOx,
+    // DEN_HarpyMeal): +0 0, +4 4.0, +8 1, +9 0, +A 1, +C 0, +10 0 (garbage above).
+    float TargetValue;
+    // unknown: bg3.exe+0x18F11F0 writes 4.0 (0x40800000). Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F11F0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h). Live 0.
+    bool Immediate;
+    // unknown: bg3.exe+0x18F11F0 writes 0. Live 0 (one View1 sample 1).
+    bool field_9;
+    // unknown: bg3.exe+0x18F11F0 writes 1. Live 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F11F0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F11F0 writes 1; meaning from TimelineFadeView0. Live 1.
+    bool Active;
+};
+
+// Born when a dialogue attached characters to the scene; View1 is the second fade channel of the
+// same request family. Same fade-view template as ecl::TimelineFadeView0Component.
+struct CharacterAttachToSceneFadeView1Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterAttachToSceneFadeView1, "ecl::CharacterAttachToSceneFadeView1Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h, see its comments).
+    // Creator bg3.exe+0x18F1690 writes 0 here. Live: 2 live instances (same dialogues): +0 0, +4
+    // 4.0, +8 1, +9 0, +A 1, +C 0, +10 0.
+    float TargetValue;
+    // unknown: bg3.exe+0x18F1690 writes 4.0 (0x40800000). Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F1690 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h). Live 0.
+    bool Immediate;
+    // unknown: bg3.exe+0x18F1690 writes 0. Live 0 (one View1 sample 1).
+    bool field_9;
+    // unknown: bg3.exe+0x18F1690 writes 1. Live 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F1690 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F1690 writes 1; meaning from TimelineFadeView0. Live 1.
+    bool Active;
+};
+
+// Fade view of the CharacterCreation fade channel. 1 live sample (respec): 0 / 4.0 / 0,0,1 / 1.0 /
+// 1 = exactly the creator's defaults.
+struct CharacterCreationFadeView0Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterCreationFadeView0, "ecl::CharacterCreationFadeView0Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h). Creator
+    // bg3.exe+0x18F1B30 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
+    // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
+    float TargetValue;
+    // unknown: bg3.exe+0x18F1B30 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F1B30 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h).
+    bool Immediate;
+    // unknown: bg3.exe+0x18F1B30 writes 0.
+    bool field_9;
+    // unknown: bg3.exe+0x18F1B30 writes 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F1B30 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F1B30 writes 1; meaning from TimelineFadeView0.
+    bool Active;
+};
+
+// Fade view of the CharacterCreation fade channel. 1 live sample (respec): exactly the creator's
+// defaults.
+struct CharacterCreationFadeView1Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterCreationFadeView1, "ecl::CharacterCreationFadeView1Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h). Creator
+    // bg3.exe+0x18F1FD0 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
+    // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
+    float TargetValue;
+    // unknown: bg3.exe+0x18F1FD0 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F1FD0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h).
+    bool Immediate;
+    // unknown: bg3.exe+0x18F1FD0 writes 0.
+    bool field_9;
+    // unknown: bg3.exe+0x18F1FD0 writes 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F1FD0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F1FD0 writes 1; meaning from TimelineFadeView0.
+    bool Active;
+};
+
 struct CharacterOutOfSightFadeView0Component : public BaseComponent
 {
     DEFINE_COMPONENT(ClientCharacterOutOfSightFadeView0, "ecl::CharacterOutOfSightFadeView0Component")
@@ -260,6 +391,59 @@ struct CombatTimelineShownOneFrameComponent : public BaseComponent
     EntityHandle Entity;
 };
 
+// Fade view of the Crowd fade channel. 48 live samples (Act 3 crowds): +0 always 0.0, +4 always
+// 4.0, +8..+A 0/0/1 (byte +B padding garbage 6b/6c/b4/b5), +C 0.0 or 1.0, +10 byte 1 (bytes
+// +11..+13 garbage).
+struct CrowdFadeView0Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCrowdFadeView0, "ecl::CrowdFadeView0Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h). Creator
+    // bg3.exe+0x18F2DB0 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
+    // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
+    float TargetValue;
+    // unknown: bg3.exe+0x18F2DB0 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F2DB0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h).
+    bool Immediate;
+    // unknown: bg3.exe+0x18F2DB0 writes 0.
+    bool field_9;
+    // unknown: bg3.exe+0x18F2DB0 writes 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F2DB0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F2DB0 writes 1; meaning from TimelineFadeView0.
+    bool Active;
+};
+
+// Fade view of the Crowd fade channel. 48 live samples (Act 3 crowds): same picture as
+// CrowdFadeView0.
+struct CrowdFadeView1Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCrowdFadeView1, "ecl::CrowdFadeView1Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h). Creator
+    // bg3.exe+0x18F3250 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
+    // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
+    float TargetValue;
+    // unknown: bg3.exe+0x18F3250 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F3250 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h).
+    bool Immediate;
+    // unknown: bg3.exe+0x18F3250 writes 0.
+    bool field_9;
+    // unknown: bg3.exe+0x18F3250 writes 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F3250 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F3250 writes 1; meaning from TimelineFadeView0.
+    bool Active;
+};
+
 struct EquipmentVisualsUpdatedEventOneFrameComponent : public BaseComponent
 {
     DEFINE_ONEFRAME_COMPONENT(ClientEquipmentVisualsUpdatedEvent, "ecl::EquipmentVisualsUpdatedEventOneFrameComponent")
@@ -318,6 +502,88 @@ struct InvisibilityAttachmentComponent : public BaseComponent
     uint8_t field_0;
 };
 
+// Born on invisible/shadow creatures (TWN Morgue shadows, Jailbreak guard): fade of an invisible
+// character's visual. Same fade-view template as ecl::TimelineFadeView0Component.
+struct InvisibilityFadeView0Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientInvisibilityFadeView0, "ecl::InvisibilityFadeView0Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h, see its comments).
+    // Creator bg3.exe+0x18F36F0 writes 0 here. Live: 4 live instances (MOO_Jailbreak dialogue,
+    // shadow enemies in TWN Morgue): +0 0, +4 4.0, +8..+A 0, +B garbage 0xF2, +C 0 or 1.0, +10 1.
+    float TargetValue;
+    // unknown: bg3.exe+0x18F36F0 writes 4.0 (0x40800000). Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F36F0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h). Live 0.
+    bool Immediate;
+    // unknown: bg3.exe+0x18F36F0 writes 0. Live 0 (one View1 sample 1).
+    bool field_9;
+    // unknown: bg3.exe+0x18F36F0 writes 1. Live 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F36F0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F36F0 writes 1; meaning from TimelineFadeView0. Live 1.
+    bool Active;
+};
+
+// Born on invisible/shadow creatures; second fade channel of the invisibility fade. Same fade-view
+// template as ecl::TimelineFadeView0Component.
+struct InvisibilityFadeView1Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientInvisibilityFadeView1, "ecl::InvisibilityFadeView1Component")
+
+    // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h, see its comments).
+    // Creator bg3.exe+0x18F3B90 writes 0 here. Live: 4 live instances (same situations): +0 0, +4
+    // 4.0, +8..+B 0, +C 0 or 1.0, +10 1.
+    float TargetValue;
+    // unknown: bg3.exe+0x18F3B90 writes 4.0 (0x40800000). Probably fade speed (as in
+    // TimelineFadeView0).
+    float field_4;
+    // inferred: bg3.exe+0x18F3B90 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
+    // (Coverage.h). Live 0.
+    bool Immediate;
+    // unknown: bg3.exe+0x18F3B90 writes 0. Live 0 (one View1 sample 1).
+    bool field_9;
+    // unknown: bg3.exe+0x18F3B90 writes 1. Live 1.
+    bool field_A;
+    // inferred: bg3.exe+0x18F3B90 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
+    float CurrentValue;
+    // inferred: bg3.exe+0x18F3B90 writes 1; meaning from TimelineFadeView0. Live 1.
+    bool Active;
+};
+
+// Born when characters turn invisible/visible (shadow enemies in TWN Morgue, Jailbreak/Oathbreaker
+// dialogues). Two delay timers and flags, one per fade view (InvisibilityFadeView0/1);
+// ecl::invisibility::EffectSystem counts them down and then queues a fade request.
+struct InvisibilityFadingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientInvisibilityFading, "ecl::InvisibilityFadingComponent")
+
+    // inferred: bg3.exe+0x1A45990 (invisibility effect update): while +0xA is set, subtracts frame
+    // time from +0 and, when <= 0, clears +0xA and pushes a fade request for view 0 (twin of the
+    // +4/+0xB path read in full). Creator bg3.exe+0x1A4CC40 writes 0. Live 0..2.54.
+    float Delay0;
+    // inferred: bg3.exe+0x1A45990: `if (*(char*)(c+0xB)) { t = *(float*)(c+4) - dt; *(float*)(c+4)
+    // = t; if (t <= 0) { *(c+0xB) = 0; ...fade request view 1 } }`. Creator writes 0. Live
+    // 0..2.54.
+    float Delay1;
+    // inferred: bg3.exe+0x1A45990 copies `(*(char*)(c+8) != 0)` into the first word of the fade
+    // request of view 0 (FadeView TargetValue side). Creator bg3.exe+0x1A4CC40 writes 1 (32-bit
+    // store of 1 over +8..+B). Live 0/1.
+    bool Visible0;
+    // inferred: bg3.exe+0x1A45990 copies `(*(char*)(c+9) != 0)` into the fade request of view 1
+    // (call with view index 1). Live 0/1.
+    bool Visible1;
+    // inferred: bg3.exe+0x1A45990: gates the countdown of +0; component is removed when +0xA and
+    // +0xB are both 0. Live 0/1.
+    bool Fading0;
+    // inferred: bg3.exe+0x1A45990: gates the countdown of +4 and is cleared when it runs out;
+    // removal when +0xA == +0xB == 0. Live 1.
+    bool Fading1;
+};
+
 struct InvisibilityVisualComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientInvisibilityVisual, "ecl::InvisibilityVisualComponent")
@@ -368,6 +634,23 @@ struct ObstructionFadeView0Component : public BaseComponent
     bool Active;
 };
 
+// Born in spell/fight steps (spells-3, death, dialogues) together with
+// ecl::highlight::DataComponent, StealthVFX, spell_cast::Targeting: one-frame event that a
+// player's target entity changed.
+struct PlayerTargetEntityChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientPlayerTargetEntityChanged, "ecl::PlayerTargetEntityChangedOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x182C090 stores *param_4 (8 bytes) here; its caller
+    // bg3.exe+0x182BCB0 walks a map of short -> EntityHandle (keys stride 2 at +0x60, values
+    // stride 8 at +0x70) and passes the value. Live: entity handles and null.
+    EntityHandle Target;
+    // inferred: Creator bg3.exe+0x182C090 stores *param_3 (16-bit) here; caller bg3.exe+0x182BCB0
+    // passes the short key of the same map (player id, as in ecl::highlight::DataComponent). Live
+    // 1.
+    int16_t PlayerId;
+};
+
 struct PlayersInTimelineGlobalComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientPlayersInTimelineGlobal, "ecl::PlayersInTimelineGlobalComponent")
@@ -382,6 +665,109 @@ struct PlayersInTimelineGlobalComponent : public BaseComponent
     // bg3.exe+0x1D3DAA0 confirms stride 0x40. Probe: 1 key, value capacity 1 (one local player in
     // a dialogue).
     HashMap<PlayerId, Guid> Timelines;
+};
+
+struct ClientProjectileSpellId
+{
+    // inferred: Same layout as SE SpellId (ExposedTypes.h, SpellMetaId + Prototype), redeclared.
+    // Live +0x178 FixedString-like values.
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SpellSourceType enum (uint8_t). Live low byte 5..9.
+    uint8_t SourceType;
+    // inferred: SE SpellMetaId::Source. Live 0.
+    Guid Source;
+    // inferred: SE SpellMetaId::ProgressionSource.
+    Guid ProgressionSource;
+    // inferred: SE SpellId::Prototype. Live +0x1A8 equals +0x178 (same spell).
+    FixedString Prototype;
+};
+
+// Client projectile object (class with virtual table, stored inline). Born when spells/throws were
+// used (with ecl::projectile::Attachment/Spell/ImpactEvent, jump events). Names from Toolkit
+// accessors of ecl::Projectile and its copy constructors EoCClient.dll+0x2951F0 / +0x295400, whose
+// layout ends at 0x23A (padded 0x240 = registry size 576).
+struct Projectile : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientProjectile, "ecl::Projectile")
+
+    // inferred: copy ctor EoCClient.dll+0x2951F0 sets *(this) = ecl::Projectile::vftable (base
+    // ls::ITextKeyEventHandler). Live: module pointer.
+    [[bg3::hidden]] void* VMT;
+    // unknown: copied as 8 bytes by the copy ctor; live equals the handle in EntityRef (+0x30) -
+    // the projectile entity.
+    EntityHandle field_8;
+    // unknown: copied as 8 bytes; live always 0.
+    uint64_t field_10;
+    // Toolkit accessor: Toolkit accessor get/set Template (ls::GameObjectTemplate const*) at
+    // +0x18. Live heap pointer.
+    [[bg3::hidden]] void* Template;
+    // inferred: copy ctor EoCClient.dll+0x295400 copies +0x20..+0x2C as ls::DynamicArray of
+    // ls::TypeWrap<int, net::PeerIDClassname> (IndexedStorage assert), element 4 bytes. Live
+    // capacity 2.
+    Array<int32_t> PeerIds;
+    // Toolkit accessor: Toolkit accessor ref EntityRef (ecs::EntityRef, 16 bytes: handle + world)
+    // at +0x30; this is its handle. Live entity handles.
+    EntityHandle Entity;
+    // Toolkit accessor: second half of the EntityRef accessor at +0x30 (EntityWorld pointer). Live
+    // heap pointer.
+    [[bg3::hidden]] void* EntityWorld;
+    // Toolkit accessor: Toolkit accessor set SourceWeapon at +0x40. Live null.
+    EntityHandle SourceWeapon;
+    // Toolkit accessor: Toolkit accessor ref Path (eoc::PathMover) at +0x48, size 0x128 (next
+    // member at +0x170); same type as SE path::PathMover (ExposedTypes.h) - kept opaque because
+    // only primitive types may be used here.
+    std::array<uint8_t, 296> Path;
+    // unknown: copy ctor copies it with ls::FixedString::FixedString.
+    FixedString field_170;
+    // Toolkit accessor: Toolkit accessor ref SpellID (eoc::spell::SpellId) at +0x178, 0x38 bytes
+    // (next member +0x1B0).
+    ClientProjectileSpellId SpellId;
+    // unknown: copy ctor copies it as FixedString. Live always empty (0xFFFFFFFF).
+    FixedString field_1B0;
+    // Toolkit accessor: Toolkit accessor set Target at +0x1B8.
+    EntityHandle Target;
+    // Toolkit accessor: Toolkit accessor set Caster at +0x1C0.
+    EntityHandle Caster;
+    // Toolkit accessor: Toolkit accessor set Source at +0x1C8.
+    EntityHandle Source;
+    // unknown: copied as 8 bytes; live entity handles or null.
+    EntityHandle field_1D0;
+    // unknown: copied as 8 bytes; live always null (0xFFC0000000000000).
+    EntityHandle field_1D8;
+    // Toolkit accessor: Toolkit accessor ref MovingObjectTransform (ls::Transform, 40 bytes) at
+    // +0x1E0. Live scale +0x200/+0x204 = 1.0.
+    Transform MovingObjectTransform;
+    // inferred: copied 8+4 bytes at +0x208/+0x210 right before TargetPosition; live world-
+    // coordinate-like floats (cf. esv::Projectile SourcePos).
+    glm::vec3 SourcePosition;
+    // Toolkit accessor: Toolkit accessor ref TargetPosition (Vector3f) at +0x214.
+    glm::vec3 TargetPosition;
+    // Toolkit accessor: Toolkit accessor set LifeTime at +0x220. Live 9.2/10/20.
+    float LifeTime;
+    // Toolkit accessor: Toolkit accessor set ExplodeRadius at +0x224. Live 0.
+    float ExplodeRadius;
+    // Toolkit accessor: Toolkit accessor get/set InfluenceRadius at +0x228.
+    float InfluenceRadius;
+    // unknown: copied as 4 bytes; live 14.11/15.0 (esv::Projectile has FallbackTimer 15.0 -
+    // possibly the same).
+    float field_22C;
+    // unknown: copied as 4 bytes; live 0.
+    uint32_t field_230;
+    // Toolkit accessor: Toolkit accessor get IsRequestDeleted at +0x234.
+    bool IsRequestDeleted;
+    // Toolkit accessor: Toolkit accessor set SpawnOverridesImpact at +0x235.
+    bool SpawnOverridesImpact;
+    // unknown: copied as a byte by the copy ctor.
+    bool field_236;
+    // Toolkit accessor: Toolkit accessor get IsOnHold / set OnHold at +0x237.
+    bool IsOnHold;
+    // unknown: copied as a byte.
+    bool field_238;
+    // unknown: copied as a byte.
+    bool field_239;
+    // unknown: copied as a byte (last member copied).
+    bool field_23A;
 };
 
 struct RoomTriggerCharacterFadeView0Component : public BaseComponent
@@ -469,6 +855,109 @@ struct RoomTriggerFadeView1Component : public BaseComponent
     bool Active;
 };
 
+// Born in dialogues and act1-idle together with ServerControlledEffectReferenceComponent and
+// ls::VisualAttachRequest: a server-controlled effect entity that is attached to another entity.
+// Written by ecl::ServerControlledEffectSystem::Update.
+struct ServerControlledEffectAttachedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientServerControlledEffectAttached, "ecl::ServerControlledEffectAttachedComponent")
+
+    // inferred: Creator bg3.exe+0x1EA9F90 (called from SCE update bg3.exe+0x1EA88B0) writes null
+    // 0xFFC0000000000000. bg3.exe+0x1EA9570 (on forget/destroy) uses this handle as the key of the
+    // ReferenceChange map and records the effect entity as removed from that entity's
+    // ecl::ServerControlledEffectReferenceComponent. Live: entity handles.
+    EntityHandle AttachedTo;
+};
+
+// Client side of an effect the server controls (born in dialogues/act1-idle with
+// ServerControlledEffectReference/Attached). Read by ecl::ServerControlledEffectSystem per-frame
+// step bg3.exe+0x1EA88B0.
+struct ServerControlledEffectComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientServerControlledEffect, "ecl::ServerControlledEffectComponent")
+
+    // unknown: Creator bg3.exe+0x1FF8760 zeroes it; bg3.exe+0x1EA88B0 passes the component start
+    // as a position-like argument to a beam/effect update (FUN_14189e8e0). Live world-coordinate-
+    // like floats (43.4, 17.0, -420.8) or 0.
+    glm::vec3 field_0;
+    // inferred: bg3.exe+0x1EA88B0 copies +0xC (8 bytes) and +0x14 (4) into the translation slot of
+    // a transform it builds. Creator writes 0; live 0.
+    glm::vec3 Translate;
+    // inferred: bg3.exe+0x1EA88B0 copies +0x18 and +0x20 (16 bytes) into the rotation slot of that
+    // transform. Creator: zero with 1.0 at +0x24 (w); live (0,0,0,1).
+    glm::quat RotationQuat;
+    // inferred: bg3.exe+0x1EA88B0: `s = *(float*)(c+0x28); if (s < 0) s = 0;` written as uniform
+    // scale (x,y,z) of the transform. Creator 0; live 1.0.
+    float Scale;
+    // inferred: Creator null. bg3.exe+0x1EA88B0 checks IsEntityAlive on it and resets it to null
+    // when dead; looked up first (FUN_140f24fc0) to find the visual to attach to; when +0x55 is
+    // set and this is null a detach request is issued. Live entity handles.
+    EntityHandle Target;
+    // unknown: Creator null; live entity handles.
+    EntityHandle field_38;
+    // unknown: Creator null; bg3.exe+0x1EA88B0 uses it as the fallback lookup when +0x30 gives
+    // nothing, and passes it to the beam update. Live 0/handles.
+    EntityHandle field_40;
+    // inferred: Creator writes -1 (8-byte store of 0xFFFFFFFFFFFFFFFF over +0x48/+0x4C).
+    // bg3.exe+0x1EA88B0 looks +0x48 up in the global resource manager
+    // (gGlobalResourceManager+0x50) - an effect resource id. Live FixedString-like values.
+    FixedString Effect;
+    // unknown: Creator -1; passed by address to the beam update together with +0x50. Live values
+    // or empty (bone/attachment name?).
+    FixedString field_4C;
+    // unknown: Creator -1; passed by address to the beam update. Live always empty.
+    FixedString field_50;
+    // unknown: Creator 0 (32-bit store over +0x54..+0x57); passed to the beam update. Live 0/1.
+    bool field_54;
+    // unknown: bg3.exe+0x1EA88B0: `*(c+0x55) |= flag`; when set and Target is null a detach
+    // request is issued. Live 0/1.
+    bool field_55;
+};
+
+// Put on the entity that server-controlled effects are attached to (born with
+// ServerControlledEffectAttached). Holds the set of effect entities referencing it;
+// ServerControlledEffectSystem removes the component when the set becomes empty.
+struct ServerControlledEffectReferenceComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientServerControlledEffectReference, "ecl::ServerControlledEffectReferenceComponent")
+
+    // inferred: Creator bg3.exe+0x1EAA800 zeroes a 48-byte hash set. Per-frame update
+    // bg3.exe+0x1EA7690 applies ReferenceChange entries (stride 0x60: added set at +0, removed set
+    // at +0x30) with FUN_14134cc00 (erase each 8-byte key, hashed by value % buckets) and
+    // FUN_14127e900 (insert), then removes the component when the key count at +0x2C is 0. macOS:
+    // ls::HashMap<ls::ID<ecs::EntityHandleTraits>,
+    // ecl::ServerControlledEffectSystem::ReferenceChange>. Live: buckets 5, one key.
+    HashSet<EntityHandle> Effects;
+};
+
+// One-frame request that the next fade of an entity is applied at once (born in many
+// dialogue/scene/trigger steps). Read by ecl::FadeResolveSystem::DetermineSnapFade.
+struct SnapFadeRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientSnapFadeRequest, "ecl::SnapFadeRequestOneFrameComponent")
+
+    // Toolkit accessor: ecl::FadeResolveSystem::DetermineSnapFade (EoCClient.dll, export) reads it
+    // as ls::StaticArray<bool,2> (assert 'ls::StaticArray<bool,2>::Get', index 0..1) - one flag
+    // per fade view (View0/View1). Creator bg3.exe+0x18DC2E0 writes 0x0101. Live 01 00.
+    std::array<bool, 2> Snap;
+};
+
+// Sound attached to an entity (born in act1-idle and dialogue steps). Added by bg3.exe+0x204BB20 /
+// +0x204BCD0 (sound attachment helpers called from bg3.exe+0x204A0C0 / +0x2048FB0).
+struct SoundAttachmentComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSoundAttachment, "ecl::SoundAttachmentComponent")
+
+    // inferred: Adders bg3.exe+0x204BB20 and +0x204BCD0 store *param_4 (8 bytes) here; the caller
+    // bg3.exe+0x204A0C0 gets it from FUN_143cbb2f0 on the client sound manager. Live 0 or values
+    // shaped like handles (0x01C0000D_00022B6C).
+    uint64_t SoundObjectId;
+    // unknown: Adders store *param_5 after FixedString IncRef; the component destructor
+    // bg3.exe+0x69E920 DecRefs the FixedString at +8. Caller passes a FixedString read from +0x28
+    // of an object (sound event or bone name).
+    FixedString field_8;
+};
+
 struct SoundAttachmentTransformRequest
 {
     // inferred: ecl::SoundAttachmentSystem::Update (Toolkit EoCClient.dll+0xCFEC80) pushes
@@ -492,6 +981,21 @@ struct SoundAttachmentTransformRequestsComponent : public BaseComponent
     // TransformComponent const>): grow check of capacity (+8) vs size (+0xC), element stride 0x18.
     // Live: all zero (empty array).
     Array<SoundAttachmentTransformRequest> Requests;
+};
+
+// One-frame request on the client: a character is selected to start its turn (party-fight
+// situation, WLD_Main_A). Holds the user that gets the turn.
+struct StartTurnRequestReactionOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientStartTurnRequestReaction, "ecl::StartTurnRequestReactionOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1951370 (AllocRaw 4) writes DAT_14617ceac; its only caller
+    // bg3.exe+0x1950470 (~ ecl::TurnOrderSystem::ProcessTurnActionsCompleted) writes the value
+    // that the helper's virtual slot +0x28 returned through an out-parameter initialised from that
+    // global. The Toolkit/macOS ecl::TurnOrderSystemHelper::SelectNewCharacter(..., ID* outEntity,
+    // UserID* outUser) has exactly that shape: the component is added to the selected character
+    // and holds the user. Live: 1.
+    UserId UserId;
 };
 
 struct SurfaceLightComponent : public BaseComponent
@@ -979,6 +1483,158 @@ struct ReactionComponent : public BaseComponent
     HashSet<EntityHandle> HandledSources;
 };
 
+// Client twin of esv::projectile::AttachmentComponent (SE ServerProjectileAttachment {
+// EntityHandle Attachment }). Read by ecl::thrown::AttachmentSystem (GatherDetachmentRequests /
+// Update). Born live while casting projectile spells.
+struct AttachmentComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientProjectileAttachment, "ecl::projectile::AttachmentComponent")
+
+    // inferred: Registry size 8; live values are entity handles (0x00400001_000xxxxx shape); macOS
+    // ecl::thrown::AttachmentSystem::GatherDetachmentRequests/Update read it; same size and role
+    // as SE esv::projectile::AttachmentComponent::Attachment (Projectile.h).
+    EntityHandle Attachment;
+};
+
+struct ImpactEventBaseTarget
+{
+    // inferred: Creator bg3.exe+0x1897900 stores PTR_FUN_1454db0b8 (outer target) /
+    // PTR_FUN_1454db080 (initial target) here: a class with a virtual table, the Script Extender
+    // spell_cast::BaseTarget (SpellCastShared.h): VMT, EntityHandle Target, optional<EntityHandle>
+    // TargetProxy, optional<vec3> Position.
+    [[bg3::hidden]] void* VMT;
+    // inferred: Creator bg3.exe+0x1897900 sets 0xffc0000000000000 (null EntityHandle); live values
+    // are entity handles. SE BaseTarget::Target.
+    EntityHandle Target;
+    // inferred: Value of optional<EntityHandle> (SE BaseTarget::TargetProxy); live garbage while
+    // the has-value byte is 0.
+    EntityHandle TargetProxy;
+    // inferred: Creator bg3.exe+0x1897900 zeroes this byte (optional has-value); live low byte
+    // always 0.
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: Value of optional<vec3> (SE BaseTarget::Position); live world coordinates (51.4,
+    // 5.9, 208.8 ...).
+    glm::vec3 Position;
+    // inferred: Creator bg3.exe+0x1897900 zeroes this byte; live 0/1.
+    bool HasPosition;
+};
+
+struct ImpactEventInitialTarget
+{
+    // inferred: SE spell_cast::InitialTarget derives from BaseTarget; second vtable
+    // PTR_FUN_1454db080 at the start of this part in the constructor.
+    ImpactEventBaseTarget Base;
+    // inferred: SE InitialTarget::TargetingType (SpellType, 1-byte enum); constructor zeroes byte
+    // 0x60; live 0/3/0xB.
+    uint8_t TargetingType;
+    // inferred: Value of SE InitialTarget::Target2 (optional<BaseTarget>); mostly zero live.
+    ImpactEventBaseTarget Target2;
+    // inferred: constructor zeroes byte 0x98; live 0/1.
+    bool HasTarget2;
+};
+
+struct ImpactEventIntermediateTarget
+{
+    // inferred: SE spell_cast::IntermediateTarget : BaseTarget (vtable PTR_FUN_1454db0b8).
+    ImpactEventBaseTarget Base;
+    // inferred: SE IntermediateTarget::InitialTarget.
+    ImpactEventInitialTarget InitialTarget;
+    // inferred: SE IntermediateTarget::field_A0; constructor zeroes byte 0xa0; live 0.
+    uint8_t field_A0;
+};
+
+// One-frame event added by the client projectile when it explodes (caller bg3.exe+0x1894B90 ~
+// ecl::Projectile::TryExplode). Holds the spell-cast target the projectile hit: exactly Script
+// Extender's spell_cast::IntermediateTarget (0xA8 bytes), declared here as own structs. Born live
+// while casting projectile spells (Eldritch Blast, Scorching Ray) together with ecl::Projectile
+// and ecl::projectile::SpellComponent.
+struct ImpactEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientProjectileImpactEvent, "ecl::projectile::ImpactEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1897900 allocates 0xA8, memsets, then constructs the target in
+    // place: +0 vtable PTR_FUN_1454db0b8, +8 null handle, bytes +0x18/+0x2C zero, +0x30 vtable
+    // PTR_FUN_1454db080, +0x38 null handle, bytes +0x48/+0x5C/+0x60/+0x98/+0xA0 zero - the field
+    // pattern of SE spell_cast::IntermediateTarget (same vtables as the target inside
+    // ecl::projectile::SpellComponent at +0x10). Live: 48 instances; vtables in the executable,
+    // handles and world positions where expected.
+    ImpactEventIntermediateTarget Target;
+};
+
+struct ProjectileSpellBaseTarget
+{
+    // inferred: Creator bg3.exe+0x1BB1F20 stores PTR_FUN_1454db0b8 (outer target) /
+    // PTR_FUN_1454db080 (initial target) here: a class with a virtual table, the Script Extender
+    // spell_cast::BaseTarget (SpellCastShared.h): VMT, EntityHandle Target, optional<EntityHandle>
+    // TargetProxy, optional<vec3> Position.
+    [[bg3::hidden]] void* VMT;
+    // inferred: Creator bg3.exe+0x1BB1F20 sets 0xffc0000000000000 (null EntityHandle); live values
+    // are entity handles. SE BaseTarget::Target.
+    EntityHandle Target;
+    // inferred: Value of optional<EntityHandle> (SE BaseTarget::TargetProxy); live garbage while
+    // the has-value byte is 0.
+    EntityHandle TargetProxy;
+    // inferred: Creator bg3.exe+0x1BB1F20 zeroes this byte (optional has-value); live low byte
+    // always 0.
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: Value of optional<vec3> (SE BaseTarget::Position); live world coordinates (51.4,
+    // 5.9, 208.8 ...).
+    glm::vec3 Position;
+    // inferred: Creator bg3.exe+0x1BB1F20 zeroes this byte; live 0/1.
+    bool HasPosition;
+};
+
+struct ProjectileSpellInitialTarget
+{
+    // inferred: SE spell_cast::InitialTarget derives from BaseTarget; second vtable
+    // PTR_FUN_1454db080 at the start of this part in the constructor.
+    ProjectileSpellBaseTarget Base;
+    // inferred: SE InitialTarget::TargetingType (SpellType, 1-byte enum); constructor zeroes byte
+    // 0x70; live 0/3/0xB.
+    uint8_t TargetingType;
+    // inferred: Value of SE InitialTarget::Target2 (optional<BaseTarget>); mostly zero live.
+    ProjectileSpellBaseTarget Target2;
+    // inferred: constructor zeroes byte 0xa8; live 0/1.
+    bool HasTarget2;
+};
+
+struct ProjectileSpellIntermediateTarget
+{
+    // inferred: SE spell_cast::IntermediateTarget : BaseTarget (vtable PTR_FUN_1454db0b8).
+    ProjectileSpellBaseTarget Base;
+    // inferred: SE IntermediateTarget::InitialTarget.
+    ProjectileSpellInitialTarget InitialTarget;
+    // inferred: SE IntermediateTarget::field_A0; constructor zeroes byte 0xb0; live 0.
+    uint8_t field_A0;
+};
+
+// Client twin of esv::projectile::SpellComponent (SE ServerProjectileSpell: Spell, Target, Index),
+// but the cast is named by a Guid instead of an entity. Added in bg3.exe+0x1BB0B40 (~
+// ecl::EntityConversionHelpers::CreateProjectile) when the projectile's creation data has a non-
+// null Guid. Born live casting projectile spells (Eldritch Blast, Scorching Ray) with
+// ecl::Projectile, ImpactEvent and AttachmentComponent.
+struct SpellComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientProjectileSpell, "ecl::projectile::SpellComponent")
+
+    // inferred: bg3.exe+0x1BB0B40 adds the component only if the 16 bytes at creation data
+    // +0x120/+0x128 are not both zero and copies them to +0/+8; the creator initialises them from
+    // a global (null Guid). Live: 48 random-looking 16-byte values. Name inferred (the server twin
+    // stores the spell-cast entity here).
+    Guid SpellCastUuid;
+    // inferred: Creator bg3.exe+0x1BB1F20 (0xC0) builds the same target object as
+    // ImpactEventOneFrameComponent at +0x10 (vtables PTR_FUN_1454db0b8 at +0x10 and
+    // PTR_FUN_1454db080 at +0x40, null handles at +0x18/+0x48); bg3.exe+0x1BB0B40 fills it with
+    // FUN_1418960c0 from a converted net target. SE esv::projectile::SpellComponent::Target is
+    // spell_cast::IntermediateTarget.
+    ProjectileSpellIntermediateTarget Target;
+    // inferred: bg3.exe+0x1BB0B40 copies a 4-byte value from creation data +0x1C0 to +0xB8;
+    // creator zeroes it; live 0. SE esv::projectile::SpellComponent::Index.
+    int32_t Index;
+};
+
 struct SpellSoundStateRequestsSwitchRequest
 {
     // inferred: ls::GameplaySoundSwitchRequest (GameEngine.dll+0x1C4440,
@@ -999,8 +1655,6 @@ struct SpellSoundStateRequestsSwitchRequest
     FixedString SwitchState;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct SpellSoundStateRequestsSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientStatusSpellSoundStateRequestsSingleton, "ecl::status::SpellSoundStateRequestsSingletonComponent")
@@ -1011,6 +1665,29 @@ struct SpellSoundStateRequestsSingletonComponent : public BaseComponent
     // assert names ls::IndexedStorage<ls::GameplaySoundSwitchRequest>. Default 16 zero bytes
     // (macOS stp xzr,xzr), live empty.
     Array<SpellSoundStateRequestsSwitchRequest> Requests;
+};
+
+// Client one-frame event carrying the player's answer to a game message box (seen when the ready
+// check of the level swap teleporter was answered; born together with
+// ecl::ready_check::Show/HideMessageBoxRequestOneFrameComponent and eoc::ready_check::*). Created
+// by the per-frame update of ecl::UIManagerProxySystem from its queue of 8-byte responses; read by
+// ecl::multiplayer::DropInApprovalSystem::Update (and the ready check client system).
+struct MessageBoxResponseEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientUIMessageBoxResponseEvent, "ecl::ui::MessageBoxResponseEventOneFrameComponent")
+
+    // unknown: bg3.exe+0x1ADD640 (add helper, size 8) zeroes the u32 at +0; bg3.exe+0x1ADD3A0 (~
+    // per-frame update of ecl::UIManagerProxySystem, step 5/5) copies byte 0 of the queued
+    // response; live 1 (probably the answer/button)
+    uint8_t field_0;
+    // unknown: bg3.exe+0x1ADD3A0 copies byte 1; live 0
+    uint8_t field_1;
+    // unknown: bg3.exe+0x1ADD3A0 copies a u16 at +2; live 1
+    uint16_t field_2;
+    // inferred: bg3.exe+0x1ADD640 initialises +4 to 0xFFFFFFFF; bg3.exe+0x1ADD3A0 assigns it with
+    // ls::FixedString::IncRef / GlobalStringTable DecRef (a FixedString, probably the message box
+    // id/context); live 0x4E800020
+    FixedString field_4;
 };
 
 DEFINE_TAG_COMPONENT(ecl, BasicGOVisualFadeActiveView0Component, ClientBasicGOVisualFadeActiveView0)
@@ -1077,6 +1754,26 @@ struct CulledComponent : public BaseComponent
 
 END_NS()
 
+BEGIN_NS(ecl::attitude)
+
+// One-frame list of attitude changes towards players (born in the CAMP_GoblinHuntCelebration
+// dialogues and helm steps). Created by the per-frame update of
+// ecl::attitude::UINotificationSystem from its AttitudeChangesNotificationRequest list; each entry
+// is reported via OnAttitudeChanged(view, entity, EntityHandle, int).
+struct ChangesOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientAttitudeChanges, "ecl::attitude::ChangesOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1A73350 zeroes a 64-byte hash map. UINotificationSystem update
+    // bg3.exe+0x1A73030 fills it and walks keys at +0x20 (stride 8) with values at +0x30 (stride
+    // 4), calling a listener slot with (key*, *(int*)value); macOS
+    // ecl::attitude::UIAttitudeHelper::OnAttitudeChanged(WorldView&, EntityHandle const&,
+    // EntityHandle const&, int). Live: 1 entry.
+    HashMap<EntityHandle, int32_t> Changes;
+};
+
+END_NS()
+
 BEGIN_NS(ecl::character)
 
 struct CharacterUpdateConfigComponent : public BaseComponent
@@ -1097,11 +1794,256 @@ struct CharacterUpdateConfigComponent : public BaseComponent
     float field_8;
 };
 
+// Trade mode of a character on the client (born in pickpocket/trader dialogues:
+// DEN_Thieflings_Pickpocket, GOB_DrowCommander). Same shape as SE TradeModeChangeRequest
+// (Visual.h: uint16_t field_0, uint8_t field_2) fed from
+// ecl::CharacterManager::TradingModeChanges.
+struct TradingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterTrading, "ecl::character::TradingComponent")
+
+    // unknown: Creator bg3.exe+0x1CB02B0 (from ecl::CharacterManager update) writes 1 (16-bit).
+    // Live 1. Possibly a player id.
+    uint16_t field_0;
+    // inferred: Creator writes 4. Toolkit ecl::trade::GetTradeContext tests `*(char*)(c+2) == 0`;
+    // macOS ecl::trade::ProcessMoveTradeItem compares it with 0 and 3 - a trade mode enum
+    // (uint8_t). Live 2/4.
+    uint8_t Mode;
+};
+
+// One-frame notice of a trade-mode switch (born in pickpocket/trader dialogues).
+// ecl::CharacterManager per-frame update bg3.exe+0x1CA5C00 drains its TradingModeChanges
+// HashMap<EntityHandle, TradeModeChangeRequest> into this component.
+struct TradingModeSwitchOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientCharacterTradingModeSwitch, "ecl::character::TradingModeSwitchOneFrameComponent")
+
+    // unknown: bg3.exe+0x1CA5C00: `p = FUN_141caf080(...); *(u16*)p = *(u16*)req; *(u8*)(p+2) =
+    // *(u8*)(req+2);` with requests of stride 4 (SE TradeModeChangeRequest::field_0). Creator
+    // bg3.exe+0x1CAF080 default 1. Live 1.
+    uint16_t field_0;
+    // inferred: copied from TradeModeChangeRequest::field_2 (bg3.exe+0x1CA5C00); same values as
+    // ecl::character::TradingComponent::Mode (creator default 4). Live 0/3.
+    uint8_t Mode;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::character, TemplateChangedEventOneFrameComponent, ClientCharacterTemplateChangedEvent)
 
 END_NS()
 
 BEGIN_NS(ecl::character_creation)
+
+struct CCAppearanceCacheMaterialSetting
+{
+    // inferred: same layout as Script Extender's AppearanceMaterialSetting
+    // (GameDefinitions/CharacterCreation.h)
+    Guid Material;
+    // inferred: as SE AppearanceMaterialSetting
+    Guid Color;
+    // inferred: as SE AppearanceMaterialSetting
+    float ColorIntensity;
+    // inferred: as SE AppearanceMaterialSetting
+    float MetallicTint;
+    // inferred: as SE AppearanceMaterialSetting
+    float GlossyTint;
+};
+
+struct CCAppearanceCacheSelectedAppearance
+{
+    // inferred: macOS InitializeAppearanceCacheComponent copies
+    // eoc::character_creation::Appearance +0xA8 (SE: Visuals) here; Windows value destructor
+    // bg3.exe+0x708260 frees arrays at +0, +0x10, +0x20
+    Array<Guid> Visuals;
+    // inferred: copied from Appearance +0xB8 (SE: Elements)
+    Array<CCAppearanceCacheMaterialSetting> Elements;
+    // inferred: copied from Appearance +0xC8 (SE: AdditionalChoices)
+    Array<float> AdditionalChoices;
+    // inferred: copied from Appearance +0x58 (SE: HairColor); default Guid::Empty
+    Guid HairColor;
+    // inferred: copied from Appearance +0x68 (SE: SkinColor)
+    Guid SkinColor;
+    // inferred: from Appearance +0x78 (SE: EyeColor) - order inferred from the copy sequence
+    Guid EyeColor;
+    // inferred: from Appearance +0x88 (SE: SecondEyeColor)
+    Guid SecondEyeColor;
+    // inferred: from Appearance +0x98 (SE: AccessorySet)
+    Guid AccessorySet;
+};
+
+// Cache of appearances already chosen in the character editor, keyed by Guid
+// (ecl::character_creation::SelectedAppearance values). situation 'respec' (Osi.StartRespec on the
+// host, then the character editor's commands, level SYS_CC_I); born together with the other
+// ecl::character_creation components of this batch.
+struct AppearanceCacheComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterCreationAppearanceCache, "ecl::character_creation::AppearanceCacheComponent")
+
+    // inferred: macOS SubsystemHelper::InitializeAppearanceCacheComponent(ID, Guid const&,
+    // Appearance const&, ...) inserts into HashTable<ls::Guid> and resizes
+    // IndexedStorage<ecl::character_creation::SelectedAppearance> at +0x30 with stride 0x80.
+    // Windows destructor bg3.exe+0x6D0970 loops over the key count at +0x2C and destroys values at
+    // +0x30 with stride 0x80, then the key set. Creator bg3.exe+0x201AC40 zeroes 64 bytes. Live:
+    // bucket table of 5, one key, one value.
+    HashMap<Guid, CCAppearanceCacheSelectedAppearance> Appearances;
+};
+
+// One-frame event of the character editor: the visual of the selected class finished loading.
+// situation 'respec' (Osi.StartRespec on the host, then the character editor's commands, level
+// SYS_CC_I); born together with the other ecl::character_creation components of this batch.
+struct LoadedClassVisualChangedComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientCharacterCreationLoadedClassVisualChanged, "ecl::character_creation::LoadedClassVisualChangedComponent")
+
+    // inferred: Creator bg3.exe+0x203AE70 (AllocRaw 0x10) copies Guid::Empty (DAT_14625aad0..dc).
+    // Live value is the class Rogue (e8b1eab0-ef11-40a2-8a0b-cee8d062bf2a, ClassDescriptions.lsx)
+    // (looked up in the game data index).
+    Guid Class;
+};
+
+// One-frame event of the character editor: the visual of the selected origin finished loading.
+// situation 'respec' (Osi.StartRespec on the host, then the character editor's commands, level
+// SYS_CC_I); born together with the other ecl::character_creation components of this batch.
+struct LoadedOriginVisualChangedComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientCharacterCreationLoadedOriginVisualChanged, "ecl::character_creation::LoadedOriginVisualChangedComponent")
+
+    // inferred: Creator bg3.exe+0x203AFD0 (AllocRaw 0x10) copies Guid::Empty (DAT_14625aad0..dc).
+    // Live value is the origin Astarion (3780c689-d903-41c2-bf64-1e6ec6a8e1e5, Origins.lsx)
+    // (looked up in the game data index).
+    Guid Origin;
+};
+
+// One-frame event of the character editor: the visual of the selected race finished loading.
+// situation 'respec' (Osi.StartRespec on the host, then the character editor's commands, level
+// SYS_CC_I); born together with the other ecl::character_creation components of this batch.
+struct LoadedRaceVisualChangedComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientCharacterCreationLoadedRaceVisualChanged, "ecl::character_creation::LoadedRaceVisualChangedComponent")
+
+    // inferred: Creator bg3.exe+0x203AD10 (AllocRaw 0x10) copies Guid::Empty (DAT_14625aad0..dc).
+    // Live value is the race Elf (6c038dcb-7eb5-431d-84f8-cecfaf1c0c5a, Races.lsx) (looked up in
+    // the game data index).
+    Guid Race;
+};
+
+// Character-creation session: the entity the session edits. situation 'respec' (Osi.StartRespec on
+// the host, then the character editor's commands, level SYS_CC_I); born together with the other
+// ecl::character_creation components of this batch.
+struct SessionCharacterComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterCreationSessionCharacter, "ecl::character_creation::SessionCharacterComponent")
+
+    // inferred: Creator bg3.exe+0x201AAD0 (AllocRaw 8) writes 0xffc0000000000000 (null handle);
+    // macOS default ctor stores the null handle too. Live: an entity handle (0x01C00006_0002FE6B),
+    // the same one held by SessionStateComponent +0 and IconDefinitionComponent +0.
+    EntityHandle Character;
+};
+
+struct CCTargetVisualMaterialSetting
+{
+    // inferred: same layout as Script Extender's AppearanceMaterialSetting
+    // (GameDefinitions/CharacterCreation.h)
+    Guid Material;
+    // inferred: as SE AppearanceMaterialSetting
+    Guid Color;
+    // inferred: as SE AppearanceMaterialSetting
+    float ColorIntensity;
+    // inferred: as SE AppearanceMaterialSetting
+    float MetallicTint;
+    // inferred: as SE AppearanceMaterialSetting
+    float GlossyTint;
+};
+
+struct CCTargetVisualStringEntry
+{
+    // inferred: bg3.exe+0x6DAE40 moves +0x10 as an 8-byte size/capacity pair and resets the source
+    // to 0 / 0xF: the 24-byte small-string shape
+    STDString field_0;
+    // unknown: rest of the 0x20 stride
+    uint64_t field_18;
+};
+
+// Visual the character-editor dummy should get (filled by
+// SubsystemHelper::FillTargetVisualComponent / ...ColorsAndMaterials from the template, race,
+// origin, body type/shape and eoc::character_creation::Appearance). situation 'respec'
+// (Osi.StartRespec on the host, then the character editor's commands, level SYS_CC_I); born
+// together with the other ecl::character_creation components of this batch.
+struct TargetVisualComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCharacterCreationTargetVisual, "ecl::character_creation::TargetVisualComponent")
+
+    // unknown: Creator bg3.exe+0x201BE90 writes 0xFFFFFFFF; destructor DecRefs it.
+    // FillTargetVisualComponent sets it from a FixedString of the character template (template
+    // +0x4B8 on macOS). Live: 0x0EF00E61 in TargetVisual (also IconDefinition +8), null in
+    // CurrentVisual.
+    FixedString field_0;
+    // unknown: FillTargetVisualComponent increments it when field_0 is set (a change counter).
+    // Creator zeroes +4..+0xB. Live 1 (Target), 0 (Current).
+    int32_t field_4;
+    // unknown: FillTargetVisualComponentColorsAndMaterials increments it (change counter of
+    // colors/materials). Live 1 (Target), 0 (Current).
+    int32_t field_8;
+    // inferred: macOS SubsystemHelper::FillTargetVisualComponentColorsAndMaterials copies
+    // eoc::character_creation::Appearance +0xA8 (SE: Visuals); Windows creator zeroes ptr/cap/size
+    // here
+    Array<Guid> Visuals;
+    // inferred: macOS SubsystemHelper::FillTargetVisualComponentColorsAndMaterials copies
+    // Appearance +0xB8 (SE: Elements). Live (TargetVisual): 9 entries
+    Array<CCTargetVisualMaterialSetting> Elements;
+    // inferred: macOS SubsystemHelper::FillTargetVisualComponentColorsAndMaterials copies
+    // Appearance +0xC8 (SE: AdditionalChoices)
+    Array<float> AdditionalChoices;
+    // inferred: macOS SubsystemHelper::FillTargetVisualComponentColorsAndMaterials copies
+    // Appearance +0x58; creator writes Guid::Empty
+    Guid HairColor;
+    // inferred: copies Appearance +0x68
+    Guid SkinColor;
+    // inferred: copies Appearance +0x78
+    Guid EyeColor;
+    // inferred: copies Appearance +0x88
+    Guid SecondEyeColor;
+    // inferred: macOS FillTargetVisualComponent writes its Guid parameter 7 here; live
+    // (TargetVisual +0x80) = Elf race 6c038dcb-... (Races.lsx), same value as
+    // LoadedRaceVisualChangedComponent
+    Guid Race;
+    // inferred: FillTargetVisualComponent fills it from Span<Guid> parameter 5
+    // (DynamicArray<ls::Guid>, stride 0x10). Live 1 entry
+    Array<Guid> field_90;
+    // inferred: FillTargetVisualComponent fills it from Span<Guid> parameter 6. Live 1 entry
+    Array<Guid> field_A0;
+    // inferred: FillTargetVisualComponent writes its Guid parameter 4 here; live (TargetVisual
+    // +0xB0) = Astarion origin 3780c689-... (Origins.lsx), same as
+    // LoadedOriginVisualChangedComponent
+    Guid Origin;
+    // inferred: FillTargetVisualComponent: param_1[0xc0] = *EBodyType (ls::EBodyType, 1 byte);
+    // creator 16-bit zero store with the next byte
+    uint8_t BodyType;
+    // inferred: param_1[0xc1] = *EBodyShape (ls::EBodyShape, 1 byte)
+    uint8_t BodyShape;
+    // unknown: creator writes byte 0
+    uint8_t field_C2;
+    // unknown: padding byte before +0xC4 (not written)
+    uint8_t field_C3;
+    // inferred: FillTargetVisualComponent: (template byte +0x84)<<5 | (template byte +0x7C)<<2 |
+    // template byte +0x82 - bits taken from the character template. Creator 16-bit zero. Live 4.
+    uint16_t TemplateFlags;
+    // unknown: Creator writes DAT_146174978 with IncRef; destructor DecRefs +0xC8.
+    // FillTargetVisualComponent copies a FixedString of an object found through parameter 5
+    // (object +0xD4). Live 0x27F000C1.
+    FixedString field_C8;
+    // unknown: Creator writes 0; FillTargetVisualComponent copies template byte +0x526. Live 5.
+    uint8_t field_CC;
+    // unknown: buffer of an array of trivially destructible elements (destructor bg3.exe+0x6CF0D0
+    // frees it via FUN_1405bd630); element type unknown. Live empty.
+    [[bg3::hidden]] void* field_D0;
+    // unknown: capacity of that array
+    uint32_t field_D8;
+    // unknown: size of that array
+    uint32_t field_DC;
+    // inferred: destructor resizes it with bg3.exe+0x6DAE40: stride 0x20, each element starts with
+    // a game string (reset to size 0 / capacity 0xF). Live empty.
+    Array<CCTargetVisualStringEntry> field_E0;
+};
 
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::character_creation, LoadedBodyTypeVisualChangedComponent, ClientCharacterCreationLoadedBodyTypeVisualChanged)
 
@@ -1236,6 +2178,98 @@ struct SoundStateComponent : public BaseComponent
     // the group at that index is overwritten (FUN_180EA9030) instead of appending. Live: heap
     // pointer, capacity 1, size 0.
     Array<int32_t> FreeGroupIndices;
+};
+
+// Crowd sound station entity in Act 3 (CTY/BGO levels, idle). Created by
+// ecl::crowds::SoundStationSystem::FinalizeStations from its per-frame new-station requests.
+struct SoundStationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCrowdsSoundStation, "ecl::crowds::SoundStationComponent")
+
+    // unknown: Creator bg3.exe+0x1F3C870 writes 0xffc0000000000000 (null handle). Filled by
+    // ecl::crowds::SoundStationSystem::FinalizeStations (EoCClient.dll+0xE9B950): *comp =
+    // request[+0x20] (an entity of the new-station request). Live: entity handles.
+    EntityHandle field_0;
+    // unknown: Creator writes -1. FinalizeStations writes the 4-byte key of the frame's new-
+    // station map (station id). Live 0..0x10.
+    int32_t field_8;
+    // unknown: Creator writes 0. FinalizeStations copies request +0xC. Live 3..14.
+    uint32_t field_C;
+};
+
+struct CrowdSoundNewStationRequest
+{
+    // inferred: ecl::crowds::SoundStationSystem::FinalizeStations (EoCClient.dll+0xE9B950) creates
+    // a station entity with the command buffer and appends {new entity handle, 8 bytes, 4 bytes}
+    // at stride 0x18 (IndexedStorage<...::NewStationRequest>).
+    EntityHandle Station;
+    // inferred: ecl::transform::GameplayTransformRequestSystem::Update (EoCClient.dll+0x548D10)
+    // reads each element's +8 (8 bytes) and +0x10 (4 bytes) as a translation and builds a
+    // Transform with identity rotation/scale for the handle at +0.
+    glm::vec3 Position;
+};
+
+struct CrowdSoundStationSoundRequest
+{
+    // inferred: Assumed: 8-byte first member like the other requests of this singleton; not
+    // decoded.
+    EntityHandle Station;
+    // inferred: SoundStationSystem::Update (EoCClient.dll+0xE9CF20) destroys a FixedString at
+    // element+8 (stride 0x10) when clearing IndexedStorage<...::StationSoundRequest>; consumed by
+    // ecl::sound::InterfaceSystem::Update.
+    FixedString Event;
+    // unknown: Not read.
+    uint32_t field_c;
+};
+
+struct CrowdSoundStationSizeRequest
+{
+    // inferred: Assumed: 8-byte first member like the other requests; not decoded.
+    EntityHandle Station;
+    // unknown: Not read (a size value, int or float).
+    uint32_t field_8;
+    // inferred: SoundStationSystem::Update destroys a FixedString at element+0xC (stride 0x10)
+    // when clearing IndexedStorage<...::StationSizeRequest>.
+    FixedString RTPC;
+};
+
+struct SoundStationRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCrowdsSoundStationRequests, "ecl::crowds::SoundStationRequestsSingletonComponent")
+
+    // inferred: SoundStationSystem::Update resets size +0xC after a CheckBoundary loop on
+    // IndexedStorage<ecl::crowds::SoundStationRequestsSingletonComponent::NewStationRequest>;
+    // FinalizeStations appends with growth FUN_1803A44F0, stride 0x18.
+    // GameplayTransformRequestSystem::Update reads it through the getter of the same type index
+    // (EoCClient.dll+0x5473D0 and the system's own getter EoCClient.dll+0xE9A700 both use
+    // DAT_1819fa0a4).
+    Array<CrowdSoundNewStationRequest> NewStations;
+    // inferred: SoundStationSystem::Update clears a hash table at +0x10 (buckets memset 0xFF, keys
+    // IndexedStorage<ls::ID<EntityHandleTraits>> size at +0x3C);
+    // GameplayTransformRequestSystem::Update iterates keys at +0x30 (8-byte handles) with values
+    // at +0x40 of stride 0xC (a translation, turned into a Transform).
+    HashMap<EntityHandle, glm::vec3> StationTranslations;
+    // inferred: +0x50/+0x58/+0x5C: IndexedStorage<...::StationSoundRequest>, stride 0x10, cleared
+    // every frame in SoundStationSystem::Update.
+    Array<CrowdSoundStationSoundRequest> StationSoundRequests;
+    // inferred: +0x60/+0x68/+0x6C: IndexedStorage<...::StationSizeRequest>, stride 0x10, cleared
+    // every frame in SoundStationSystem::Update.
+    Array<CrowdSoundStationSizeRequest> StationSizeRequests;
+};
+
+struct SoundStationStateSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCrowdsSoundStationState, "ecl::crowds::SoundStationStateSingletonComponent")
+
+    // inferred: ecl::crowds::SoundStationSystem::FinalizeStations(...,
+    // SoundStationRequestsSingletonComponent&, SoundStationStateSingletonComponent& param_4)
+    // (EoCClient.dll+0xE9B950): for each new station it inserts the 4-byte key taken from the
+    // frame data (*puVar12, stride 4 - a sound group / cluster index) with FUN_18078B130 and
+    // stores the new station entity handle in the values array at +0x30 (8-byte elements, grown to
+    // the key capacity at +0x28 / +0x38, IndexedStorage<ls::ID<EntityHandleTraits>>); removed
+    // stations are erased by key (FUN_180E9CBB0) and their entity destroyed. 64 bytes = one
+    // HashMap. macOS default ctor: 64 zero bytes. Live (idle): all zero.
+    HashMap<int32_t, EntityHandle> Stations;
 };
 
 struct SoundVolumeComponent : public BaseComponent
@@ -1383,7 +2417,45 @@ END_NS()
 
 BEGIN_NS(ecl::ftb)
 
+// One-frame notice that a player's free-turn-based (FTB) request is blocked (born in the
+// TWN_Hospital_Reception dialogue). Created by the per-frame update of ecl::ftb::ZoneSystem from
+// modified eoc::ftb::ZoneBlockReasonComponent.
+struct BlockedFTBRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientFTBBlockedRequest, "ecl::ftb::BlockedFTBRequestOneFrameComponent")
+
+    // inferred: ecl::ftb::ZoneSystem update bg3.exe+0x1956170: `p = FUN_141956c50(...); *(short*)p
+    // = sVar8;` where sVar8 is the low 16 bits of a uint at +0x12C of the character (player id, 0
+    // skipped). Creator bg3.exe+0x1956C50 writes 0. Live 1.
+    int16_t PlayerId;
+    // inferred: Same function: `*(char*)(p+2) = cVar3;` where cVar3 is the byte of
+    // eoc::ftb::ZoneBlockReasonComponent (SE: uint8_t Reason; 0 skipped, 2 only when an entity is
+    // null). Live 1.
+    uint8_t Reason;
+};
+
 DEFINE_TAG_COMPONENT(ecl::ftb, ToggleRequestComponent, ClientFtbToggleRequest)
+
+END_NS()
+
+BEGIN_NS(ecl::highlight)
+
+// Highlighted entity per player (born in spells-3 and fight steps with PlayerTargetEntityChanged).
+// Maintained by ecl::highlight::UpdateSystem (per-frame update bg3.exe+0x1A3C910).
+struct DataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientHighlightData, "ecl::highlight::DataComponent")
+
+    // inferred: bg3.exe+0x1A3CEB0 copies a 16-byte request {short, ?, EntityHandle at +8} into the
+    // component and calls HighlightManager slots with (*(short*)c, c+8); macOS
+    // ecl::highlight::UpdateSystemHelper::SetHighlight/ClearHighlight(short,
+    // ls::ID<EntityHandleTraits> const&, HighlightManager&). Creator bg3.exe+0x1A3D2F0 writes 0.
+    // Live 1.
+    int16_t PlayerId;
+    // inferred: Second argument of SetHighlight/ClearHighlight (bg3.exe+0x1A3CEB0); creator writes
+    // null 0xFFC0000000000000. Live entity handles.
+    EntityHandle Entity;
+};
 
 END_NS()
 
@@ -1458,12 +2530,46 @@ END_NS()
 
 BEGIN_NS(ecl::item)
 
+// Marker with data added to client items whose destruction (eoc::item::DestroyingComponent) has
+// been handled: queried as <eoc::item::DestroyingComponent, ecl::Item> without
+// DestroyingHandledComponent (macOS query spec), added by bg3.exe+0x1CC5130 after it plays the
+// destroy visuals. Born live with eoc::item::DestroyingComponent / DestroyedComponent when items
+// were destroyed during spell casts.
+struct DestroyingHandledComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientItemDestroyingHandled, "ecl::item::DestroyingHandledComponent")
+
+    // unknown: Creator bg3.exe+0x1CC6630 (0x10 bytes) copies 16 bytes from a local pair in
+    // bg3.exe+0x1CC5130: an 8-byte value defaulting to 0xffc0000000000000 (null handle), set by
+    // FUN_141cc4de0 when a destroy effect/animation entry (type 5) of the item is found. Live:
+    // entity handles (0x00400001_xxxx shape) or null.
+    EntityHandle field_0;
+    // unknown: Byte defaulting to 0, set together with +0 by FUN_141cc4de0. Live low byte 0/1.
+    bool field_8;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::item, DestroyingUnloadVisualRequestComponent, ClientItemDestroyingUnloadVisualRequest)
 DEFINE_TAG_COMPONENT(ecl::item, RetryLinkDynPhysicsRequestComponent, ClientItemRetryLinkDynPhysicsRequest)
 
 END_NS()
 
 BEGIN_NS(ecl::item::animation)
+
+// Per-item float timer of ecl::item::animation::StateTransitionSystem (per-frame update
+// bg3.exe+0x191E250 -> bg3.exe+0x191F340): when an item's animation state changes the system gets
+// or creates this component and sets it to 0; otherwise it removes it. Queried with
+// StateComponent, CulledComponent and ls::AnimationUpdateComponent (bg3.exe+0x19204F0) - a
+// fallback timer for item animations that do not report completion. Seen while idle and in many
+// item steps (no companions born).
+struct FallbackTimerComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientItemAnimationFallbackTimer, "ecl::item::animation::FallbackTimerComponent")
+
+    // inferred: Creator bg3.exe+0x191FB20 allocates 4 bytes and zeroes them; bg3.exe+0x191F340
+    // writes 0 (*(undefined4*)p = 0) on a state transition. Live: 48 instances, floats 0..9.87
+    // (counting time). Name inferred.
+    float Time;
+};
 
 struct RequestComponent : public BaseComponent
 {
@@ -1773,6 +2879,25 @@ END_NS()
 
 BEGIN_NS(ecl::party)
 
+// Event entity written by ecl::party::PartySystem::Update (bg3.exe+0x1949EF0) and read by
+// gui::AssignedCharactersSystem (macOS). The system collects a HashMap<EntityHandle, pair of
+// EntityHandles> of members whose two party handles differ (old != new) and creates one event
+// entity per entry. Born live in party/summon steps (with GroupsChangedEvent, summons).
+struct PartyChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientPartyPartyChangedEvent, "ecl::party::PartyChangedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x194B100 (0x18 bytes) initialises three null handles;
+    // bg3.exe+0x1949EF0 writes the 8-byte map key here. Live: entity handles.
+    EntityHandle Entity;
+    // unknown: Second handle of the map value (value[1]); the map only keeps entries whose two
+    // handles differ. Live: handle or 0/null. Probably the new or old party (view) entity - not
+    // established.
+    EntityHandle field_8;
+    // unknown: First handle of the map value (value[0]). Live: handle or 0/null.
+    EntityHandle field_10;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::party, GroupsChangedEventOneFrameComponent, ClientPartyGroupsChangedEvent)
 DEFINE_TAG_COMPONENT(ecl::party, LoadedEventOneFrameComponent, ClientPartyLoadedEvent)
 
@@ -1803,6 +2928,86 @@ struct HighlightTargetSingletonComponent : public BaseComponent
     // 8) and values (+0x30, stride 0x10). Key = pinged target entity (inferred). macOS default:
     // zeroed 64 bytes; live (idle): empty.
     HashMap<EntityHandle, PingHighlightEffect> Highlights;
+};
+
+struct PingMultiEffectEffectObject
+{
+    // inferred: SE ecl::ProvidedMultiEffectObject::Entity; creator bg3.exe+0x18A4700 initialises
+    // it to the null handle.
+    EntityHandle Entity;
+    // inferred: SE ProvidedMultiEffectObject::Position (live world coordinates in the target
+    // object).
+    glm::vec3 Position;
+    // inferred: SE ProvidedMultiEffectObject::Tags (Array<Guid>); zeroed by the creator; live
+    // empty.
+    Array<Guid> Tags;
+    // inferred: SE ProvidedMultiEffectObject::Flags (ProvidedMultiEffectObjectFlags, 4-byte
+    // bitmask); creator writes a 4-byte 0; live 3 in TargetEffect.
+    uint32_t Flags;
+};
+
+struct PingMultiEffectPlayTime
+{
+    // inferred: SE ecl::EffectHandlerPlayTime::Phase
+    uint64_t Phase;
+    // inferred: SE ecl::EffectHandlerPlayTime::Time
+    float Time;
+};
+
+struct PingMultiEffectInitInfo
+{
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h); null handle by default.
+    EntityHandle EventProviderEntity;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h); null handle by default
+    // (live null).
+    EntityHandle Player;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::SourceEffect.
+    PingMultiEffectEffectObject SourceEffect;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::TargetEffect.
+    PingMultiEffectEffectObject TargetEffect;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::PlayTime
+    // (Array<EffectHandlerPlayTime>); zeroed by default.
+    Array<PingMultiEffectPlayTime> PlayTime;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::MultiEffectDefinition:
+    // 24-byte ls::STDString (size at +0x10, capacity +0x14 = 0xF when empty, set so by creator
+    // bg3.exe+0x18A4700); live: heap pointer, size 0x20, capacity 0x2F when filled.
+    STDString MultiEffectDefinition;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::WeaponBones; creator
+    // bg3.exe+0x18A4700 sets 0xFFFFFFFF (null).
+    FixedString WeaponBones;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::FXScale; default 1.0
+    // (0x3F800000) written by creator bg3.exe+0x18A4700; live 1.0.
+    float FXScale;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::ZoneRange; default 0.
+    float ZoneRange;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::DamageType (enum
+    // DamageType, uint8_t).
+    uint8_t DamageType;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::VerbalIntent.
+    uint8_t VerbalIntent;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::EnteredDuringSave.
+    bool EnteredDuringSave;
+    // inferred: Script Extender ecl::EffectHandlerInitInfo (Effect.h)::Reset.
+    bool Reset;
+};
+
+// One-frame request of the ping feature (writer bg3.exe+0x18A2F90, the ping system whose WorldView
+// holds GameplayVFXSingleton, ping Play/Targeting singletons and Multi-effect create/destroy
+// requests): asks the effect handler to create a ping multi-effect. Same payload as SE's
+// ecl::dummy::MultiEffectCreateRequestOneFrameComponent (Dummy.h: EffectHandlerInitInfo Effect),
+// declared here with own structs. Born live with ecl::effect::HandlerComponent /
+// InitializedComponent and eoc::notification::PingRequestComponent.
+struct MultiEffectCreateRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientPingMultiEffectCreateRequest, "ecl::ping::MultiEffectCreateRequestOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x18A4700 allocates 0xA8 and writes: +0/+8/+0x10/+0x40 null
+    // handles, 4-byte zeros at +0x38/+0x68 (Flags), +0x70 array, +0x80 STDString (byte 0, size 0,
+    // capacity 0xF at +0x94), +0x98 0xFFFFFFFF, +0x9C 1.0f, +0xA0 0 - exactly SE
+    // ecl::EffectHandlerInitInfo (0xA8). Live 14 instances: +0 an entity handle, +0x40 the same
+    // handle, +0x48 a world position, +0x68 = 3, +0x80 heap string of 0x20 chars, +0x98 null
+    // FixedString, +0x9C 1.0.
+    PingMultiEffectInitInfo Effect;
 };
 
 DEFINE_TAG_COMPONENT(ecl::ping, IsInSelectorWhileInactiveComponent, ClientPingIsInSelectorWhileInactive)
@@ -1859,6 +3064,25 @@ struct SoundPlayRequestBusComponent : public BaseComponent
     // under 'IndexedStorage<ls::GameplaySoundEventRequest>'; ProcessPlaySounds destroys them each
     // frame. Live: empty.
     Array<GameplaySoundEventRequest> Requests;
+};
+
+// One-frame request added by the per-frame update of ecl::platform::SoundSystem
+// (bg3.exe+0x196AA30, step 1) to moving platforms whose template defines sounds: the set of the
+// template's two sound FixedStrings and one float. Consumed like
+// ls::GameplaySoundSetupRequestOneFrameComponent (same HashSet<FixedString> start). Born live with
+// a platform/item step (no companions).
+struct SoundSetupRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientPlatformSoundSetupRequest, "ecl::platform::SoundSetupRequestOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x196B8E0 (0x38 bytes) zeroes a 48-byte HashSet; bg3.exe+0x196AA30
+    // fills it from the two FixedStrings at template +0xC0 and +0xC8 (IncRef each, 4-byte keys).
+    // Live: 3 instances, buckets 5, keys capacity/size 2/2.
+    HashSet<FixedString> Sounds;
+    // unknown: Creator writes -1.0 (0xBF800000); bg3.exe+0x196AA30 then copies the 4-byte value at
+    // template +0xD0. Live -1.0. Probably a duration/range (ls::GameplaySoundSetupRequest uses -1
+    // for 'no duration'), not established.
+    float field_30;
 };
 
 DEFINE_TAG_COMPONENT(ecl::platform, DeadReckoningComponent, ClientPlatformDeadReckoning)
@@ -2041,6 +3265,69 @@ struct UpdateLastGroundRequestSingletonComponent : public BaseComponent
 
 END_NS()
 
+BEGIN_NS(ecl::ready_check)
+
+// One-frame request of ecl::ready_check::UserSystem (per-frame update bg3.exe+0x78B6C0) to hide
+// the ready-check message box; seen when using a level-swap teleporter / elevator (party ready
+// check).
+struct HideMessageBoxRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientReadyCheckHideMessageBoxRequest, "ecl::ready_check::HideMessageBoxRequestOneFrameComponent")
+
+    // inferred: Filler bg3.exe+0x78C380 copies a 2-byte value from the system's request (stride
+    // 0x18); gui::MessageBoxManager::OnHideMessageBoxRequested(short const&, FixedString const&)
+    // takes a short id. Creator bg3.exe+0x78D1E0 zeroes +0 (8 bytes). Live 1.
+    int16_t MessageBoxId;
+    // inferred: bg3.exe+0x78C500 copies it element by element with stride 4 and FixedString
+    // IncRef. Live: capacity 4, size 3.
+    Array<FixedString> field_8;
+};
+
+END_NS()
+
+BEGIN_NS(ecl::relation)
+
+// Event entity created in the per-frame update of ecl::relation::RelationSystem
+// (bg3.exe+0x759530): for each entry of a HashMap<EntityHandle, Guid> of pending faction changes
+// (fed by the FactionComponent::m_CurrentFactionID sync hook in SystemLoad) a new entity gets this
+// component. Born live in fights together with combat merge/switch and temporary-hostility events.
+struct FactionChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientRelationFactionChangedEvent, "ecl::relation::FactionChangedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1963430 (0x18 bytes) copies the 8-byte map key (key stride 8 in
+    // bg3.exe+0x759530) to +0. Live: entity handles.
+    EntityHandle Entity;
+    // inferred: Creator copies four dwords of the 16-byte map value (value stride 0x10) to
+    // +8..+0x17. Live: random-looking 16-byte values (faction uuids). macOS SystemLoad watches
+    // eoc::relation::FactionComponent::m_CurrentFactionID (a Guid) - name inferred from that.
+    Guid Faction;
+};
+
+// Event entity created by ecl::relation::RelationSystem::ProcessRelationChangeRequests
+// (bg3.exe+0x19631A0, Toolkit EoCClient.dll+0x9E8C20): for every 4-byte key of two pending sets
+// the system creates a new entity and adds this component (macOS:
+// EntityCommandBuffer::AddComponentUnchecked<RelationChangedEventOneFrameComponent, unsigned int
+// const&, bool>). The keys are the unsigned int keys of eoc::relation::RelationComponent's
+// relation maps (HashMap<unsigned int, ERelation>, watched in SystemLoad). Born live in fights
+// (faction/relation changes).
+struct RelationChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientRelationRelationChangedEvent, "ecl::relation::RelationChangedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1963E20 (8 bytes) stores the 4-byte key from the system's set at
+    // +0 (stride 4 in bg3.exe+0x19631A0); macOS AddComponentUnchecked<..., unsigned int const&,
+    // bool>. Live values like 0x0031002B / 0x01310103 - two 16-bit halves (likely a pair of
+    // faction indices). Same key type as RelationComponent's HashMap<unsigned int, ERelation>.
+    uint32_t RelationKey;
+    // unknown: Second constructor argument (bool) at +4: 1 for keys of the first pending set
+    // (system +0x1B8), 0 for the second set (system +0x1E8). Which change kind each set is (e.g.
+    // permanent vs temporary) was not established. Live 0/1.
+    bool field_4;
+};
+
+END_NS()
+
 BEGIN_NS(ecl::roll)
 
 struct ActiveRollResultEvent
@@ -2093,6 +3380,24 @@ struct ActiveRollEventsSingletonComponent : public BaseComponent
     Array<ActiveRollFailedModifiersChangedEvent> FailedModifiersChangedEvents;
 };
 
+// Event entity created by ecl::RollSystem's per-frame update (bg3.exe+0x19D6730 ->
+// bg3.exe+0x19D74C0) from a system array of 16-byte requests (entity alive check), read by
+// ecl::sound::PointAndClickSoundSystem::ProcessPassiveRollSuccessEvents (plays a reaction when the
+// byte equals 3). Born live in a dialogue/party step together with eoc::RequestedRollComponent.
+struct PassiveRollSuccessOneFrameEventComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientRollPassiveRollSuccessEvent, "ecl::roll::PassiveRollSuccessOneFrameEventComponent")
+
+    // inferred: Creator bg3.exe+0x19D82A0 (0x10 bytes) copies the request's 8-byte handle (checked
+    // with IsEntityAlive in bg3.exe+0x19D74C0); ProcessPassiveRollSuccessEvents (Toolkit) passes
+    // it as the entity of the sound reaction. Live: entity handles.
+    EntityHandle Entity;
+    // unknown: Creator copies one byte from request +8;
+    // PointAndClickSoundSystem::ProcessPassiveRollSuccessEvents reacts only when it equals 3. An
+    // enum of the roll (type/ability?) - not identified. Live low byte 0/7/8.
+    uint8_t field_8;
+};
+
 END_NS()
 
 BEGIN_NS(ecl::room_portal)
@@ -2108,6 +3413,46 @@ DEFINE_TAG_COMPONENT(ecl::savegame, IsSavingComponent, ClientSavegameIsSaving)
 END_NS()
 
 BEGIN_NS(ecl::screen_fade)
+
+// One-frame event of ecl::screen_fade::ScreenFadeSystem (written in ProcessScreenFadeToRequests /
+// ProcessClearScreenFadeRequests / FinalizeComponents, whose WorldView names all four screen_fade
+// one-frame events). Holds a set of short player ids: sets of players whose clear-screen fade
+// finished this frame. Born live together with camera ScreenFadeTo/ClearScreenFade manual requests
+// and SnapFadeRequest (cinematic/scene steps).
+struct ClearScreenFadeFinishedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientScreenFadeClearScreenFadeFinished, "ecl::screen_fade::ClearScreenFadeFinishedOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1909610 allocates 0x30 bytes, zeroes three 16-byte parts
+    // (HashSet shape: buckets, next ids, keys) and registers destructor thunk_FUN_140582ad0, which
+    // only frees three buffers (trivial keys). macOS ScreenFadeSystem instantiates
+    // ls::HashTable<short, HashTableOpsDefault>::operator= and Toolkit FinalizeComponents
+    // (EoCClient) copies short values ('IndexedStorage<short, ...s_TagHashTable>');
+    // ScreenFadeComponent keys are the same short player ids (HashMap<short,
+    // DynamicArray<ScreenFadeData>>). Live (48 instances): bucket count 5, next ids cap/size 1/1,
+    // keys cap/size 1/1 - one player per event.
+    HashSet<int16_t> PlayerIds;
+};
+
+// One-frame event of ecl::screen_fade::ScreenFadeSystem (written in ProcessScreenFadeToRequests /
+// ProcessClearScreenFadeRequests / FinalizeComponents, whose WorldView names all four screen_fade
+// one-frame events). Holds a set of short player ids: players whose clear-screen fade request was
+// cancelled. Born live together with camera ScreenFadeTo/ClearScreenFade manual requests and
+// SnapFadeRequest (cinematic/scene steps).
+struct ClearScreenFadeRequestCancelledOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientScreenFadeClearScreenFadeRequestCancelled, "ecl::screen_fade::ClearScreenFadeRequestCancelledOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x19092B0 allocates 0x30 bytes, zeroes three 16-byte parts
+    // (HashSet shape: buckets, next ids, keys) and registers destructor thunk_FUN_140582ad0, which
+    // only frees three buffers (trivial keys). macOS ScreenFadeSystem instantiates
+    // ls::HashTable<short, HashTableOpsDefault>::operator= and Toolkit FinalizeComponents
+    // (EoCClient) copies short values ('IndexedStorage<short, ...s_TagHashTable>');
+    // ScreenFadeComponent keys are the same short player ids (HashMap<short,
+    // DynamicArray<ScreenFadeData>>). Live (1 instances): bucket count 5, next ids cap/size 1/1,
+    // keys cap/size 1/1 - one player per event.
+    HashSet<int16_t> PlayerIds;
+};
 
 // NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
 // seen: the member boundaries are untested
@@ -2193,6 +3538,46 @@ struct ScreenFadeTimerComponent : public BaseComponent
     // searched with Guid::GetHash of a fade id and its values (+0x30) are 0x18-byte
     // ScreenFadeTimerSettings. Live: allocated, 0 keys.
     HashMap<Guid, ScreenFadeTimerSettings> Timers;
+};
+
+// One-frame event of ecl::screen_fade::ScreenFadeSystem (written in ProcessScreenFadeToRequests /
+// ProcessClearScreenFadeRequests / FinalizeComponents, whose WorldView names all four screen_fade
+// one-frame events). Holds a set of short player ids: players whose fade-to finished. Born live
+// together with camera ScreenFadeTo/ClearScreenFade manual requests and SnapFadeRequest
+// (cinematic/scene steps).
+struct ScreenFadeToFinishedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientScreenFadeScreenFadeToFinished, "ecl::screen_fade::ScreenFadeToFinishedOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1909460 allocates 0x30 bytes, zeroes three 16-byte parts
+    // (HashSet shape: buckets, next ids, keys) and registers destructor thunk_FUN_140582ad0, which
+    // only frees three buffers (trivial keys). macOS ScreenFadeSystem instantiates
+    // ls::HashTable<short, HashTableOpsDefault>::operator= and Toolkit FinalizeComponents
+    // (EoCClient) copies short values ('IndexedStorage<short, ...s_TagHashTable>');
+    // ScreenFadeComponent keys are the same short player ids (HashMap<short,
+    // DynamicArray<ScreenFadeData>>). Live (48 instances): bucket count 5, next ids cap/size 1/1,
+    // keys cap/size 1/1 - one player per event.
+    HashSet<int16_t> PlayerIds;
+};
+
+// One-frame event of ecl::screen_fade::ScreenFadeSystem (written in ProcessScreenFadeToRequests /
+// ProcessClearScreenFadeRequests / FinalizeComponents, whose WorldView names all four screen_fade
+// one-frame events). Holds a set of short player ids: players whose fade-to request was cancelled.
+// Born live together with camera ScreenFadeTo/ClearScreenFade manual requests and SnapFadeRequest
+// (cinematic/scene steps).
+struct ScreenFadeToRequestCancelledOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientScreenFadeScreenFadeToRequestCancelled, "ecl::screen_fade::ScreenFadeToRequestCancelledOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1909100 allocates 0x30 bytes, zeroes three 16-byte parts
+    // (HashSet shape: buckets, next ids, keys) and registers destructor thunk_FUN_140582ad0, which
+    // only frees three buffers (trivial keys). macOS ScreenFadeSystem instantiates
+    // ls::HashTable<short, HashTableOpsDefault>::operator= and Toolkit FinalizeComponents
+    // (EoCClient) copies short values ('IndexedStorage<short, ...s_TagHashTable>');
+    // ScreenFadeComponent keys are the same short player ids (HashMap<short,
+    // DynamicArray<ScreenFadeData>>). Live (17 instances): bucket count 5, next ids cap/size 1/1,
+    // keys cap/size 1/1 - one player per event.
+    HashSet<int16_t> PlayerIds;
 };
 
 struct ScreenFadeVisualData
@@ -2758,8 +4143,6 @@ struct MixStatePostSoundEventRequest
     uint8_t field_8;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct MixStatePostHUDEventRequestsSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientSoundMixStatePostHUDEventRequestsSingleton, "ecl::sound::MixStatePostHUDEventRequestsSingletonComponent")
@@ -2885,6 +4268,50 @@ struct MusicStateSingletonComponent : public BaseComponent
     Array<MusicStateQueuedRequest> PostedRequests;
 };
 
+struct PointAndClickSoundSwitchUpdate
+{
+    // unknown: Element of DynamicArray<ecl::sound::SoundSwitchUpdate> (macOS name); FUN_180dfc0a0
+    // (Toolkit) copies elements of 8 bytes (allocation (n, 8, 4)) through FixedString ops.
+    FixedString field_0;
+    // unknown: Second 4-byte half of SoundSwitchUpdate; assumed FixedString (switch group / state
+    // pair) - not verified.
+    FixedString field_4;
+};
+
+// Per-character request of ecl::sound::PointAndClickSoundSystem: UpdateSoundRequestComponents
+// (Toolkit EoCClient.dll, stride 0x48) copies the system's
+// ls::Optional<PointAndClickSoundSystem::ReactionToPlay> into it, or resets it. Born live when the
+// host started sneaking (with SoundFinishedPlayingEvent, IsSneaking).
+struct PointAndClickSoundRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSoundPointAndClickSoundRequest, "ecl::sound::PointAndClickSoundRequestComponent")
+
+    // unknown: UpdateSoundRequestComponents copies ReactionToPlay byte +9 here; reset to 0. Live
+    // 0/1.
+    uint8_t field_0;
+    // unknown: ls::STDString::operator= from ReactionToPlay +0x10; reset to "". Live: heap
+    // pointer, size 0x1D/0x26, capacity 0x1F/0x2F (an event/sound name).
+    STDString field_8;
+    // unknown: Copied from ReactionToPlay +0x28; reset 0. Live 0.
+    uint8_t field_20;
+    // unknown: Copied from ReactionToPlay +0x2C; reset to the global 'Unassigned' value. Live 0x1
+    // / 0xFFFF0000.
+    uint32_t field_24;
+    // inferred: Has-value byte of the optional at +0x30 (cleared before destroying it, copied from
+    // ReactionToPlay +0x30). Live 0/1.
+    bool HasSwitchUpdates;
+    // inferred: Optional value: DynamicArray<ecl::sound::SoundSwitchUpdate> copied by
+    // FUN_180dfc0a0 and destroyed by FUN_180dfee40. Live: heap pointer, capacity 1, size 0/1.
+    Array<PointAndClickSoundSwitchUpdate> SwitchUpdates;
+    // unknown: Reset to 0x14 (2-byte store 0x0014 at +0x40) or set by FUN_180dfcc50 from the
+    // reaction type; probably an EPointAndClickActionType/ReactionType enum. Live 6/0xA/0x14.
+    uint8_t field_40;
+    // unknown: Zeroed with +0x40; live 0/2.
+    uint8_t field_41;
+    // unknown: Reset to 0. Live 0.
+    uint8_t field_42;
+};
+
 struct PointAndClickSoundStateComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientSoundPointAndClickSoundState, "ecl::sound::PointAndClickSoundStateComponent")
@@ -2943,6 +4370,21 @@ struct SneakStateSingletonComponent : public BaseComponent
     // build (address 100DA5D78) stores it (strb wzr, [x23]; default zero). What the byte means is
     // not established.
     uint8_t field_0;
+};
+
+// One-frame event read by ecl::sound::PointAndClickSoundSystem::ProcessSoundFinishedEvents
+// (Toolkit EoCClient.dll, called from Update at EoCClient.dll+0xDFF6F0): for each event the 4-byte
+// value is compared with the keys of the system's HashMap<net::UserID,
+// PointAndClickSoundStateComponent*>; on a match the state's +0x40 byte is cleared and +0x44
+// refreshed. Born live together with PointAndClickSoundRequestComponent (sneaking step).
+struct SoundFinishedPlayingEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSoundSoundFinishedPlayingEvent, "ecl::sound::SoundFinishedPlayingEventOneFrameComponent")
+
+    // inferred: ProcessSoundFinishedEvents (Toolkit, EoCClient.dll) compares *(int*)(component)
+    // with each key of HashMap<net::UserID, PointAndClickSoundStateComponent*> (4-byte stride).
+    // Live: 1 instance, value 1 (the local user, same as PointAndClickSoundStateComponent.User).
+    UserId User;
 };
 
 struct SpellImpactBusSoundRequest
@@ -3010,6 +4452,19 @@ struct SpellImpactRequestBusComponent : public BaseComponent
     // processes new impacts when it exceeds 0.3 (throttle). Live: 22.5-41.9 (seconds since the
     // last processed impact).
     float Timer;
+};
+
+// One-frame request: start the instrument sound of a spell cast (bard instrument); seen in a fight
+// in CTY_Main_A (S_LOW_HagSurvivors_Bandit_Barbarian_01).
+struct StartInstrumentSpellSoundRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientSoundStartInstrumentSpellSoundRequest, "ecl::sound::StartInstrumentSpellSoundRequestOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x1A84F00 (AllocRaw 4) writes 0xFFFFFFFF (null FixedString).
+    // Written only by ecl::sound::SpellInstrumentSoundSystem::ProcessSpellRequest (macos_index),
+    // which takes a FixedString from eoc::SpellPrototype::GetFixedStringValue(spell, <field name>)
+    // (EoCClient.dll+0x7F9580). Live: 0x15801632 (a FixedString index).
+    FixedString Sound;
 };
 
 struct TagSoundSwitchRequest
@@ -3279,8 +4734,6 @@ struct MixStateRTPCRequest
     float Value;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct MixStateRTPCRequestsSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientSoundMixStateRTPCRequestsSingleton, "ecl::sound::MixStateRTPCRequestsSingletonComponent")
@@ -3343,7 +4796,153 @@ struct AddedSpellModificationOneFrameComponent : public BaseComponent
     Array<AddedSpellModificationSources> Modifications;
 };
 
+struct RemovedSpellModificationEntry
+{
+    // inferred: Element is eoc::spell::Modification (stride 0x88 in
+    // ModificationNotifySystem::Update, EoCClient.dll+0x8EAEC0); equals Script Extender
+    // spell::Modification (Spell.h): SpellModificationSource SourceType at +0 (1-byte enum in SE).
+    uint8_t SourceType;
+    // inferred: SE spell::Modification::Source (+4).
+    FixedString Source;
+    // inferred: Payload of SE spell::Modification::Variant (14 alternatives, the largest
+    // ModifyUseCosts = 0x48 bytes: Type, Guid, STDString, Level, Guid). Declared as bytes because
+    // the variant alternatives are SE structs.
+    std::array<uint8_t, 72> ModificationData;
+    // inferred: Variant alternative index after the 0x48-byte payload (ls::Variant layout).
+    uint8_t ModificationType;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad51;
+    // inferred: SE spell::Modification::Spells = HashSet<SpellId> (48 bytes) ending at the 0x88
+    // stride. Declared as bytes because SpellId is an SE struct.
+    std::array<uint8_t, 48> Spells;
+};
+
+struct RemovedSpellModificationSources
+{
+    // inferred: Element type named by the game: IndexedStorage<ls::HashMap<ls::FixedString,
+    // ls::DynamicArray<eoc::spell::Modification>>> (FUN_18034e320, stride 0x40) - the same map as
+    // eoc::spell::ModificationContainerComponent::m_ModificationSources (SE
+    // SpellModificationContainerComponent.Modifications).
+    HashMap<FixedString, Array<RemovedSpellModificationEntry>> Modifications;
+};
+
+// One-frame event of ecl::spell::ModificationNotifySystem: the spell modifications removed from an
+// entity this frame, same shape as AddedSpellModificationOneFrameComponent (layout copied, struct
+// names renamed). Born with no companions (a spell cast step that removed a modification).
+struct RemovedSpellModificationOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientSpellRemovedSpellModification, "ecl::spell::RemovedSpellModificationOneFrameComponent")
+
+    // inferred: ecl::spell::ModificationNotifySystem::CreateOneFrameComponents (bg3.exe+0x1A6AF70,
+    // toolkit match) walks three FrameData lists (+0x50, +0x90, +0xD0); for the third it adds this
+    // component with FUN_141a6bed0 (bg3.exe+0x1A6BED0, the rx creator of this type, 16 bytes) and
+    // fills it with FUN_141a6b4b0, the same Array copy (elements of 0x40 bytes =
+    // HashMap<FixedString, DynamicArray<eoc::spell::Modification>>) used for
+    // AddedSpellModificationOneFrameComponent. Live: 29 instances, capacity 1, size 1.
+    Array<RemovedSpellModificationSources> Modifications;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::spell, ModificationsChangedEventOneFrameComponent, ClientSpellModificationsChangedEvent)
+
+END_NS()
+
+BEGIN_NS(ecl::spell_preview)
+
+// Set of entities highlighted by the spell preview of the spell being targeted. Born live in
+// situation spells-3 (GK.Stage.Cast of Shout_HealingWord_Mass, Target_Invisibility, Shout_Blur
+// ...) together with spell_preview::EffectsComponent, ForceComponent, SurfaceTilesComponent,
+// TargetingComponent and spell_cast::TargetingComponent. Added by bg3.exe+0x1EEAC60 (called from
+// the spell preview update bg3.exe+0x1ED9230, part of ecl::spell_preview::PreviewSystem, per-frame
+// update bg3.exe+0x1ED8BE0); removed by bg3.exe+0x1ED97C0; read by
+// ecl::CharacterTask_Spell::GetTaskInfo (bg3.exe+0x1FBBD40 via bg3.exe+0x1FBE230).
+// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
+// seen: the member boundaries are untested
+struct HighlightsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSpellPreviewHighlights, "ecl::spell_preview::HighlightsComponent")
+
+    // inferred: Creator bg3.exe+0x1EEAC60 allocates 0x30 and zeroes it; registration
+    // bg3.exe+0x646430 (size word 0x300030) sets destructor bg3.exe+0x582AD0, which frees three
+    // buffers at +0x0, +0x10 and +0x20 (the HashSet bucket table, next-id array and key array).
+    // ecl::CharacterTask_Spell::GetTaskInfo bg3.exe+0x1FBBD40 iterates the keys at +0x20 with
+    // stride 8 and count at +0x2C, passing each to IsEntityAlive / Legacy_IsInvisible: keys are
+    // EntityHandles. Live: one empty instance (all zero).
+    HashSet<EntityHandle> Entities;
+};
+
+struct SpellPreviewSurfaceTilesTilePos
+{
+    // inferred: eoc::AiTilePos (named by the Toolkit return type) has the layout of SE
+    // CommonTypes.h AiTilePos: int16 X, int16 Y, int32 SubgridId.
+    int16_t X;
+    // inferred: as X
+    int16_t Y;
+    // inferred: as X
+    int32_t SubgridId;
+};
+
+// AI-grid tiles that the previewed spell would cover with a surface. Born live in situation
+// spells-3 (spell casts) together with the other spell_preview components; added by
+// bg3.exe+0x1EEAE10 from the spell preview update bg3.exe+0x1ED9230
+// (ecl::spell_preview::PreviewSystem); read by ecl::CharacterTask_Spell::GetPreviewTiles.
+// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
+// seen: the member boundaries are untested
+struct SurfaceTilesComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSpellPreviewSurfaceTiles, "ecl::spell_preview::SurfaceTilesComponent")
+
+    // inferred: EoCClient.dll ecl::CharacterTask_Spell::GetPreviewTiles returns
+    // ls::Optional<ls::DynamicArray<eoc::AiTilePos> const&>; the macOS version takes it straight
+    // from GetComponent<ecl::spell_preview::SurfaceTilesComponent>, and bg3.exe+0x1FB72C0 returns
+    // the component pointer itself (empty when size at +0xC is 0). Creator bg3.exe+0x1EEAE10
+    // allocates 0x10 and zeroes it; destructor bg3.exe+0x686280 frees the buffer at +0. Element =
+    // eoc::AiTilePos (8 bytes); declared here as an own struct with the same layout. Live: one
+    // empty instance.
+    Array<SpellPreviewSurfaceTilesTilePos> Tiles;
+};
+
+struct SpellPreviewTargetingTarget
+{
+    // inferred: Creator stores &PTR_FUN_1454db050 (bg3.exe+0x54DB050, 6 slots) at component +8;
+    // live a module address (0x7FF7...).
+    [[bg3::hidden]] void* VMT;
+    // inferred: Slot 4 bg3.exe+0xF1CE00 checks the handle at +8 with IsEntityAlive; creator writes
+    // null handle 0xffc0000000000000; live null.
+    EntityHandle Target;
+    // inferred: Slots 3/4 (bg3.exe+0xF1CD90, +0xF1CE00) use the handle at +0x10 instead of/in
+    // addition to +8 when the byte at +0x18 is set; live 0.
+    EntityHandle Target2;
+    // inferred: Byte at +0x18 selects +0x10 over +8 in bg3.exe+0xF1CD90; creator writes 0 at
+    // component +0x20.
+    bool HasTarget2;
+};
+
+// Targeting state of the spell preview. Born live in spells-3 (spell casts) and in the dialogue
+// DEN_GoblinScouts_Captive, together with the other spell_preview components. Added by
+// bg3.exe+0x1EEAF80 from the spell preview update (ecl::spell_preview::PreviewSystem); read by
+// ecl::spell_preview::GetAimDirection (macOS) and by queries with spell_cast::TargetingComponent.
+// Contains an embedded polymorphic target object (virtual table bg3.exe+0x54DB050) at +8. Partial
+// layout.
+struct TargetingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSpellPreviewTargeting, "ecl::spell_preview::TargetingComponent")
+
+    // inferred: Creator bg3.exe+0x1EEAF80 writes 0xFFFFFFFF; macOS
+    // ecl::spell_preview::GetAimDirection uses it as an index (-1 = none, < count at +0x14) into
+    // the 0xA0-byte elements of ProjectilePathComponent. Destructor is trivial, so not a
+    // FixedString. Live -1.
+    int32_t ProjectilePathIndex;
+    // unknown: Creator writes one byte 0 at +4; live low byte 0 (upper bytes vary: padding).
+    uint8_t field_4;
+    // inferred: Embedded object with its own virtual table, see struct; creator writes vtable +8,
+    // null handle +0x10, 0 at +0x18, byte 0 at +0x20.
+    SpellPreviewTargetingTarget Target;
+    // unknown: Creator writes 8 bytes 0; live 0.
+    uint64_t field_28;
+    // unknown: Creator writes 8 bytes 0 at +0x30; live 0.
+    uint32_t field_30;
+    // unknown: Creator writes a byte 0 at +0x34 separately; live 0.
+    uint8_t field_34;
+};
 
 END_NS()
 
@@ -3562,6 +5161,24 @@ struct SSSteerComponent : public BaseComponent
 
 END_NS()
 
+BEGIN_NS(ecl::summon)
+
+// Client timer for a summon's spawn animation request. Born live in situation spells-5 (summoning
+// spells). Created by bg3.exe+0x19619E0 with 6.0; the per-frame update of
+// ecl::summon::AnimationSystem (bg3.exe+0x1961220) subtracts the frame time and removes the
+// component when it reaches 0.
+struct AnimationRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSummonAnimationRequest, "ecl::summon::AnimationRequestComponent")
+
+    // inferred: Creator bg3.exe+0x19619E0 writes 0x40C00000 (6.0f); bg3.exe+0x1961220 does value
+    // -= GameTime delta (+8), and when <= 0 queues the entity for removal of the component. Live
+    // 6.0.
+    float Timer;
+};
+
+END_NS()
+
 BEGIN_NS(ecl::tadpole_tree)
 
 struct TadpoleTreeStatePowerContainerPower
@@ -3590,7 +5207,48 @@ DEFINE_ONEFRAME_TAG_COMPONENT(ecl::tadpole_tree, PowersChangedOneFrameComponent,
 
 END_NS()
 
+BEGIN_NS(ecl::tag)
+
+// Tag GUIDs the client checked for spells on an entity. Born live in many dialogue situations
+// (CAMP_GoblinHuntCelebration, CAMP_Jergal, DEN_TieflingLeader) and an item PlaySound use; written
+// by ecl::tag::TagSystem::ProcessSpellCheckedTags.
+struct SpellCheckedTagComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTagSpellCheckedTag, "ecl::tag::SpellCheckedTagComponent")
+
+    // inferred: EoCClient.dll ecl::tag::TagSystem::ProcessSpellCheckedTags
+    // (WorldView<SpellCheckedTagComponent, eoc::TagComponent const>) copies 16-byte elements into
+    // the array with the assert text ls::IndexedStorage<class ls::Guid,...>::CheckBoundary,
+    // allocating 0x10 per element; game copy bg3.exe+0x1B14470. Live: heap pointer at +0, capacity
+    // 1 / size 1 at +8/+0xC in all 29 instances.
+    Array<Guid> Tags;
+};
+
+END_NS()
+
 BEGIN_NS(ecl::thrown)
+
+// Client-side rotation state of a thrown object. Born live in situation shove-throw (and a
+// Moonrise bazaar dialogue) together with eoc::thrown::IsThrownComponent,
+// RotationParametersComponent, ThrownSoundComponent and the drop components. Written by
+// bg3.exe+0x1A25F70, called from the per-frame update of ecl::thrown::ThrowAnimationSystem
+// (bg3.exe+0x1A25B70).
+struct CurrentRotationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientThrownCurrentRotation, "ecl::thrown::CurrentRotationComponent")
+
+    // unknown: bg3.exe+0x1A25F70 copies 12 bytes from +0xC of a 0x38-stride component of the same
+    // entity (eoc::thrown::RotationParametersComponent, 56 bytes, its vec3 at +0xC). Live (0,
+    // 0.71, 1.571) / (0, 9.54, 1.571).
+    glm::vec3 field_0;
+    // unknown: bg3.exe+0x1A25F70 stores the 12-byte result of FUN_141a25960(transform +0x10 of a
+    // 0x28-stride component = ls::TransformComponent) here: a vector derived from the entity's
+    // transform (probably Euler angles). Live (0, 0.0189, 0.0602) or 0.
+    glm::vec3 field_C;
+    // unknown: bg3.exe+0x1A25F70 writes (component already existed) here; creator
+    // bg3.exe+0x1A27F20 writes byte 0. Live low byte 0, upper bytes vary (padding).
+    bool field_18;
+};
 
 struct ThrownSoundRequestBusCharacterSoundRequest
 {
@@ -3676,6 +5334,24 @@ struct SoundRequestBusComponent : public BaseComponent
     // inferred: ClearRequestBus: ecl::thrown::ItemSetSwitchRequest at +0x40, stride 0x10. Live:
     // one instance had capacity 1 here.
     Array<ThrownSoundRequestBusItemSetSwitchRequest> ItemSetSwitchRequests;
+};
+
+// Client sound state of a thrown object (whoosh sound). Born live in shove-throw together with the
+// other thrown/drop components. Created and filled by bg3.exe+0x1E9E170, called from
+// ecl::thrown::SoundSystem (per-frame update bg3.exe+0x1E9D500; Toolkit
+// ecl::thrown::SoundSystem::Update with WorldView<ThrowerSoundEventOneFrameComponent,
+// ThrownSoundComponent, SoundRequestBusComponent, ...>).
+struct ThrownSoundComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientThrownThrownSound, "ecl::thrown::ThrownSoundComponent")
+
+    // unknown: Creator bg3.exe+0x1E9F260 writes 1; bg3.exe+0x1E9E170 then stores the 4-byte result
+    // of a virtual call (slot 1) of an object of the system. Live 0.
+    uint32_t field_0;
+    // inferred: bg3.exe+0x1E9E170 copies 12 bytes from +0x10 of the entity's
+    // ls::TransformComponent (0x28 stride; +0x10 = translation). Live world coordinates (53.8,
+    // 18.7, -167.4).
+    glm::vec3 Position;
 };
 
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::thrown, PrepareAnimationRequestOneFrameComponent, ClientThrownPrepareAnimationRequest)
@@ -4006,6 +5682,21 @@ END_NS()
 
 BEGIN_NS(eoc)
 
+// On the client, the sound name of the closest tracked sound entity. Born live in the dialogue
+// DEN_HarpyMeal_CharmedVictim. Created and updated by the per-frame update of
+// ecl::TrackedSoundEntitiesSystem (bg3.exe+0x1E07680) via the get-or-create helper
+// bg3.exe+0x1E08430.
+struct ClosestTrackedSoundEntityComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClosestTrackedSoundEntity, "eoc::ClosestTrackedSoundEntityComponent")
+
+    // unknown: Creator bg3.exe+0x1E08430 writes 0xFFFFFFFF (null FixedString); bg3.exe+0x1E07680
+    // assigns it with FixedString IncRef/DecRef from a parallel array of FixedStrings of the
+    // tracked entities (eoc::TrackedSoundEntityComponent has one FixedString, Coverage.h). Live
+    // 0x26B00001 (a FixedString index).
+    FixedString field_0;
+};
+
 struct GameOverComponent : public BaseComponent
 {
     DEFINE_COMPONENT(GameOver, "eoc::GameOverComponent")
@@ -4048,6 +5739,24 @@ struct PathingMovementSpeedChangedOneFrameComponent : public BaseComponent
     float PreviousSpeed;
     // inferred: Second float of PathMovementSpeedChangedData = the new movement speed passed to
     // SetPathMovementSpeed. Live: 0, 0.8, 2, 3.75.
+    float Speed;
+};
+
+// Client state for ragdoll impact sounds of a character (registered on both sides, written by the
+// client ecl::ragdoll::SoundSystem, per-frame update bg3.exe+0x1E5D2B0). Born live in idle /
+// spells-1 / a Baldur's Gate dialogue (ragdolls of dying characters). Impact handlers
+// bg3.exe+0x1E5E090 and bg3.exe+0x1E5E230 play Movement_Ragdoll_Impact /
+// Gameplay_Character_RagdollImpactForce.
+struct RagdollSoundComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(RagdollSound, "eoc::RagdollSoundComponent")
+
+    // inferred: Creator bg3.exe+0x1E5E840 writes 99.0f; bg3.exe+0x1E5E090 adds a time step to it
+    // on every contact event; bg3.exe+0x1E5E230 requires it > 0.25 before playing the impact sound
+    // and resets it to 0. Live 1.16 .. 99.
+    float TimeSinceImpact;
+    // inferred: bg3.exe+0x1E5E090 stores the length of the contact velocity vector here;
+    // bg3.exe+0x1E5E230 requires it > 0.5. Live 0 .. 0.0147.
     float Speed;
 };
 
@@ -4764,8 +6473,6 @@ struct EventGlobalFlagSetComponent : public BaseComponent
     Guid FlagId;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct EventGoalAchievedComponent : public BaseComponent
 {
     DEFINE_COMPONENT(AnalyticsEventGoalAchieved, "eoc::analytics::EventGoalAchievedComponent")
@@ -4801,8 +6508,6 @@ struct EventGoldChangedComponent : public BaseComponent
     EntityHandle CharacterHandle;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct EventInterruptUsedComponent : public BaseComponent
 {
     DEFINE_COMPONENT(AnalyticsEventInterruptUsed, "eoc::analytics::EventInterruptUsedComponent")
@@ -5148,6 +6853,25 @@ struct BlueprintRefreshedEventOneFrameComponent : public BaseComponent
     uint8_t field_0;
 };
 
+// Request to refresh a character's animation blueprint/action animation, placed on a separate
+// request entity. Created by esv::animation::BlueprintRefreshSystem::CreateRefreshActionRequest
+// (server; game copy bg3.exe+0x784880 also used by the client) and read by
+// ecl/esv::death::CharacterSystem::Update. Born live in many dialogues, events and the first fight
+// (on both sides).
+struct RefreshAnimationRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnimationRefreshAnimationRequest, "eoc::animation::RefreshAnimationRequestOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x785470 writes the null handle; bg3.exe+0x784880 / EoCServer.dll
+    // CreateRefreshActionRequest create a new entity and copy the character's handle (param
+    // ID<EntityHandleTraits> const&) here. Live entity handles.
+    EntityHandle Entity;
+    // inferred: EoCServer.dll esv::animation::BlueprintRefreshSystem::CreateRefreshActionRequest
+    // writes its eoc::ERefreshActionAnim parameter (enum, 4 bytes) at +8; bg3.exe+0x784880 writes
+    // an int32 there. Live 0..2.
+    uint32_t Action;
+};
+
 END_NS()
 
 BEGIN_NS(eoc::bounds)
@@ -5169,6 +6893,15 @@ struct MoveComponent : public BaseComponent
     // size 16 = one DynamicArray; net::UserID is 4 bytes (Script Extender UserId). macOS default
     // ctor zeroes 16 bytes.
     Array<UserId> WaitForUserIds;
+};
+
+struct SpellWaitComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(CameraSpellWait, "eoc::camera::SpellWaitComponent")
+
+    // unknown: serializer bg3.exe+0xA4ECD0/0xA4EE60: one 4-byte write at +0 (global offset
+    // DAT_14627f7b0 = 0); macOS ctor 0.
+    uint32_t field_0;
 };
 
 END_NS()
@@ -5281,8 +7014,6 @@ struct BehaviourComponent : public BaseComponent
     uint8_t State;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct CharacterComponent : public BaseComponent
 {
     DEFINE_COMPONENT(CrowdsCharacter, "eoc::crowds::CharacterComponent")
@@ -5299,8 +7030,6 @@ struct CharacterComponent : public BaseComponent
     FixedString field_C;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct CustomAnimationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(CrowdsCustomAnimation, "eoc::crowds::CustomAnimationComponent")
@@ -5325,8 +7054,6 @@ struct DeadReckoningComponent : public BaseComponent
     float field_10;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct ProxyComponent : public BaseComponent
 {
     DEFINE_COMPONENT(CrowdsProxy, "eoc::crowds::ProxyComponent")
@@ -5337,8 +7064,6 @@ struct ProxyComponent : public BaseComponent
     EntityHandle field_0;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct ProxyDynamicAnimationSetComponent : public BaseComponent
 {
     DEFINE_COMPONENT(CrowdsProxyDynamicAnimationSet, "eoc::crowds::ProxyDynamicAnimationSetComponent")
@@ -5349,6 +7074,23 @@ struct ProxyDynamicAnimationSetComponent : public BaseComponent
     // ls::Guid::IsValid and adds a 16-byte component holding it - the only 16-byte component of
     // that WorldView. macOS default ctor stp xzr,xzr,[x23].
     Guid DynamicAnimationSet;
+};
+
+// Server-side position and heading of a crowd proxy (ambient crowd member in Baldur's Gate /
+// Moonrise). Written by esv::crowds::ProxyTransformSystem (per-frame update bg3.exe+0x35686B0);
+// read by esv::crowds::DetourSystem, PatrolSystem and SpawnSystem (macOS). Born live in lower-city
+// dialogues and item uses (only server instances).
+struct ProxyTransformComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(CrowdsProxyTransform, "eoc::crowds::ProxyTransformComponent")
+
+    // inferred: bg3.exe+0x35686B0 copies 8+4 bytes at +0 and +8 as one vector together with +0xC;
+    // live world coordinates (-309.9, 7.3, 17.5).
+    glm::vec3 Position;
+    // inferred: bg3.exe+0x35686B0 compares fmodf(angle + 2pi, 2pi) with fmodf(*(+0xC) + 2pi, 2pi)
+    // and writes the new angle to +0xC when it changed: a heading (yaw) in radians. Live 0.06 ..
+    // -2.96.
+    float Rotation;
 };
 
 DEFINE_TAG_COMPONENT(eoc::crowds, IsFadingComponent, CrowdsIsFading)
@@ -5424,6 +7166,20 @@ struct NoPrivateDialogsSingletonComponent : public BaseComponent
 END_NS()
 
 BEGIN_NS(eoc::drop)
+
+// Replicated: the entity an item was originally dropped/thrown onto. Written by
+// esv::drop::DropEntityRequestSystem (AddDropEntityComponent, EntityValidator; macOS). Born live
+// in shove-throw and a Servant of the Raven dialogue together with drop::AnimationComponent,
+// DropEntityStateComponent, thrown::IsThrownComponent and the esv::drop components.
+struct OriginalDropTargetComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(DropOriginalDropTarget, "eoc::drop::OriginalDropTargetComponent")
+
+    // inferred: Replication serializer bg3.exe+0x9D89C0 writes one EntityHandle (FUN_144017090,
+    // the handle writer) from +0 (global offset DAT_14627fc98 = 0). macOS default constructor str
+    // x1,[x23] (8 bytes). Live entity handles on both sides.
+    EntityHandle Target;
+};
 
 DEFINE_TAG_COMPONENT(eoc::drop, AnimationComponent, DropAnimation)
 DEFINE_TAG_COMPONENT(eoc::drop, DropEntityStateComponent, DropEntityState)
@@ -5533,6 +7289,75 @@ END_NS()
 
 BEGIN_NS(eoc::jump)
 
+// One-frame request to play the animation of a new jump phase. Added by bg3.exe+0x1A23890 from the
+// jump trajectory animation systems (client
+// ecl::jump::TrajectoryAnimationStateSystem::UpdateJumpAnimationState bg3.exe+0x1A21CA0, server
+// esv::jump::TrajectoryAnimationStateSystem::UpdateJumpAnimationState) whenever
+// eoc::jump::StateComponent.State advances. Born live in the jump situation, a mud-mephit fight
+// and a tadpoling pod.
+struct AnimationRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(JumpAnimationRequest, "eoc::jump::AnimationRequestOneFrameComponent")
+
+    // inferred: bg3.exe+0x1A21CA0 writes the remaining time to the next phase (e.g. StateComponent
+    // +0x18 - elapsed, clamped at 0) here; the server writes 0.5 on abort. Live 0.109 .. 0.32
+    // (same value as jump::StateComponent +0x14).
+    float Delay;
+    // inferred: bg3.exe+0x1A21CA0 writes the new jump::StateComponent.State (+0xC) as the second
+    // dword (CONCAT44(state, time)); server abort writes 3. Live 0.
+    int32_t State;
+    // unknown: bg3.exe+0x1A21CA0 copies byte 0 of eoc::jump::InfoComponent here (4-byte write, low
+    // byte meaningful). Live 1 or 3; upper bytes garbage on the server.
+    uint8_t field_8;
+};
+
+// Animation/flight state of a jump in progress (both sides). Initialised by
+// eoc::jump::helpers::SetupJumpInitialState (bg3.exe+0x114B1F0), advanced by
+// eoc::jump::helpers::UpdateJumpState and by the jump TrajectoryAnimationStateSystems (client
+// UpdateJumpAnimationState bg3.exe+0x1A21CA0). Born live in the jump situation, a mud-mephit fight
+// and a tadpoling pod, with jump::AnimationRequestOneFrameComponent.
+struct StateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(JumpState, "eoc::jump::StateComponent")
+
+    // inferred: bg3.exe+0x114B0B0 (called by SetupJumpInitialState/UpdateJumpAnimationState with
+    // the state as 2nd arg) stores a normalised direction between two points of the path mover at
+    // +0..+0xB when its pitch is <= 1.553 rad. Live unit-length vectors e.g. (0.155, 0.862,
+    // -0.475).
+    glm::vec3 Direction;
+    // inferred: SetupJumpInitialState writes -1; UpdateJumpAnimationState sets 0/1 (takeoff), 2,
+    // 3/4 (landing), 5 (finished/aborted) and compares with < 3; the new value is sent in
+    // jump::AnimationRequestOneFrameComponent. Live -1.
+    int32_t State;
+    // inferred: SetupJumpInitialState writes 0; UpdateJumpAnimationState adds GameTime delta (+8)
+    // each frame. Live 0.
+    float Time;
+    // unknown: SetupJumpInitialState sets +0x14 and +0x1C from the same value; when Time crosses
+    // it State becomes 1 (takeoff time). Live 0.109 .. 0.32.
+    float field_14;
+    // unknown: SetupJumpInitialState writes +0x1C (or half of it); used as the next phase
+    // threshold in UpdateJumpAnimationState. Live equals +0x1C.
+    float field_18;
+    // unknown: Written by SetupJumpInitialState; read when State becomes 2. Live 0.25 .. 0.91.
+    float field_1C;
+    // inferred: SetupJumpInitialState clears it; UpdateJumpAnimationState sets it to 1 when the
+    // flight starts (projectile taken off hold) and returns early while it is 0.
+    bool Started;
+    // unknown: Set to (request byte == 0) from a land request map in UpdateJumpAnimationState;
+    // leads to State 3/4/5.
+    bool field_21;
+    // unknown: Copied from the same land request byte; leads to State 3 or 5.
+    bool field_22;
+    // unknown: Set by SetupJumpInitialState; selects State 4 instead of 3 and enables the State 2
+    // phase.
+    bool field_23;
+    // unknown: Set from land request bytes 1/2; selects State 5 instead of 3. Live 0.
+    bool field_24;
+    // unknown: Server UpdateJumpAnimationState (Toolkit) sets it when a jump finish request
+    // arrives. Live 0.
+    bool field_25;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(eoc::jump, ActivationEventOneFrameComponent, JumpActivationEvent)
 
 END_NS()
@@ -5614,8 +7439,6 @@ END_NS()
 
 BEGIN_NS(eoc::notification)
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct BackgroundGoalComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationBackgroundGoal, "eoc::notification::BackgroundGoalComponent")
@@ -5886,6 +7709,22 @@ struct EnterPhotoModeFailedNotificationComponent : public BaseComponent
     uint8_t field_0;
 };
 
+// Replicated notification that an entity (item) was received; read on the client by
+// gui::registration::VMItemRegistrationSystem::Update (macOS). Born live in shove-throw, item and
+// dialogue situations (items handed over).
+struct EntityReceivedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationEntityReceived, "eoc::notification::EntityReceivedComponent")
+
+    // unknown: Replication serializer bg3.exe+0x9A0240 member 1: 16 bytes from +0 (DAT_14627fef8
+    // base). Live: a different random-looking 16-byte value per instance (the received entity's
+    // UUID?).
+    Guid field_0;
+    // unknown: Serializer member 2: 16 bytes at +0x10. Live the same value in all 11 instances
+    // (the receiving character's UUID?).
+    Guid field_10;
+};
+
 // NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
 // situation that creates it
 struct GatherAtCampCheckComponent : public BaseComponent
@@ -5939,8 +7778,6 @@ struct LockpickedEventComponent : public BaseComponent
     Guid field_10;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct LongRestCancelComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationLongRestCancel, "eoc::notification::LongRestCancelComponent")
@@ -6055,6 +7892,33 @@ struct PingRequestComponent : public BaseComponent
     uint8_t field_20;
 };
 
+// Replicated request from the server to play a sound on a character's client; routed by
+// ecl::ServerSoundSystem::RouteCharacterServerRequests (macOS). Born live in many dialogues,
+// scripted events (explosions, collapses), idle and item use.
+struct PlayServerSoundComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationPlayServerSound, "eoc::notification::PlayServerSoundComponent")
+
+    // inferred: Serializer bg3.exe+0x995AE0 member 1: 16 bytes at +0. macOS
+    // RouteCharacterServerRequests looks the two qwords at +0/+8 up in a HashMap<Guid,
+    // EntityHandle> (uuid -> handle) to find the character.
+    Guid Entity;
+    // inferred: Serializer member 2: ecs::sync::Serialize(FixedString*) at +0x10;
+    // RouteCharacterServerRequests passes it to character::SoundSystem::PlaySound /
+    // PlayerManager::PlaySoundForLocalPlayer.
+    FixedString SoundEvent;
+    // unknown: Serializer member 3: 4 bytes at +0x14. Live 0..2.
+    uint32_t field_14;
+    // unknown: Serializer member 4: 1 byte at +0x18; when set, RouteCharacterServerRequests
+    // resolves the sound through the current sound bank (type 9) and may play it as an external
+    // SFX instead.
+    bool field_18;
+    // inferred: Serializer member 5: 1 byte at +0x19; macOS default strb wzr at +0x19; when set,
+    // RouteCharacterServerRequests calls PlayerManager::PlaySoundForLocalPlayer /
+    // PlayExternalSoundForLocalPlayer instead of the character sound system.
+    bool LocalPlayerOnly;
+};
+
 struct ProfileShownTutorialsUpdateNotificationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationProfileShownTutorialsUpdate, "eoc::notification::ProfileShownTutorialsUpdateNotificationComponent")
@@ -6126,8 +7990,6 @@ struct ResetTutorialsMessageRequestNotificationComponent : public BaseComponent
     uint8_t field_4;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
-// situation that creates it
 struct ShortRestResultComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationShortRestResult, "eoc::notification::ShortRestResultComponent")
@@ -6390,6 +8252,83 @@ DEFINE_TAG_COMPONENT(eoc::platform, MovementPausedComponent, PlatformMovementPau
 END_NS()
 
 BEGIN_NS(eoc::ready_check)
+
+// One-frame event with the outcome of a ready check, put on a new entity by
+// esv::ready_check::OverseerSystem::ProcessResultEvents from its esv::ready_check::ResultEvent
+// list (seen at the level swap teleporter vote, with eoc::ready_check::StateComponent). Saved
+// model game.ready_check.v0.ResultEventOneFrameComponent (40 bytes, member names not known).
+struct ResultEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ReadyCheckResultEvent, "eoc::ready_check::ResultEventOneFrameComponent")
+
+    // inferred: EoCServer.dll+0x2E29D0 ProcessResultEvents: STDString::operator=(component,
+    // event+8); live heap ptr, size 0x17, capacity 0x1F - the same 23-character id as
+    // StateComponent.EventId (m_EventId of the state model)
+    STDString EventId;
+    // inferred: ProcessResultEvents copies two qwords (event+0x20/+0x28) to +0x18/+0x20; live: the
+    // same Guid as StateComponent.TransactionId
+    Guid TransactionId;
+    // inferred: ProcessResultEvents copies one byte (event+0x30) to +0x28; live 1; matches
+    // StateComponent.ResultVal
+    bool Result;
+};
+
+// Server state of a running ready check (the party vote shown before e.g. the level swap
+// teleporter to the lower city; born together with
+// ecl::ready_check::Show/HideMessageBoxRequestOneFrameComponent,
+// ecl::ui::MessageBoxResponseEventOneFrameComponent and
+// eoc::ready_check::ResultEventOneFrameComponent). Written by esv::ready_check::OverseerSystem
+// (ProcessRequests creates it, UpdateComponents counts the timers down and sets the result).
+// Saved: model game.ready_check.v2.StateComponent; member names from the v1 model (savefields.py).
+struct StateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ReadyCheckState, "eoc::ready_check::StateComponent")
+
+    // the game's own member name: savegame model ready_check v1 StateComponent, member 0
+    // (m_EventId); EoCServer.dll+0x2E22A0 OverseerSystem::ProcessRequests:
+    // STDString::operator=(state, request-0x18); live: heap ptr, size 0x17, capacity 0x1F
+    STDString EventId;
+    // the game's own member name: savegame model member 1 (m_TranslatedString); ProcessRequests:
+    // TranslatedString::operator=(state+0x18, request); live handle FixedString + version 1
+    TranslatedString TranslatedString;
+    // the game's own member name: savegame model member 2 (m_TransactionId); ProcessRequests
+    // copies 16 bytes to +0x28..+0x37; UpdateComponents (EoCServer.dll+0x2E50D0) compares ls::Guid
+    // at state+0x28 with the user's transaction id; same Guid seen in
+    // ResultEventOneFrameComponent+0x18
+    Guid TransactionId;
+    // the game's own member name: savegame model member 3 (m_InitiatorUserId); ProcessRequests
+    // writes a 4-byte value at +0x38; live 0x00010001 (a UserId)
+    UserId InitiatorUserId;
+    // unknown: not written in the functions read; live 0xFFFFFFFF (may be padding or a default -1)
+    uint32_t field_3c;
+    // the game's own member name: savegame model member 4 (m_ParticipantUserIds); ProcessRequests
+    // inserts the owner UserID of each requested character into the set at +0x40
+    // (FUN_180274920(state+0x40, .., &userId)); live: bucket count 5, next-ids 1/1, keys 1/1
+    HashSet<UserId> ParticipantUserIds;
+    // unknown: ProcessRequests inserts an entity obtained for the user (FUN_1802e1060) into +0x70;
+    // UpdateComponents iterates its keys (ptr +0x90, count +0x9C, 8-byte stride) and looks each up
+    // for eoc::party::ViewComponent / GetUserCharacters; perhaps the model's m_ResultSet, not
+    // established
+    HashSet<EntityHandle> field_70;
+    // the game's own member name: savegame model member 6 (m_ResultVal); UpdateComponents sets
+    // +0xA1 to 1 if 0 and stores the result bool at +0xA0 (an ls::Optional<bool>); live 0/0
+    bool ResultVal;
+    // inferred: flag of the optional ResultVal (see +0xA0)
+    bool ResultValHasValue;
+    // the game's own member name: savegame model member 7 (m_IsForced); ProcessRequests copies
+    // request+0x58 byte to +0xA2; UpdateComponents: if +0xA2 == 0 and a check passes, result code
+    // 4
+    bool IsForced;
+    // unknown: not seen written; live 5
+    uint8_t field_a3;
+    // the game's own member name: savegame model member 8 (m_Timer); ProcessRequests sets 30.0
+    // (0x41F00000); UpdateComponents subtracts frame time while more than one participant and ends
+    // the check with code 7 when <= 0
+    float Timer;
+    // inferred: ProcessRequests sets 120.0 (0x42F00000); UpdateComponents subtracts frame time
+    // every frame and finishes the check when <= 0; not in the v1 savegame model
+    float TimeoutTimer;
+};
 
 struct UserComponent : public BaseComponent
 {
@@ -6814,6 +8753,22 @@ DEFINE_ONEFRAME_TAG_COMPONENT(eoc::splatter, UpdateAttachmetsRequestOneFrameComp
 
 END_NS()
 
+BEGIN_NS(eoc::steering)
+
+// Replicated steering value of a moving character, written by esv::steering::StateSystem::Update
+// (macOS). Born live in many dialogues, events, scenes and shove-throw (characters that turn).
+struct SyncComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(SteeringSync, "eoc::steering::SyncComponent")
+
+    // unknown: Serializer bg3.exe+0x8E0340 writes 4 bytes from +0 (DAT_1462805f0 base); macOS
+    // default str w1,[x23]. Live floats in about -3.13 .. 3.13 (a heading angle in radians, e.g.
+    // target rotation).
+    float field_0;
+};
+
+END_NS()
+
 BEGIN_NS(eoc::story)
 
 // NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
@@ -6871,6 +8826,47 @@ DEFINE_TAG_COMPONENT(eoc::summon, IsSpawnComponent, SummonIsSpawn)
 END_NS()
 
 BEGIN_NS(eoc::thrown)
+
+// Replicated marker of an object in flight after a throw, written by
+// esv::thrown::ThrowAnimationSystem::ProcessThrownRequests (bg3.exe+0x2AFA000) from a 0x28-byte
+// throw request. Born live in shove-throw with RotationParametersComponent, drop components and
+// the client thrown components.
+struct IsThrownComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ThrownIsThrown, "eoc::thrown::IsThrownComponent")
+
+    // unknown: Serializer bg3.exe+0x8EE450: 4 bytes at +0 (DAT_1462805a0 base); bg3.exe+0x2AFA000
+    // copies the request's float at +0xC (only when it is non-zero). Live 0.33 .. 1.31.
+    float field_0;
+    // unknown: Serializer: 1 byte at +4; bg3.exe+0x2AFA000 copies the request's byte at +0x10.
+    // Live 3; upper bytes garbage.
+    uint8_t field_4;
+    // unknown: Serializer writes an EntityHandle (FUN_144017090) from +8; creator
+    // bg3.exe+0x2AFBE90 writes the null handle; copied from the request's +0x18. Live entity
+    // handles (the thrower?).
+    EntityHandle field_8;
+};
+
+// Replicated rotation parameters of a thrown object (how it spins in flight), written by
+// esv::thrown::ThrowAnimationSystem::ProcessApplyRotationParams (Toolkit EoCServer.dll) and copied
+// into ecl::thrown::CurrentRotationComponent on the client. Born live in shove-throw.
+struct RotationParametersComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ThrownRotationParameters, "eoc::thrown::RotationParametersComponent")
+
+    // unknown: Serializer bg3.exe+0x8EF080 member 1: 12 bytes at +0 (DAT_1462805a8 base). Live (0,
+    // -18.8, 0) / (0, -24.2, 0) (angular speed?).
+    glm::vec3 field_0;
+    // unknown: Serializer member 2: 12 bytes at +0xC; copied to
+    // ecl::thrown::CurrentRotationComponent +0 by bg3.exe+0x1A25F70. Live (0, 0, 1.5708).
+    glm::vec3 field_C;
+    // unknown: Serializer member 3: 16 bytes at +0x18. Live (0, 0.70, 0, 0.46) - not a unit
+    // quaternion, so kept as vec4.
+    glm::vec4 field_18;
+    // unknown: Serializer member 4: 16 bytes at +0x28. Live equal to field_18. macOS default
+    // writes 1.0 (w1) at +0x34 (hint only).
+    glm::vec4 field_28;
+};
 
 // NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
 // situation that creates it
@@ -7136,6 +9132,21 @@ struct BaseStatsReloadedOneFrameComponent : public BaseComponent
     uint64_t Flags;
 };
 
+// Lives in idle levels (WLD_Main_A, SCL_Main_A; up to 195 holders); maintained by
+// esv::ConstellationSystem.
+struct ConstellationChildComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerConstellationChild, "esv::ConstellationChildComponent")
+
+    // unknown: Registry size 8 (server). Live (48 instances): low dword an index 0x1C7..0x2626E,
+    // high dword 0x2000001..0x200000C - the shape of an EntityHandle (salt + type bits). Readers
+    // named on macOS: esv::ConstellationSystem::ProcessActivations/Update, ::ResolveChildHandle,
+    // ::ExtractConstellation (Toolkit EoCServer.dll esv::ConstellationSystem::Process* take it in
+    // their WorldView). Which entity it names (the parent constellation or the resolved child) was
+    // not read.
+    EntityHandle field_0;
+};
+
 struct ConstellationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerConstellation, "esv::ConstellationComponent")
@@ -7249,6 +9260,39 @@ struct ExplorationAwardStateComponent : public BaseComponent
     bool field_8;
 };
 
+// Level change / leaving a level (WLD_Main_A, SCL_Main_A). Written by
+// esv::RootLevelSystem::Update, read by camp/trade/trigger systems.
+struct GameStateUnloadLevelComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerGameStateUnloadLevel, "esv::GameStateUnloadLevelComponent")
+
+    // unknown: Live: heap pointers (2 samples); macOS default zeroes it (str xzr [x23]).
+    [[bg3::hidden]] void* field_0;
+    // inferred: EoCServer.dll esv::RootLevelSystem::StartUnload(GameStateUnloadLevelComponent&)
+    // passes +8 to GameEventManager::ExecuteLevelUnloadEvent and LevelManager::GetLevel. Live
+    // 0x3C8000A0 / 0x3CF000A0 (FixedString indices; the same value appears as LevelName of
+    // SaveWorldRequest).
+    FixedString LevelName;
+};
+
+// Server-only, saved (model game.gravity.v0.GravityActiveTimeoutComponent, 4 bytes, no member
+// names known). Seen on up to 8 holders in idle levels (WLD/SCL/CTY) and after dialogues: items
+// whose gravity was switched on. Written by esv::GravitySystem::Update and
+// esv::GravitySystemHelper::SetItemGravity (macOS signatures); the Update runs a query
+// Spec<GravityActiveTimeoutComponent, read TimeFactorComponent> - a timer advanced by scaled frame
+// time.
+struct GravityActiveTimeoutComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerGravityActiveTimeout, "esv::GravityActiveTimeoutComponent")
+
+    // inferred: registry size 4 (coverage.json server row); macOS esv::GravitySystem::Update
+    // allocates it with ComponentFrameStorageAllocRaw(...,4,...) and iterates it in a query
+    // together with ls::TimeFactorComponent (time-scaled countdown); per-frame update of
+    // esv::GravitySystem bg3.exe+0x2EBCEE0 -> bg3.exe+0x2EBDBD0 adds/removes it. Live: 27 values,
+    // all floats 1.38 .. 10.0 (0x41200000), i.e. a seconds timer starting at 10
+    float Timeout;
+};
+
 struct OsirisSetDisplayTitleHiddenRequest
 {
     // inferred: esv::DisplayNameSystem::HandleSetDisplayTitleHiddenRequests
@@ -7260,8 +9304,6 @@ struct OsirisSetDisplayTitleHiddenRequest
     bool Hidden;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct OsirisSetDisplayTitleHiddenRequestsSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerOsirisSetDisplayTitleHiddenRequests, "esv::OsirisSetDisplayTitleHiddenRequestsSingletonComponent")
@@ -7272,6 +9314,38 @@ struct OsirisSetDisplayTitleHiddenRequestsSingletonComponent : public BaseCompon
     // size +0xC) with stride 0x10 (AllocateInternal(n, 0x10, 8)). Read by
     // esv::DisplayNameSystem::Update (macOS). Live: one instance, empty.
     Array<OsirisSetDisplayTitleHiddenRequest> Requests;
+};
+
+// Born by a jump (Projectile_Jump) and many other moves; up to 2 holders. Written by
+// esv::safe_position::TrackingSystem.
+struct SafePositionUpdatedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerSafePositionUpdatedEvent, "esv::SafePositionUpdatedEventOneFrameComponent")
+
+    // inferred: EoCServer.dll esv::safe_position::TrackingSystem::ProcessNotSafePositionChanges
+    // iterates the event storage with stride 0x18, takes the EntityHandle at +0 and looks up that
+    // character's esv::SafePositionComponent; the event entity itself is destroyed. Live: entity-
+    // handle shaped values.
+    EntityHandle Entity;
+    // inferred: Same function compares +8/+0xC/+0x10 with the SafePositionComponent's position and
+    // copies them into it. Live floats (world coordinates).
+    glm::vec3 Position;
+};
+
+// Born by statuses (ENLARGE/REDUCE etc. in TUT_Avernus_C, with ScaleMultiplierBoost). Driven by
+// esv::VisualSystem::ProcessScaleChange.
+struct ScaleChangeComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScaleChange, "esv::ScaleChangeComponent")
+
+    // unknown: Live 1.0. Not used by ProcessScaleChange's step (start or original scale?).
+    float field_0;
+    // inferred: EoCServer.dll esv::VisualSystem::ProcessScaleChange (stride 0xC): step = clamp(+4
+    // - +8, rate) and +8 += step. Live 1.33 after ENLARGE.
+    float TargetScale;
+    // inferred: Same function: the current scale, moved toward +4 each frame, clamped to >= 0.01,
+    // written to the visual (+0xC of the visual component). Live 1.0.
+    float Scale;
 };
 
 struct ServerTimelineActorDataComponent : public BaseComponent
@@ -7361,6 +9435,56 @@ struct ServerTimelineDataComponent : public BaseComponent
     bool field_10;
 };
 
+// Request raised when a character's equipment becomes disabled or enabled again
+// (eoc::DisabledEquipmentComponent added/removed in the same helper bg3.exe+0x31BB9A0). Seen.py
+// context: born in the 'spells-6' step (Wild Shape / Rage / Animate Dead casts) together with
+// eoc::DisabledEquipmentComponent and shapeshift components.
+struct ChangeUnequipLockRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerStatsChangeUnequipLockRequest, "esv::stats::ChangeUnequipLockRequestOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x31C9ED0 allocates 0x10, defaults +0 to the null handle; caller
+    // bg3.exe+0x31BB9A0 stores the character whose DisabledEquipmentComponent it just
+    // added/removed. Live: entity handles.
+    EntityHandle Entity;
+    // inferred: Creator zeroes the byte at +8; caller writes (flag == 0), where the flag also
+    // selects between getting/creating a 1-byte component (FUN_1431c9d70, set to 0) and calling
+    // FUN_1440103b0 with eoc::DisabledEquipmentComponent's type index (add or remove - not
+    // established). Live: byte 1 in all samples. Polarity of the name not verified.
+    bool Locked;
+};
+
+struct TadpoleTreeResourceRequest
+{
+    // inferred: esv::tadpole_tree::ResourceRequest (Toolkit IndexedStorage assert).
+    // ProcessTadpoleTreePowersRequests (EoCServer.dll+0x1608CB0) copies +0 into the
+    // ResourceRequestResult it emits.
+    uint32_t RequestId;
+    // unknown: Not read in the functions examined.
+    uint32_t field_4;
+    // inferred: Compared with 0 / negative in ProcessTadpoleTreePowersRequests; FUN_1815fcf60
+    // passes it as the amount of TadpolePowerPointResourceId to add/spend.
+    int32_t Amount;
+    // unknown: Not read; may be padding.
+    uint32_t field_C;
+    // inferred: FUN_1815fcf60 checks +0x10 for a valid live entity and fetches its action
+    // resources.
+    EntityHandle Entity;
+};
+
+// Singleton of tadpole-power point requests: read by
+// esv::ActionResourceSystem::ProcessTadpoleTreePowersRequests and
+// TadpoleTreeExecutorSystem::Update. Lives from level load; empty in the sample.
+struct CurrentResourceRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerTadpoleTreeCurrentResourceRequests, "esv::tadpole_tree::CurrentResourceRequestsSingletonComponent")
+
+    // inferred: Creator bg3.exe+0x2F03D30 zeroes pointer/capacity/size; macOS
+    // ls::DynamicArray<esv::tadpole_tree::ResourceRequest>; ProcessTadpoleTreePowersRequests walks
+    // elements of stride 0x18 (6 dwords). Live: empty.
+    Array<TadpoleTreeResourceRequest> Requests;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseSightReloadedOneFrameComponent, ServerBaseSightReloaded)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseSizeReloadedOneFrameComponent, ServerBaseSizeReloaded)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseStatsReloadRequestOneFrameComponent, ServerBaseStatsReloadRequest)
@@ -7405,6 +9529,85 @@ END_NS()
 
 BEGIN_NS(esv::ai::swarm)
 
+// AI swarm (groups of small enemies: mephits, dogs) in combat; up to 4 holders. Written by
+// esv::ai::swarm::ExecuteActionsSystem.
+struct ActionAttemptsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmActionAttempts, "esv::ai::swarm::ActionAttemptsComponent")
+
+    // inferred: eoc::ai::swarm::EActionType (1 byte). EoCServer.dll
+    // esv::ai::swarm::ExecuteActionsSystem::Update: if +0 equals the requested action byte, +4 is
+    // incremented; else +4 = 1 and +0 = the action. Live low byte 1/3/5/6.
+    uint8_t Action;
+    // inferred: Same code: counter of attempts of the same action. Live always 1.
+    int32_t Attempts;
+};
+
+// AI swarm turn (one holder). Written by CalculateMoveGroupsSystem, read by ExecuteActionsSystem /
+// ActionRequestSystem.
+struct AttackOrderComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmAttackOrder, "esv::ai::swarm::AttackOrderComponent")
+
+    // inferred: EoCServer.dll esv::ai::swarm::CalculateMoveGroupsSystem::UpdateMoveGroups adds
+    // this 16-byte component (FUN_1816bf8d0, frame storage of 0x10) and pushes, for each 0x28-byte
+    // move group, its first 8 bytes through FUN_180226b20 -> FUN_180226e50
+    // (IndexedStorage<ls::ID<ecs::EntityHandleTraits>>). Live: heap pointer, capacity 1..4, size
+    // 1..4.
+    Array<EntityHandle> Order;
+};
+
+// AI swarm members during a swarm turn (idle levels with swarm groups).
+struct CalculatingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmCalculating, "esv::ai::swarm::CalculatingComponent")
+
+    // unknown: Live (37 instances): entity-handle shaped (index 0x90F..0x27A27, high dword
+    // 0x800001..0x2000012); the same handles appear at +0x18 of NextActionComponent. Read by
+    // FindTargets/CalculateMoveGroups/Activation/Deactivation systems
+    // (DeactivationSystem::DestroyCalculatingEntities).
+    EntityHandle field_0;
+};
+
+struct AiSwarmGroupsGroup
+{
+    // unknown: esv::ai::swarm::Group (macOS name). FUN_1816a5f50 copies it with
+    // FixedString::operator= when compacting; macOS ~GroupsComponent releases a FixedString at
+    // element +0.
+    FixedString field_0;
+    // inferred: FUN_1816a5f50 removes the entity from the
+    // ls::HashTable<ls::ID<ecs::EntityHandleTraits>> at element +8 and drops the group when its
+    // size (+0x34) is 0.
+    HashSet<EntityHandle> Members;
+};
+
+// AI swarm groups singleton (idle levels).
+struct GroupsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmGroups, "esv::ai::swarm::GroupsComponent")
+
+    // inferred: macOS name: ls::HashMap<ls::FixedString, esv::ai::swarm::Group>
+    // (AddMember/RemoveMember). EoCServer.dll FUN_1816a5f50 (called from
+    // esv::ai::swarm::GroupSystem::Update): hashes a FixedString key, values at +0x30 with stride
+    // 0x38. Live: bucket count 0x1D..0xC1, key arrays of capacity 0x20/0x80.
+    HashMap<FixedString, AiSwarmGroupsGroup> Groups;
+};
+
+// Born in fights with swarm enemies (S_HAG_WoodWoad, MudMephit) and at level change. Written by
+// esv::ai::swarm::MemberSystem.
+struct MemberChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerAiSwarmMemberChangedEvent, "esv::ai::swarm::MemberChangedEventOneFrameComponent")
+
+    // inferred: EoCServer.dll esv::ai::swarm::MemberSystem::UpdateMembers builds a pair {current
+    // group from eoc::ai::swarm::MemberComponent, requested group} (see
+    // esv.ai.swarm.MembersChangedComponent layout) and copies it into this event. Live always
+    // 0xFFFFFFFF (null: no previous group).
+    FixedString OldSwarmGroup;
+    // inferred: Same pair, +4 = requested group. Live: FixedString indices.
+    FixedString NewSwarmGroup;
+};
+
 struct AiSwarmMembersChange
 {
     // inferred: esv::ai::swarm::MemberSystem::UpdateMembers (EoCServer.dll+0x16A3080): for each
@@ -7428,6 +9631,326 @@ struct MembersChangedComponent : public BaseComponent
     // value. Adder bg3.exe+0x3258980 allocates 0x40 bytes and zeroes them. Live: 4 instances of
     // cleared maps (bucket count 29/43, key/value capacity 32, size 0).
     HashMap<EntityHandle, AiSwarmMembersChange> Changes;
+};
+
+// AI swarm turn (idle levels). Read by ExecuteActionsSystem.
+struct NextActionComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmNextAction, "esv::ai::swarm::NextActionComponent")
+
+    // inferred: eoc::ai::swarm::EActionType (1 byte). EoCServer.dll FUN_1816b7530 (from
+    // ExecuteActionsSystem::Update, element stride 0x20): switches on byte +0 (3, 6/7, 0 ...).
+    // Live 0 or 6.
+    uint8_t Action;
+    // inferred: Same function: ls::Optional<Vector3f>::Get on +4 (flag +0x10), passed as the
+    // move/cast position.
+    glm::vec3 Position;
+    // inferred: Optional flag tested before Get. Live 0.
+    bool HasPosition;
+    // inferred: FUN_1816b7530: IsEntityAlive(+0x18), used as the action target. Live entity
+    // handles.
+    EntityHandle Target;
+};
+
+struct AiSwarmSpellsSpellId
+{
+    // inferred: Same members as Script Extender SpellId (Base/ExposedTypes.h: SpellMetaId +
+    // Prototype), size 0x38.
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SpellSourceType (1 byte); macOS default ctor stores the Sentinel byte at +8; live
+    // value 0x17 when empty
+    uint8_t SourceType;
+    // inferred: SpellMetaId::Source
+    Guid Source;
+    // inferred: SpellMetaId::ProgressionSource
+    Guid ProgressionSource;
+    // inferred: SpellId::Prototype
+    FixedString Prototype;
+};
+
+// AI swarm spell choice per member (idle levels).
+struct SpellsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmSpells, "esv::ai::swarm::SpellsComponent")
+
+    // inferred: EoCServer.dll esv::ai::swarm::FindSpellsSystem::Update: eoc::spell::GetAttackSpell
+    // result is assigned to +0 (also overridden by a spell with prototype flag bit 50). Live
+    // FixedStrings at +0/+0x30.
+    AiSwarmSpellsSpellId AttackSpell;
+    // unknown: FindSpellsSystem::Update assigns a spell found in a FixedString-keyed map of the
+    // entity (values of 0x68 bytes, chosen when value+8 == 0) to +0x38.
+    AiSwarmSpellsSpellId field_38;
+    // inferred: FindSpellsSystem::Update: SpellId::operator=(+0x70) next to
+    // ls::Optional<esv::ai::swarm::DashSpell>::Get (spells of type 6 with an AI flag).
+    AiSwarmSpellsSpellId DashSpell;
+    // unknown: Same branch stores the DashSpell value (8 bytes from the helper) at +0xA8. Live
+    // doubles (e.g. 16.8, -1.0).
+    double field_a8;
+    // inferred: FindSpellsSystem::Update: eoc::spell::IsMovementSpell ->
+    // SpellId::operator=(+0xB0).
+    AiSwarmSpellsSpellId MoveSpell;
+    // unknown: Same branch: *(+0xE8) = helper vtable slot 1 result for the move spell (a
+    // distance?). Live 0 / 3.0.
+    double field_e8;
+};
+
+struct AiSwarmTargetsTarget
+{
+    // inferred: FindTargets writes the candidate's EntityHandle to +0 of each
+    // eoc::ai::swarm::Target.
+    EntityHandle Entity;
+    // unknown: FindTargets copies 2 bytes into +8 (a flag pair of the candidate).
+    uint8_t field_8;
+    // unknown: Second byte of that pair.
+    uint8_t field_9;
+};
+
+// AI swarm target search (idle levels).
+struct TargetsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmTargets, "esv::ai::swarm::TargetsComponent")
+
+    // inferred: EoCServer.dll esv::ai::swarm::FindTargetsSystem::FindTargets(...,
+    // DynamicArray<eoc::ai::swarm::Target>& param_4, DynamicArray<eoc::ai::swarm::Target>&
+    // param_5): two arrays of 16-byte Targets (IndexedStorage<eoc::ai::swarm::Target>, stride
+    // 0x10). Live: filled (capacity 1..8, size 1..6).
+    Array<AiSwarmTargetsTarget> Targets;
+    // unknown: The second Target array of FindTargets. Live always empty (zeros). Which of the two
+    // lists is which (e.g. preferred vs other) not established.
+    Array<AiSwarmTargetsTarget> field_10;
+};
+
+struct AiSwarmTurnActionsCalculationSpellId
+{
+    // inferred: Same members as Script Extender SpellId (Base/ExposedTypes.h: SpellMetaId +
+    // Prototype), size 0x38.
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SpellSourceType (1 byte); macOS default ctor stores the Sentinel byte at +8; live
+    // value 0x17 when empty
+    uint8_t SourceType;
+    // inferred: SpellMetaId::Source
+    Guid Source;
+    // inferred: SpellMetaId::ProgressionSource
+    Guid ProgressionSource;
+    // inferred: SpellId::Prototype
+    FixedString Prototype;
+};
+
+// AI swarm turn calculation per member (idle levels).
+struct TurnActionsCalculationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmTurnActionsCalculation, "esv::ai::swarm::TurnActionsCalculationComponent")
+
+    // unknown: Live 0..2. The esv::ai::swarm::TurnActionsCalculation object starts at +8 (copy
+    // ctor EoCServer.dll+0xBC0E70 and game dtor bg3.exe+0x30B9EA0 offsets + 8 match the live
+    // sample).
+    int32_t field_0;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: TurnActionsCalculation +0 (int); name from the replicated debug copy
+    // eoc::ai::swarm::ReplicatedDebugCalculation m_TargetIndex (macOS FieldMeta), mapped by order.
+    // Live 3..0xC.
+    int32_t TargetIndex;
+    // inferred: TurnActionsCalculation +4 (16 bytes copied, Optional<vec3>);
+    // ReplicatedDebugCalculation m_CastPosition by order. Live world coordinates, flag 1.
+    glm::vec3 CastPosition;
+    // inferred: ls::Optional flag of CastPosition
+    bool HasCastPosition;
+    // unknown: TurnActionsCalculation +0x14: optional 8-byte value (FixedString copied with its
+    // ctor + int), flag at +0x1C (game dtor bg3.exe+0x30B9EA0 releases it when the flag is set) -
+    // probably an Optional<esv::ai::swarm::PathID>.
+    FixedString field_1c;
+    // unknown: Second half of that optional (live 0..0xE3D).
+    int32_t field_20;
+    // unknown: Its optional flag (live 0/1).
+    bool field_24;
+    // inferred: TurnActionsCalculation +0x20 (16 bytes); ReplicatedDebugCalculation
+    // m_MoveSpellIntermediary by order.
+    glm::vec3 MoveSpellIntermediary;
+    // inferred: ls::Optional flag of MoveSpellIntermediary
+    bool HasMoveSpellIntermediary;
+    // inferred: TurnActionsCalculation +0x30 (16 bytes); ReplicatedDebugCalculation
+    // m_MoveSpellAttackCastPosition by order.
+    glm::vec3 MoveSpellAttackCastPosition;
+    // inferred: ls::Optional flag of MoveSpellAttackCastPosition
+    bool HasMoveSpellAttackCastPosition;
+    // unknown: Optional 8-byte value (FixedString + int) with flag at +8, like field_1c; game dtor
+    // releases the FixedString when the flag is set.
+    FixedString field_48;
+    // unknown: Second half of the optional value.
+    int32_t field_4c;
+    // unknown: Optional flag.
+    bool field_50;
+    // unknown: Optional 8-byte value (FixedString + int) with flag at +8, like field_1c; game dtor
+    // releases the FixedString when the flag is set.
+    FixedString field_54;
+    // unknown: Second half of the optional value.
+    int32_t field_58;
+    // unknown: Optional flag.
+    bool field_5c;
+    // inferred: TurnActionsCalculation +0x58: Optional<{SpellId, vec3, vec3}> (flag +0xA8);
+    // eoc::spell::SpellId copy ctor; ReplicatedDebugCalculation m_MoveSpell.
+    AiSwarmTurnActionsCalculationSpellId MoveSpell;
+    // inferred: Calc +0x90 (copied with the SpellId); m_MoveSpellStart by order.
+    glm::vec3 MoveSpellStart;
+    // inferred: Calc +0x9C; m_MoveSpellEnd by order.
+    glm::vec3 MoveSpellEnd;
+    // inferred: Calc +0xA8: flag guarding the SpellId (dtor/copy).
+    bool HasMoveSpell;
+    // inferred: Calc +0xB0 (8 bytes); m_MovementPoints (double) by order; live 18.0 / -1.0 (the
+    // debug builder defaults it to -1.0).
+    double MovementPoints;
+    // inferred: Calc +0xB8: SpellId (copy ctor, always destroyed); m_DashSpell by order. Live
+    // FixedStrings at +0xC0/+0xF0.
+    AiSwarmTurnActionsCalculationSpellId DashSpell;
+    // inferred: Calc +0xF0 (8 bytes: float + flag); m_PathDistanceXZ (Optional<float>). Live 3.5 /
+    // 33.5 with flag 1.
+    float PathDistanceXZ;
+    // inferred: Optional flag.
+    bool HasPathDistanceXZ;
+    // unknown: Calc +0xF8 (16 bytes). Live world coordinates with flag 1 in 16 of 48 samples.
+    glm::vec3 field_100;
+    // unknown: ls::Optional flag of field_100
+    bool field_100_set;
+    // unknown: Calc +0x108 (16 bytes). Live zero.
+    glm::vec3 field_110;
+    // unknown: ls::Optional flag of field_110
+    bool field_110_set;
+    // inferred: Calc +0x118: copy ctor allocates count * 0xC (IndexedStorage<Vector3f>);
+    // m_PathPoints by order. Live heap, capacity 4..0x40.
+    Array<glm::vec3> PathPoints;
+    // inferred: Calc +0x128 (16 bytes, last member); m_ReachablePosition by order. Live zero.
+    glm::vec3 ReachablePosition;
+    // inferred: ls::Optional flag of ReachablePosition
+    bool HasReachablePosition;
+};
+
+struct AiSwarmTurnActionsSpellId
+{
+    // inferred: Same members as Script Extender SpellId (Base/ExposedTypes.h: SpellMetaId +
+    // Prototype), size 0x38.
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SpellSourceType (1 byte); macOS default ctor stores the Sentinel byte at +8; live
+    // value 0x17 when empty
+    uint8_t SourceType;
+    // inferred: SpellMetaId::Source
+    Guid Source;
+    // inferred: SpellMetaId::ProgressionSource
+    Guid ProgressionSource;
+    // inferred: SpellId::Prototype
+    FixedString Prototype;
+};
+
+struct AiSwarmTurnActionsMoveSpell
+{
+    // inferred: SpellId of the move spell (debug code copies it to DebugTurnActions MoveSpell).
+    AiSwarmTurnActionsSpellId Spell;
+    // inferred: vec3 after the SpellId (same struct as TurnActionsCalculation +0x58).
+    glm::vec3 Start;
+    // inferred: second vec3; DebugSystem::FindEntitiesInfo copies value+0x44 into an optional vec3
+    // of DebugTurnActionsComponent.
+    glm::vec3 End;
+};
+
+struct AiSwarmTurnActionsBaseTarget
+{
+    // inferred: spell_cast::BaseTarget has a virtual table (SE SpellCastShared.h); live +0xD0 is a
+    // pointer into the executable.
+    [[bg3::hidden]] void* VMT;
+    // inferred: BaseTarget::Target; ExecuteActions debug code calls
+    // BaseTarget::GetInteractionTarget on it.
+    EntityHandle Target;
+    // inferred: BaseTarget::TargetProxy value (std::optional<EntityHandle>).
+    EntityHandle TargetProxy;
+    // inferred: optional flag
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: BaseTarget::Position value (std::optional<glm::vec3>).
+    glm::vec3 Position;
+    // inferred: optional flag (live 1)
+    bool HasPosition;
+};
+
+struct AiSwarmTurnActionsInitialTarget
+{
+    // inferred: spell_cast::BaseTarget has a virtual table (SE SpellCastShared.h); live +0xD0 is a
+    // pointer into the executable.
+    [[bg3::hidden]] void* VMT;
+    // inferred: BaseTarget::Target; ExecuteActions debug code calls
+    // BaseTarget::GetInteractionTarget on it.
+    EntityHandle Target;
+    // inferred: BaseTarget::TargetProxy value (std::optional<EntityHandle>).
+    EntityHandle TargetProxy;
+    // inferred: optional flag
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: BaseTarget::Position value (std::optional<glm::vec3>).
+    glm::vec3 Position;
+    // inferred: optional flag (live 1)
+    bool HasPosition;
+    [[bg3::hidden]] std::array<uint8_t, 3> _Pad2D;
+    // inferred: InitialTarget::TargetingType (SE SpellType). Live 3..8 at component +0x100.
+    uint8_t TargetingType;
+    // inferred: InitialTarget::Target2 value (std::optional<BaseTarget>); macOS
+    // ~TurnActionsComponent calls its virtual destructor at component +0x108 when the flag at
+    // +0x138 is set.
+    AiSwarmTurnActionsBaseTarget Target2;
+    // inferred: optional flag
+    bool HasTarget2;
+};
+
+// AI swarm turn actions per member (idle levels). Read by CalculateMoveGroups/Deactivation/Debug
+// systems.
+struct TurnActionsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerAiSwarmTurnActions, "esv::ai::swarm::TurnActionsComponent")
+
+    // inferred: eoc::ai::swarm::EActionState; EoCServer.dll
+    // esv::ai::swarm::DebugSystem::FindEntitiesInfo copies byte +0 to
+    // DebugTurnActionsComponent.ActionState (+0xC8). Live 4.
+    uint8_t ActionState;
+    // inferred: eoc::ai::swarm::EActionType; same function copies byte +1 to
+    // DebugTurnActionsComponent.Action (+0xC9). Live 1.
+    uint8_t Action;
+    // inferred: FindEntitiesInfo: SpellId +8 -> DebugTurnActionsComponent.DashSpell (+0x58, dirty
+    // bit 5).
+    AiSwarmTurnActionsSpellId DashSpell;
+    // inferred: FindEntitiesInfo: SpellId +0x40 -> DebugTurnActionsComponent.AttackSpell (+0x20,
+    // dirty bit 4).
+    AiSwarmTurnActionsSpellId AttackSpell;
+    // inferred: Optional value at +0x78 read through FUN_1816bb870 when byte +0xC8 is set; feeds
+    // DebugTurnActions MoveSpell. macOS dtor releases FixedStrings at +0x78/+0xA8 under flag
+    // +0xC8.
+    AiSwarmTurnActionsMoveSpell MoveSpell;
+    // inferred: optional flag
+    bool HasMoveSpell;
+    // inferred: FindEntitiesInfo calls eoc::spell_cast::BaseTarget::GetInteractionTarget(+0xD0);
+    // the Guid of that entity -> DebugTurnActions.Target. Same members as SE
+    // spell_cast::InitialTarget (0x70). Live: VMT, entity, position+flag, TargetingType 3..8.
+    AiSwarmTurnActionsInitialTarget Target;
+    // unknown: Live varying values.
+    uint64_t field_140;
+    // unknown: Live 18.0 / -1.0 (like MovementPoints).
+    double field_148;
+    // inferred: FindEntitiesInfo: optional vec3 at +0x150 -> DebugTurnActions.CastPosition (+0xCC,
+    // dirty bit 10).
+    glm::vec3 CastPosition;
+    // inferred: optional flag
+    bool HasCastPosition;
+    // inferred: FindEntitiesInfo: optional vec3 at +0x160 -> DebugTurnActions.ReachablePosition
+    // (+0xDC, dirty bit 11).
+    glm::vec3 ReachablePosition;
+    // inferred: optional flag
+    bool HasReachablePosition;
+    // inferred: FindEntitiesInfo compares +0x170 (stride 0xC) with DebugTurnActions.Path and
+    // copies it; macOS dtor frees +0x170. Live capacity 2..0x40.
+    Array<glm::vec3> Path;
+    // unknown: Live 0.
+    uint64_t field_180;
+    // unknown: Live 0.
+    uint64_t field_188;
 };
 
 DEFINE_TAG_COMPONENT(esv::ai::swarm, IsCalculatingComponent, ServerAiSwarmIsCalculating)
@@ -7503,6 +10026,18 @@ struct EndTheDayResultEventOneFrameComponent : public BaseComponent
     uint8_t field_0;
 };
 
+// Seen once at a level change (camp). Written by esv::camp::InteractionSystem::Update (macOS).
+struct EndTheDayStateEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerCampEndTheDayStateEvent, "esv::camp::EndTheDayStateEventOneFrameComponent")
+
+    // inferred: eoc::EEndTheDayState (4 bytes). EoCServer.dll
+    // esv::camp::InteractionSystem::ProcessSetEndTheDayStateRequests takes the last of a
+    // DynamicArray<eoc::EEndTheDayState> of requests ('only using last') and posts it; the event
+    // is in its WorldView. Live 1.
+    uint32_t State;
+};
+
 struct TriggerComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerCampTrigger, "esv::camp::TriggerComponent")
@@ -7553,6 +10088,20 @@ struct DeathActionsQueueSingletonComponent : public BaseComponent
     Array<EntityHandle> Characters;
 };
 
+// Seen once at a level change (teleport between levels).
+struct ExecuteTeleportRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCharacterExecuteTeleportRequest, "esv::character::ExecuteTeleportRequestComponent")
+
+    // inferred: bg3.exe+0x32FCD10 creates the 0x20-byte component with +0 = 0xFFC0000000000000
+    // (null handle); bg3.exe+0x32FBF00 sets +0 = *param_3 (an EntityHandle).
+    EntityHandle Entity;
+    // unknown: bg3.exe+0x32FBF00 constructs an ls::STDString at +8 from its string argument; the
+    // creator sets the SSO capacity +0x1C = 0xF. Called from bg3.exe+0x32FB160 right before
+    // LoadProtocol::LoadLevel (a level/trigger name?). Live: empty string.
+    STDString field_8;
+};
+
 DEFINE_TAG_COMPONENT(esv::character, EntityMovingComponent, ServerCharacterEntityMoving)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::character, TemplateChangedEventOneFrameComponent, ServerCharacterTemplateChangedEvent)
 
@@ -7584,6 +10133,32 @@ struct CombatLogStateComponent : public BaseComponent
     uint8_t field_0;
 };
 
+struct CombatLogEquipStatusRequestEntry
+{
+    // inferred: esv::combat_log::EquipStatusRequest +0: EquipStatusSystem copies
+    // esv::status::ApplyEventOneFrameComponent.Target (+8) here; the combat log resolves it to a
+    // NetEntity.
+    EntityHandle Target;
+    // inferred: EquipStatusRequest +8: FixedString::operator= from the status' id; becomes
+    // EquipStatusEntry +0x38.
+    FixedString StatusId;
+    // unknown: EquipStatusRequest +0x10: Guid copied from ApplyEventOneFrameComponent.field_18;
+    // becomes EquipStatusEntry +0x40.
+    Guid field_10;
+};
+
+// Born by casting self-buff spells / equipping (FalseLife, ArmorOfAgathys, Light...).
+struct EquipStatusRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCombatLogEquipStatusRequest, "esv::combat_log::EquipStatusRequestOneFrameComponent")
+
+    // inferred: EoCServer.dll esv::combat_log::EquipStatusSystem::Update fills
+    // DynamicArray<esv::combat_log::EquipStatusRequest> (stride 0x20);
+    // CombatLogSystem::ProcessEquipStatusRequests iterates it (n * 0x20) into
+    // eoc::CombatLog::EquipStatusEntry. Live: heap, capacity 1, size 1.
+    Array<CombatLogEquipStatusRequestEntry> Requests;
+};
+
 END_NS()
 
 BEGIN_NS(esv::constellation)
@@ -7601,6 +10176,95 @@ END_NS()
 
 BEGIN_NS(esv::crowds)
 
+struct AnimationPauseRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsAnimationPauseRequests, "esv::crowds::AnimationPauseRequestsSingletonComponent")
+
+    // inferred: esv::crowds::PlayPauseAnimationSystem::Update (Toolkit EoCServer.dll+0xD7ED50,
+    // WorldView<AnimationPauseRequestsSingletonComponent, AnimationPlayRequestsSingletonComponent,
+    // ...>) gets both singletons, clears them (FUN_180226330), then for crowd entities from its
+    // queries inserts the 8-byte entity handle into the set: bucket count at +8, hash = handle %
+    // count, keys appended at +0x20 (capacity +0x28, size +0x2C) with assert text
+    // ls::IndexedStorage<struct ls::ID<struct ecs::EntityHandleTraits>, mem::s_TagHashTable>,
+    // next-ids at +0x10. Adder bg3.exe+0x356B4D0 / bg3.exe+0x356B680 (called once from
+    // bg3.exe+0x356B140, each on a new entity) zeroes 0x30 bytes in HashSet shape. Live: one
+    // instance, empty.
+    HashSet<EntityHandle> Entities;
+};
+
+struct AnimationPlayRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsAnimationPlayRequests, "esv::crowds::AnimationPlayRequestsSingletonComponent")
+
+    // inferred: esv::crowds::PlayPauseAnimationSystem::Update (Toolkit EoCServer.dll+0xD7ED50,
+    // WorldView<AnimationPauseRequestsSingletonComponent, AnimationPlayRequestsSingletonComponent,
+    // ...>) gets both singletons, clears them (FUN_180226330), then for crowd entities from its
+    // queries inserts the 8-byte entity handle into the set: bucket count at +8, hash = handle %
+    // count, keys appended at +0x20 (capacity +0x28, size +0x2C) with assert text
+    // ls::IndexedStorage<struct ls::ID<struct ecs::EntityHandleTraits>, mem::s_TagHashTable>,
+    // next-ids at +0x10. Adder bg3.exe+0x356B4D0 / bg3.exe+0x356B680 (called once from
+    // bg3.exe+0x356B140, each on a new entity) zeroes 0x30 bytes in HashSet shape. Live: one
+    // instance, empty.
+    HashSet<EntityHandle> Entities;
+};
+
+// Server-only, on crowd character triggers (48 holders seen, from level load). Built by
+// esv::crowds::DetourBuilderSystem::BuildDetours (per-frame update bg3.exe+0x355CCE0) and read by
+// esv::crowds::DetourSystem::GetSplineInfo / FindNextMainSplineTarget: a map from a spline name
+// (FixedString) to the entity holding the ls::SplineComponent of that detour route.
+struct DetourCacheComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsDetourCache, "esv::crowds::DetourCacheComponent")
+
+    // inferred: EoCServer.dll+0xD98B50 DetourSystem::GetSplineInfo(world, FixedString const& name,
+    // ...): looks the name up in the component with FixedString::GetHash % *(uint32*)(comp+8)
+    // (HashSet<FixedString> lookup FUN_18027f180), takes value index i from the values at
+    // comp+0x30 (8-byte element), and resolves it with EntityWorld get-component to an object
+    // whose +8 is the SplineTemplate (ls::SplineComponent). 64 bytes = HashMap layout. Live:
+    // buckets heap / count 5, NextIds and Keys capacity 1 size 1, values heap with size 1
+    HashMap<FixedString, EntityHandle> SplinesByName;
+};
+
+// Crowd characters walking detours along splines (4 holders, idle).
+struct DetourComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsDetour, "esv::crowds::DetourComponent")
+
+    // unknown: Live 0xFFFFFFFF (null FixedString); macOS default stores w27 (-1) at +0.
+    FixedString field_0;
+    // inferred: EoCServer.dll esv::crowds::DetourSystem::FindNextMainSplineTarget passes +4 as the
+    // Vector3f& output of GetSplineInfo (spline node position). Live 0.
+    glm::vec3 TargetPosition;
+    // unknown: FindNextMainSplineTarget passes +0x10 as GetSplineInfo's float& (node value + 0.1).
+    // Live FLT_MAX.
+    float field_10;
+    // unknown: Live 1.0.
+    float field_14;
+    // inferred: GetSplineInfo's short& node index (wrapped to the spline's node count). Live -1.
+    int16_t NodeIndex;
+    // unknown: FindNextMainSplineTarget compares it with node indices and sets it to 0x7FFF or 0.
+    int16_t field_1a;
+    // unknown: FindNextMainSplineTarget tests byte +0x1C. Live 0.
+    bool field_1c;
+};
+
+// Crowd character idling at the end of a detour (lower-city crowds seen during the Shadow-cursed /
+// morgue fights in SCL_Main_A; born alone). Written and counted by
+// esv::crowds::DetourSystem::Update.
+struct DetourIdlingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsDetourIdling, "esv::crowds::DetourIdlingComponent")
+
+    // inferred: esv::crowds::DetourSystem::Update (macOS bg3_macos_x64+0x5F0E5C0; Windows
+    // EoCServer.dll+0xD99D20) adds the component when the crowd member reached its detour target,
+    // zeroes 8 bytes and stores at +0 a random value between the CrowdCharacterTrigger's floats
+    // +0xA8 and +0xAC (min/max idle time). Live 5.9..9.5.
+    float Duration;
+    // inferred: Same Update adds GetDeltaTimeForEntity to +4 each frame and ends idling when
+    // Duration <= Elapsed. Live 0..1.22.
+    float Elapsed;
+};
+
 // NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
 // seen: the member boundaries are untested
 struct DetourStopMoveToRequestsSingletonComponent : public BaseComponent
@@ -7616,6 +10280,69 @@ struct DetourStopMoveToRequestsSingletonComponent : public BaseComponent
     // esv::crowds::DetourSystem::Update (macOS index). Live (seen.py, idle): one instance, all
     // bytes zero (empty container).
     HashSet<EntityHandle> Entities;
+};
+
+struct CrowdsMoveToRequest
+{
+    // inferred: esv::crowds::CharacterMovementSystem::Update (EoCServer.dll+0xD8C530) copies
+    // value+0 (8 bytes) and value+8 (4 bytes) into esv::crowds::MoveToComponent+0 / +8 (a
+    // position; the component then gets the proxy transform).
+    glm::vec3 Target;
+    // unknown: Copied as a 4-byte value to esv::crowds::MoveToComponent+0x18
+    // (EoCServer.dll+0xD8C530); meaning not established (speed-like).
+    float field_c;
+    // unknown: Copied as one byte to esv::crowds::MoveToComponent+0x21 (EoCServer.dll+0xD8C530);
+    // the merge loop copies the whole dword, so bytes 0x11..0x13 are treated as padding.
+    uint8_t field_10;
+};
+
+struct MoveToRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsMoveToRequests, "esv::crowds::MoveToRequestsSingletonComponent")
+
+    // inferred: Container: bg3.exe creator (AddSingleton) allocates 0x40 bytes and zeroes them;
+    // its destructor bg3.exe+0x5C4870 frees the values array at +0x30 without per-element
+    // destructors (plain data) and then the key hash set (bg3.exe+0x582AD0) = HashMap with POD
+    // values. esv::crowds::CharacterMovementSystem::Update (EoCServer.dll+0xD8C530, WorldView
+    // names DetourMoveTo/MoveTo/PatrolMoveTo RequestsSingleton const) iterates keys at +0x20
+    // (count +0x2C, stride 8, hashed as uint64 and looked up as the entity whose MoveToComponent
+    // is created/updated) and values at +0x30 with stride 0x14 (scratch allocation
+    // FUN_180d8be90(n, 0x14, 4)). Key = crowd character entity. Writer:
+    // esv::crowds::BehaviourSystem::Update (macOS index: writes MoveToRequestsSingletonComponent).
+    // Live (seen.py, idle): one instance, all bytes zero (empty container).
+    HashMap<EntityHandle, CrowdsMoveToRequest> Requests;
+};
+
+struct CrowdsPatrolMoveToRequest
+{
+    // inferred: esv::crowds::CharacterMovementSystem::Update (EoCServer.dll+0xD8C530) copies
+    // value+0 (8 bytes) and value+8 (4 bytes) into esv::crowds::MoveToComponent+0 / +8 (a
+    // position; the component then gets the proxy transform).
+    glm::vec3 Target;
+    // unknown: Copied as a 4-byte value to esv::crowds::MoveToComponent+0x18
+    // (EoCServer.dll+0xD8C530); meaning not established (speed-like).
+    float field_c;
+    // unknown: Copied as one byte to esv::crowds::MoveToComponent+0x21 (EoCServer.dll+0xD8C530);
+    // the merge loop copies the whole dword, so bytes 0x11..0x13 are treated as padding.
+    uint8_t field_10;
+};
+
+struct PatrolMoveToRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsPatrolMoveToRequests, "esv::crowds::PatrolMoveToRequestsSingletonComponent")
+
+    // inferred: Container: bg3.exe creator (AddSingleton) allocates 0x40 bytes and zeroes them;
+    // its destructor bg3.exe+0x5C4870 frees the values array at +0x30 without per-element
+    // destructors (plain data) and then the key hash set (bg3.exe+0x582AD0) = HashMap with POD
+    // values. esv::crowds::CharacterMovementSystem::Update (EoCServer.dll+0xD8C530, WorldView
+    // names DetourMoveTo/MoveTo/PatrolMoveTo RequestsSingleton const) iterates keys at +0x20
+    // (count +0x2C, stride 8, hashed as uint64 and looked up as the entity whose MoveToComponent
+    // is created/updated) and values at +0x30 with stride 0x14 (scratch allocation
+    // FUN_180d8be90(n, 0x14, 4)). Key = crowd character entity. Writer:
+    // esv::crowds::PatrolSystem::Update (EoCServer.dll+0xD86770; macOS index: writes
+    // PatrolMoveToRequestsSingletonComponent). Live (seen.py, idle): one instance, all bytes zero
+    // (empty container).
+    HashMap<EntityHandle, CrowdsPatrolMoveToRequest> Requests;
 };
 
 struct CrowdsPatrolRequest
@@ -7653,8 +10380,6 @@ struct PatrolRequestsSingletonComponent : public BaseComponent
     HashMap<EntityHandle, CrowdsPatrolRequest> Requests;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct PatrolStopMoveToRequestsSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerCrowdsPatrolStopMoveToRequests, "esv::crowds::PatrolStopMoveToRequestsSingletonComponent")
@@ -7668,6 +10393,37 @@ struct PatrolStopMoveToRequestsSingletonComponent : public BaseComponent
     // esv::crowds::PatrolSystem::Update (macOS index). Live (seen.py, idle): one instance, all
     // bytes zero (empty container).
     HashSet<EntityHandle> Entities;
+};
+
+// Spawn data of a crowd proxy (Baldur's Gate lower-city crowds; born in dialogue steps together
+// with eoc::crowds::AppearanceComponent, BehaviourComponent, DeadReckoningComponent...). Written
+// by esv::crowds::SpawnSystem::CreateCrowdProxy from a SpawnSystem::SpawnRequest.
+struct SpawnComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsSpawn, "esv::crowds::SpawnComponent")
+
+    // unknown: CreateCrowdProxy (EoCServer.dll+0xD711C0) assigns request+0x1C to +0 when that
+    // FixedString is not null (it also selects a spawn mode 0/2 from it). Default -1 (Windows
+    // adder FUN_180d65170 / macOS str w26). Live always null.
+    FixedString field_0;
+    // unknown: Default 0xFFC0000000000000 (adder FUN_180d65170); CreateCrowdProxy stores the
+    // request handle at +0x28 here after validating it (an entity with a component whose ushort
+    // +0x7C is compared). Live valid handles.
+    EntityHandle field_8;
+    // inferred: CreateCrowdProxy: +0x10 = request+4 (8 bytes), +0x18 = request+0xC; request+4 is
+    // also passed as the spawn position to the proxy creation. Live world coordinates (-309.9,
+    // 7.3, 8.2 ...).
+    glm::vec3 Position;
+    // unknown: = request+0x10. Live small floats (0.06..0.21, some negative).
+    float field_1C;
+    // unknown: = request+0x14 (8-byte copy with +0x24).
+    float field_20;
+    // unknown: = request+0x18.
+    float field_24;
+    // unknown: = request byte +0x20 when field_0 is set; default 0.
+    uint8_t field_28;
+    // unknown: = request byte +0x21; default 2 (adder writes uint16 0x0200 at +0x28). Live 1 or 2.
+    uint8_t field_29;
 };
 
 struct CrowdsSpawnEvent
@@ -7697,8 +10453,6 @@ struct SpawnEventsSingletonComponent : public BaseComponent
     HashMap<EntityHandle, CrowdsSpawnEvent> Events;
 };
 
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct StopMoveToRequestsSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerCrowdsStopMoveToRequests, "esv::crowds::StopMoveToRequestsSingletonComponent")
@@ -7714,6 +10468,33 @@ struct StopMoveToRequestsSingletonComponent : public BaseComponent
     HashSet<EntityHandle> Entities;
 };
 
+// Server-only, saved (models game.crowds.v0/v1 16 bytes, v2 12 bytes align 4; no member names
+// known). Lives on crowd character triggers (esv::CrowdCharacterTrigger), up to 212 holders, from
+// level load on. Driven by esv::crowds::SpawnSystem::ProcessTriggers / SpawnCharacters
+// (EoCServer.dll, CrowdCharacterSpawnSystem.cpp): a spawn timer per trigger, the number of
+// characters it has spawned, and a flag that blocks spawning while players are near.
+struct TriggerSpawnStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCrowdsTriggerSpawnState, "esv::crowds::TriggerSpawnStateComponent")
+
+    // inferred: EoCServer.dll+0xD73760 ProcessTriggers: if (*(float*)(state+4) <
+    // *(float*)(state+0)) the trigger keeps waiting, otherwise it spawns; i.e. +0 is the time to
+    // wait before the next spawn (re-rolled with ls::Random). macOS Save copies 8 bytes (+0..+8)
+    // to the v2 model. Live floats 0 .. 24.6
+    float SpawnInterval;
+    // inferred: ProcessTriggers: *(float*)(state+4) = deltaTime + *(float*)(state+4) when no
+    // blocking query matches; compared with +0. Live floats 0 .. 2910
+    float ElapsedTime;
+    // inferred: SpawnCharacters EoCServer.dll+0xD74A30: *(ushort*)(state+8) + newCount <= trigger
+    // max (CrowdCharacterTrigger +0x7C scaled by crowd quality); ProcessTriggers compares the
+    // trigger's max with *(ushort*)(state+8). macOS Save copies a 2-byte value from +8. Live 0
+    uint16_t SpawnedCount;
+    // inferred: ProcessTriggers: *(bool*)(state+10) = distance-to-players test (fVar27 < fVar30)
+    // and spawning is skipped while it is set; written from FUN_180d72950(players, transform).
+    // macOS Save copies one byte from +0xA. Live 0
+    bool PlayersNearby;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::crowds, BehaviourRequestOneFrameComponent, ServerCrowdsBehaviourRequest)
 DEFINE_TAG_COMPONENT(esv::crowds, DeactivateCharacterComponent, ServerCrowdsDeactivateCharacter)
 DEFINE_TAG_COMPONENT(esv::crowds, DespawnWithoutCharacterComponent, ServerCrowdsDespawnWithoutCharacter)
@@ -7722,6 +10503,34 @@ DEFINE_TAG_COMPONENT(esv::crowds, DisableCharacterSpawningComponent, ServerCrowd
 END_NS()
 
 BEGIN_NS(esv::death)
+
+// Server timer on a dying character that blocks the death animation for a while (born when
+// characters were killed in 'spells-1' and dialogue fights, together with 36 other death/effect
+// types). Written by esv::death::CharacterSystem.
+struct DeathAnimationBlockComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerDeathAnimationBlock, "esv::death::DeathAnimationBlockComponent")
+
+    // inferred: bg3.exe+0x2BABAE0 (called from the per-frame update of
+    // esv::death::CharacterSystem) adds the component (creator FUN_142bacb70, 4 bytes, default 0)
+    // and sets it to 5.0 (0x40A00000); every frame it subtracts GameTime delta (+8) and removes
+    // the component when <= 0. Live 0.83..5.0.
+    float Timer;
+};
+
+// Server fallback timer for a death animation that never reports its end (born with character
+// deaths in 'spells-1' and dialogue fights). Written by esv::death::CharacterSystem.
+struct DeathAnimationFallbackTimerComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerDeathAnimationFallbackTimer, "esv::death::DeathAnimationFallbackTimerComponent")
+
+    // inferred: bg3.exe+0x2BAB330 (called from the per-frame update of
+    // esv::death::CharacterSystem) adds or fetches the component (creator FUN_142bac930, 4 bytes,
+    // default 0) and sets it to 4.0 (0x40800000); later it subtracts delta time scaled by the
+    // entity time factor and at <= 0 fires FUN_142bada70 (the fallback-finished event, cf.
+    // esv::death::AnimFallbackTimerFinishedEventOneFrameComponent). Live 2.81..4.0.
+    float Timer;
+};
 
 struct DyingWaitingForDeactivationComponent : public BaseComponent
 {
@@ -7852,10 +10661,121 @@ struct DialogStartedEventsSingletonComponent : public BaseComponent
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::dialog, CharacterJoinedDialogOneFrameComponent, ServerDialogCharacterJoinedDialog)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::dialog, CharacterLeftDialogOneFrameComponent, ServerDialogCharacterLeftDialog)
+// Rate limiting of automated dialogues (ADs) on a speaker: which AD instance runs and a cooldown
+// after it ended (act1 idle and many dialogue steps). Written by esv::dialog::ADRateLimitingSystem
+// from its RateLimitingUpdateRequest list (RequestRateLimitingDialog(Guid, ObjectSet, float,
+// float)). Sibling of ADRateLimitingHistoryComponent (SE Coverage.h).
+struct ADRateLimitingDataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerDialogADRateLimitingData, "esv::dialog::ADRateLimitingDataComponent")
+
+    // inferred: bg3.exe+0x2E14200 (called from the ADRateLimitingSystem per-frame update
+    // bg3.exe+0x2E13A00) creates the component (0x20 bytes) and copies the request's 16 bytes at
+    // element+0x10 (stride 0x38) to +0/+8; an existing component with the same 16 bytes makes the
+    // request a duplicate. RequestRateLimitingDialog's first argument is a Guid. Live: 14 distinct
+    // values over 48 instances.
+    Guid DialogId;
+    // inferred: +0x10 = the uint32 returned by the ADRateLimitingSystemHelper start call (vtable
+    // +0x10), the same id SE's ADRateLimitingHistoryEntry.DialogInstanceId holds; the update
+    // bg3.exe+0x2E14670 looks it up in the system's ended/failed id sets and zeroes it. Live small
+    // ints 0..0x4B.
+    uint32_t DialogInstanceId;
+    // inferred: bg3.exe+0x2E14670 sets +0x14 to 1 when the instance id is in the ended set
+    // (system+0x108), and only then counts the timer down; creator sets 0.
+    bool DialogEnded;
+    // inferred: Default 15.0 (0x41700000); set from the request's first float (element+0x30);
+    // bg3.exe+0x2E14670 subtracts the frame delta while DialogEnded is set and removes the
+    // component at <= 0. Live 0.017..2.0.
+    float Timer;
+    // unknown: Default 5.0 (0x40A00000); set from the request's second float (element+0x34); not
+    // read by the update. Live 5, 10, 15, 20.
+    float field_1C;
+};
 
 END_NS()
 
 BEGIN_NS(esv::drop)
+
+// One-frame request on the dropping character to spend action resources for a drop/throw ('shove-
+// throw' step); its Guid is the drop request's Guid that DropEntityExecuteSystem later finds in
+// eoc::ActionResourceSpendEventOneFrameComponent.
+struct ActionResourceSpendRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerDropActionResourceSpendRequest, "esv::drop::ActionResourceSpendRequestOneFrameComponent")
+
+    // inferred: bg3.exe creator FUN_142e31180 allocates 0x10 bytes, no destructor, and initialises
+    // them from a 16-byte global (null Guid). Live values equal DropEntityStateComponent+0x30 and
+    // DropEntityExecutionComponent+0 of the same character;
+    // ProcessWaitingForActionResourceSpending (EoCServer.dll+0x9B4590) matches that Guid against
+    // ActionResourceSpendEvent elements (stride 0x18, Guid at +0).
+    Guid RequestGuid;
+};
+
+// On the dropping character during a drop/throw ('shove-throw' step): the entities being dropped.
+struct DropEntitiesListComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerDropEntitiesList, "esv::drop::DropEntitiesListComponent")
+
+    // inferred: DropEntityExecuteSystem::ProcessWaitingForActionResourceSpending
+    // (EoCServer.dll+0x9B4590) walks it with stride 8 calling IsEntityAlive and adds
+    // DropEntityTargetComponent to each; DropEntityEndUpSystem::ProcessDropStateCreation
+    // (EoCServer.dll+0x9A7780) counts its alive handles into DropEntitiesToProcessComponent. macOS
+    // has esv::drop::DropEntitiesListComponent::~DropEntitiesListComponent (frees the buffer).
+    // Live: heap pointer, capacity 1, size 1.
+    Array<EntityHandle> Entities;
+};
+
+// On the dropping character ('shove-throw' step): how many dropped entities have not yet ended up.
+struct DropEntitiesToProcessComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerDropEntitiesToProcess, "esv::drop::DropEntitiesToProcessComponent")
+
+    // inferred: esv::drop::DropEntityEndUpSystem::ProcessDropStateCreation
+    // (EoCServer.dll+0x9A7780) counts the alive handles of DropEntitiesListComponent and writes
+    // the count to +0 of the added component (FUN_1809a3660); the update then works with
+    // HashMap<EntityHandle, unsigned int> of finished counts. Live: 1 (one thrown entity).
+    uint32_t Count;
+};
+
+// Put on the dropping character when the drop is executed (action resources spent; 'shove-throw'
+// step). Written by esv::drop::DropEntityExecuteSystem::ProcessWaitingForActionResourceSpending
+// from its DropEntityStateComponent.
+struct DropEntityExecutionComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerDropEntityExecution, "esv::drop::DropEntityExecutionComponent")
+
+    // inferred: ProcessWaitingForActionResourceSpending (EoCServer.dll+0x9B4590) adds the
+    // component (FUN_1809b1eb0) and copies state+0x30/+0x38 (the request Guid matched against
+    // ActionResourceSpendEvent) into +0/+8. Live equals DropEntityState+0x30.
+    Guid RequestGuid;
+    // inferred: Same function: +0x10 = state+0x10 (8 bytes), +0x18 = state+0x18. Live
+    // 56.25/17.24/104.8 like the state.
+    glm::vec3 Position;
+};
+
+struct DropEntityFinishedEntry
+{
+    // inferred: esv::inventory_transfer::TransferFinishedDescription (name from the IndexedStorage
+    // assert in ProcessFinishedEvents, EoCServer.dll+0x9A7AD0): +0 = the entity whose moving-
+    // finished event was processed (query entity).
+    EntityHandle Entity;
+    // unknown: +8 = dword +8 of the entity's moving-finished event component (16-byte stride; a
+    // byte at +0xC of that event decides whether the entry is added).
+    int32_t field_8;
+};
+
+// One-frame event on the dropper when dropped entities finished moving ('shove-throw' step); built
+// by esv::drop::DropEntityEndUpSystem::ProcessFinishedEvents.
+struct DropEntityFinishedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerDropEntityFinishedEvent, "esv::drop::DropEntityFinishedEventOneFrameComponent")
+
+    // inferred: bg3.exe creator FUN_142e36770 zeroes 16 bytes and registers destructor
+    // FUN_1405946c0 (frees an array buffer, no element destructors). ProcessFinishedEvents appends
+    // 16-byte TransferFinishedDescription elements (stride 0x10) to a HashMap<EntityHandle,
+    // DynamicArray<...>> keyed by the dropper. Live: heap pointer, capacity 1, size 1.
+    Array<DropEntityFinishedEntry> Entities;
+};
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::drop, DropEntityExecutionFailedOneFrameComponent, ServerDropEntityExecutionFailed)
 DEFINE_TAG_COMPONENT(esv::drop, DropFinishedEventComponent, ServerDropFinishedEvent)
@@ -7902,6 +10822,62 @@ END_NS()
 
 BEGIN_NS(esv::escort)
 
+struct EscortGroupsGroup
+{
+    // inferred: esv::escort::Group (name from macOS ls::HashMap<ls::FixedString,
+    // esv::escort::Group> in FindNewLeader / RemoveMember(HashMap<FixedString, Group>&,
+    // EntityHandle, FixedString const&)). macOS ~GroupsSingletonComponent destroys each value with
+    // HashTable<ls::ID<EntityHandleTraits>>::~HashTable at stride 0x30; Windows destructor
+    // bg3.exe+0x6D11C0 (registered by bg3.exe+0x27038E0) walks values at +0x30 with stride 0x30
+    // calling the same hash-set destructor FUN_140582ad0.
+    HashSet<EntityHandle> Members;
+};
+
+// Server singleton of escort groups: group name -> members. Came to life in the SCL drider-caravan
+// dialogue (escort/follow setup) together with esv::escort::FollowerComponent,
+// MemberChangedOneFrameComponent, HasStragglersComponent and others.
+struct GroupsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerEscortGroups, "esv::escort::GroupsSingletonComponent")
+
+    // inferred: 64 bytes: keys = FixedString (macOS HashMap<ls::FixedString, esv::escort::Group>;
+    // destructor ends with HashTable<FixedString>::~HashTable on +0), values array at +0x30 with
+    // size at +0x2C and stride 0x30 (bg3.exe+0x6D11C0). Live (1 instance): all zero - empty map at
+    // sample time.
+    HashMap<FixedString, EscortGroupsGroup> Groups;
+};
+
+// On an escort follower that is actively following (SCL drider caravan / hyena dialogues; born
+// with esv::escort::RequestFollowComponent).
+struct IsFollowingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerEscortIsFollowing, "esv::escort::IsFollowingComponent")
+
+    // inferred: esv::escort::FollowerSystem::Update (EoCServer.dll+0xCED460) passes the address of
+    // the component's dword (stride 4) as the unsigned int& of the follower helper's vtable+8 call
+    // = esv::escort::FollowerHelper::StartFollowing(WorldView<esv::Character>&, EntityHandle,
+    // EntityHandle, unsigned int&) (macOS name), and passes the value to vtable+0x10 =
+    // StopFollowing(..., EntityHandle, unsigned int). Live: 0x17B3..0x1847 (small ids of the
+    // follow task).
+    uint32_t FollowId;
+};
+
+// One-frame event on a character whose escort group changed (SCL drider caravan dialogue; born
+// with esv::escort::GroupsSingletonComponent, FollowerComponent, ...). Read by FindNewLeader.
+struct MemberChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerEscortMemberChanged, "esv::escort::MemberChangedOneFrameComponent")
+
+    // inferred: esv::escort::MemberSystem::Update (EoCServer.dll+0xCE6000) adds the component
+    // (FUN_180ce4440) when the requested group differs from the current
+    // esv::escort::MemberComponent group and assigns +0 = the current group (or the empty
+    // FixedString when the character had no MemberComponent). Live 0xFFFFFFFF (no previous group).
+    FixedString OldGroup;
+    // inferred: Same place: +4 = the requested group; a null group removes MemberComponent,
+    // otherwise MemberComponent.Group is set to it. Live valid FixedStrings (0x02400230...).
+    FixedString NewGroup;
+};
+
 DEFINE_TAG_COMPONENT(esv::escort, GroupRequestCompletedComponent, ServerEscortGroupRequestCompleted)
 DEFINE_TAG_COMPONENT(esv::escort, LeaderPriorityRequestCompletedComponent, ServerEscortLeaderPriorityRequestCompleted)
 DEFINE_TAG_COMPONENT(esv::escort, LeaderRequestCompletedComponent, ServerEscortLeaderRequestCompleted)
@@ -7909,9 +10885,166 @@ DEFINE_TAG_COMPONENT(esv::escort, RequestFollowComponent, ServerEscortRequestFol
 
 END_NS()
 
+BEGIN_NS(esv::exp)
+
+struct AvailableLevelChangedEntry
+{
+    // inferred: esv::exp::ExperienceSystem::SignalAvailableLevelChange (EoCServer.dll+0x700F30)
+    // builds eoc::exp::ObjectLevelChangedEvent: +0 = the entity handle argument.
+    EntityHandle Entity;
+    // inferred: +8 = the int argument; the function returns an error without an event when it
+    // equals the AvailableLevelComponent level, so it is the level before the change.
+    int32_t OldLevel;
+    // inferred: +0xC = AvailableLevelComponent.Level (the current, new level).
+    int32_t NewLevel;
+};
+
+// One-frame event when a character's available level changes (level-up became possible after XP
+// from dialogues/fights). Holds eoc::exp::ObjectLevelChangedEvent entries; read by
+// esv::progression::ManagementSystem::Update.
+struct AvailableLevelChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerExpAvailableLevelChanged, "esv::exp::AvailableLevelChangedOneFrameComponent")
+
+    // inferred: 16-byte DynamicArray (bg3.exe creator FUN_142b75d70 zeroes it, array destructor).
+    // UpdateExperience (EoCServer.dll+0x701E50) collects
+    // DynamicArray<eoc::exp::ObjectLevelChangedEvent> (stride 0x10) from
+    // SignalAvailableLevelChange; component = that list by name. Live (26 instances): heap
+    // pointer, capacity 1, size 1.
+    Array<AvailableLevelChangedEntry> Events;
+};
+
+struct XPGainedEventEntry
+{
+    // inferred: UpdateExperience (EoCServer.dll+0x701E50) appends eoc::exp::ObjectGainedXPEvent
+    // (name from its IndexedStorage assert, stride 0x10): +0 = the entity of the
+    // EntityView<ExperienceComponent, AvailableLevelComponent> (view+0x28).
+    EntityHandle Entity;
+    // inferred: +8 = the int XP argument of UpdateExperience (added to ExperienceComponent's
+    // current/next/total experience).
+    int32_t Amount;
+    // unknown: +0xC = ExperienceComponent byte +0xC (SE ExperienceComponent.field_28), set to 1
+    // when the gain reached the level cap branch, 0 otherwise.
+    bool field_C;
+};
+
+// One-frame event of experience gained (dialogue XP rewards and kills: born in dialog/spell
+// steps). Holds the eoc::exp::ObjectGainedXPEvent list built by
+// esv::exp::ExperienceSystem::UpdateExperience.
+struct XPGainedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerExpXPGainedEvent, "esv::exp::XPGainedEventOneFrameComponent")
+
+    // inferred: 16-byte DynamicArray (bg3.exe creator FUN_142b75c20 zeroes it and registers an
+    // array destructor). Element type eoc::exp::ObjectGainedXPEvent from the
+    // ExperienceSystem::UpdateExperience signature (DynamicArray<eoc::exp::ObjectGainedXPEvent>&);
+    // that the component wraps this array is inferred from the name. Live (48 instances): heap
+    // pointer, capacity 1, size 1.
+    Array<XPGainedEventEntry> Events;
+};
+
+END_NS()
+
 BEGIN_NS(esv::expertise)
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::expertise, ExpertiseUpdatedEventOneFrameComponent, ServerExpertiseUpdatedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::falling)
+
+struct FallingDataActionOriginator
+{
+    // inferred: Same members as SE ActionOriginator (ExposedTypes.h). LEGACY_RequestFallingStarted
+    // assigns eoc::ActionOriginator(Guid::Generate()) to component+0.
+    Guid ActionGuid;
+    // inferred: SE ActionOriginator.PassiveId; macOS default -1 (d2 store at +0x10); live null.
+    FixedString PassiveId;
+    // inferred: SE ActionOriginator.StatusId; live null.
+    FixedString StatusId;
+    // inferred: SE ActionOriginator.InterruptId; macOS default w7=-1 at +0x18; live null.
+    FixedString InterruptId;
+    // inferred: SE ActionOriginator.CanApplyConcentration (default true); macOS strb 1 at +0x1C;
+    // live 1.
+    bool CanApplyConcentration;
+};
+
+struct FallingDataSpellId
+{
+    // inferred: Same members as SE SpellId (ExposedTypes.h, SpellMetaId + Prototype).
+    // LEGACY_RequestFallingStarted: eoc::spell::SpellId::operator=(component+0x28, request+8).
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SE SpellSourceType (1 byte); macOS default 0x17 (Sentinel) at component+0x30.
+    uint8_t SourceType;
+    // inferred: SE SpellMetaId.Source; live zero.
+    Guid Source;
+    // inferred: SE SpellMetaId.ProgressionSource; live zero.
+    Guid ProgressionSource;
+    // inferred: SE SpellId.Prototype; LEGACY_RequestFallingStarted logs component+0x58 as 'Spell'
+    // and passes it to SpellPrototypeManager::GetPrototype.
+    FixedString Prototype;
+};
+
+// Server state of a falling entity (jumps, shoves, falls; born with ecl::jump Takeoff/Land events
+// and ecl::Projectile). Created and updated by esv::FallingSystem (LEGACY_RequestFallingStarted,
+// UpdateFallingComponents, ProcessStopFallingRequest, DamageHitEntities, ForceOnImpact). macOS
+// AddComponent<esv::falling::DataComponent, float, eoc::spell::SpellId, EAbility, bool,
+// EntityHandle> names the constructor arguments.
+struct DataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerFallingData, "esv::falling::DataComponent")
+
+    // inferred: EoCServer.dll+0x669DF0 LEGACY_RequestFallingStarted:
+    // eoc::ActionOriginator::operator=(component, ActionOriginator(Guid::Generate())). Equals SE
+    // ActionOriginator. Live: random Guid, three null FixedStrings, byte 1.
+    FallingDataActionOriginator Originator;
+    // inferred: LEGACY_RequestFallingStarted: if the request's handle at +0x50 is valid it is
+    // stored at component+0x20 (last AddComponent argument, ls::ID<EntityHandleTraits>; the debug
+    // log prints it as 'Source'). macOS default null handle.
+    EntityHandle Source;
+    // inferred: SpellId::operator=(component+0x28, request+8); equals SE eoc::spell::SpellId (0x38
+    // bytes).
+    FallingDataSpellId Spell;
+    // inferred: component+0x60 = request byte +0x40, the EAbility argument of the macOS
+    // AddComponent signature (SE enum AbilityId, 1 byte here). macOS default 0.
+    uint8_t Ability;
+    // unknown: macOS default zero (stur q1 at +0x68); live always 0; not seen written.
+    uint64_t field_68;
+    // unknown: macOS default zero; live always 0.
+    uint64_t field_70;
+    // inferred: LEGACY_RequestFallingStarted clears component+0x78 (FUN_180226330) and inserts the
+    // group characters of the faller when the spell prototype has flag 4 (FUN_18021e210 =
+    // HashSet<EntityHandle> insert). Live: bucket pointer and count 5, key/next arrays with 1
+    // element in 4 of 48 instances. Name is a guess (entities excluded from/handled by the fall
+    // damage).
+    HashSet<EntityHandle> HitEntities;
+    // unknown: DamageHitEntities (EoCServer.dll+0x668AE0) computes (StartHeight - current height)
+    // + this; ForceOnImpact (EoCServer.dll+0x669B30) also reads it: an extra fall distance. Live
+    // 0.
+    float field_A8;
+    // inferred: UpdateFallingComponents (EoCServer.dll+0x66C470) adds GetDeltaTimeForEntity to
+    // +0xAC every frame and aborts the fall when MaxFallTime <= it. Live 0.
+    float FallTime;
+    // inferred: Compared with FallTime; assert text 'has been falling for longer than %.2f seconds
+    // and will now be aborted' prints it. Live always FLT_MAX (macOS default d8).
+    float MaxFallTime;
+    // inferred: LEGACY_RequestFallingStarted keeps the larger of the old and new start height at
+    // +0xB4 ('Start Height' in its log). Live 0.22..10.07.
+    float StartHeight;
+    // unknown: = request byte +0x48 (the bool argument of AddComponent). macOS default 1; live
+    // 0/1.
+    bool field_B8;
+    // inferred: UpdateFallingComponents logs 'Update deferred removal' when set;
+    // ProcessStopFallingRequest (EoCServer.dll+0x66BA70) prints it as 'Deferred: %s' and only
+    // stops falling when 0. LEGACY_RequestFallingStarted clears +0xB9/+0xBA.
+    bool DeferredRemoval;
+    // unknown: Cleared together with +0xB9 by LEGACY_RequestFallingStarted (uint16 store).
+    bool field_BA;
+    // unknown: Set to 1 by LEGACY_RequestFallingStarted; when set, ProcessStopFallingRequest calls
+    // DamageHitEntities and ForceOnImpact on landing (apply impact). macOS default 1.
+    bool field_BB;
+};
 
 END_NS()
 
@@ -8306,6 +11439,26 @@ struct OriginalOwnerUpdateRequestsSingletonComponent : public BaseComponent
     HashMap<EntityHandle, EntityHandle> Requests;
 };
 
+// Server one-frame marker put on an entity that reached an inventory through Osiris ToInventory
+// with the notification flag (the 'important item received' popup).
+// esv::inventory::EntityReceivalNotificationSystem (SE: ServerInventoryReceivalNotification,
+// HashMap<EntityHandle, EntityHandle> Notify) collects pairs in LEGACY_NotifyFromOsiris(item,
+// receiver) and its per-frame update bg3.exe+0x350B600 adds this component and writes the paired
+// handle. Seen.py context: shove-throw (Osi.ToInventory(dagger, host, 1, 1, 0)), dialogues that
+// hand out items, crime-theft.
+struct ReceivedAsImportantOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerInventoryReceivedAsImportant, "esv::inventory::ReceivedAsImportantOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x350BC80 allocates 8 bytes, default 0xffc0000000000000 (null
+    // handle). bg3.exe+0x350B600 (per-frame update of EntityReceivalNotificationSystem): for each
+    // alive key handle of its list it calls 0x350BC80 and stores the paired value. Toolkit
+    // EoCServer.dll+0x14C4220 scr::ToInventory calls LEGACY_NotifyFromOsiris(item handle, target
+    // character handle), so the map is item -> receiver and the stored value is the receiving
+    // character. Live (9 instances): valid entity handles.
+    EntityHandle Receiver;
+};
+
 // NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
 // situation that creates it
 struct ShapeshiftAddedEquipmentComponent : public BaseComponent
@@ -8337,6 +11490,29 @@ struct ShapeshiftUnequippedEquipmentComponent : public BaseComponent
     // component on a match (the item is then equipped back). Same shape as
     // esv::inventory::ShapeshiftAddedEquipmentComponent.
     Guid ShapeshiftState;
+};
+
+// Server one-frame event of esv::inventory::StackSystem: an entity was split from a stack (log
+// 'Marking entity %s as split from stack entity %s' in the Toolkit ProcessStackChanges right
+// before the add). Written by bg3.exe+0x34A9190 = esv::inventory::StackSystem::ProcessStackChanges
+// from FrameData list +0x110/+0x120 (element stride 24); read by esv::TagSystem /
+// esv::ProjectileInitializationSystem. EntitySplitEventOneFrameComponent is filled from the same
+// 24-byte element type. Seen.py context: item splitting during shove-throw / item tests.
+struct StackSplitEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerInventoryStackSplitEvent, "esv::inventory::StackSplitEventOneFrameComponent")
+
+    // unknown: Creator bg3.exe+0x34B2C40 (AllocRaw 0x18) zeroes +0 and +8. ProcessStackChanges
+    // copies element +0x08..+0x17 into component +0x00..+0x0F as four dwords (bg3.exe+0x34A9190
+    // lines ~406-414, EoCServer.dll+0xF4E980 same). Live (5 instances): always 0. 16 bytes that
+    // default to 0, not 0xffc0.. - possibly a Guid; not established.
+    uint64_t field_0;
+    // unknown: Second half of the 16 bytes above (element +0x10..+0x17). Live: always 0.
+    uint64_t field_8;
+    // inferred: Creator default 0xffc0000000000000 at +0x10; ProcessStackChanges writes element +0
+    // (a 64-bit handle) to +0x10. Live: entity handles (0x018000xx/0x0200xxxx high dwords). Either
+    // the stack or the split-off entity (log names both); not established which.
+    EntityHandle Entity;
 };
 
 DEFINE_TAG_COMPONENT(esv::inventory, DeferredCharacterDropAnimationComponent, ServerInventoryDeferredCharacterDropAnimation)
@@ -8389,6 +11565,41 @@ struct TransferListsSingletonComponent : public BaseComponent
 END_NS()
 
 BEGIN_NS(esv::item)
+
+// Server state of esv::item::DestructionSystem (macOS index: only writer): an item being destroyed
+// waits for its fade-out / destruction effect to finish (Toolkit DestructionSystem::Update helper
+// logs 'Can't play fade-out effect (%s) on item destruction: %s'). Seen.py context: item-destroy,
+// spells that destroy items, level events.
+struct DestroyingWaitingForEffectComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerItemDestroyingWaitingForEffect, "esv::item::DestroyingWaitingForEffectComponent")
+
+    // inferred: Creator bg3.exe+0x33D00D0 allocates 4 bytes, default 0. bg3.exe+0x33CFE20 reads
+    // the float, removes the waiting state when it is <= 0.0, otherwise stores value - GameTime
+    // delta (param_2 +8). Live (10): 1.5..2.49 s.
+    float TimeLeft;
+};
+
+// Server one-frame event on an item whose inventory move finished. Added by the per-frame update
+// of esv::ItemManager (bg3.exe+0x33A3990) for every entry of a local list (entity key + 16-byte
+// value); read by esv::pickup::PickUpExecutionFinishedSystem::Update (macOS index). A character
+// twin esv::character::EntityMovingFinishedEventOneFrameComponent exists. Seen.py context: item
+// moves (pick-up / ToInventory).
+struct EntityMovingFinishedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerItemEntityMovingFinishedEvent, "esv::item::EntityMovingFinishedEventOneFrameComponent")
+
+    // unknown: Creator bg3.exe+0x33B4820 (AllocRaw 0x10) default 0xffc0000000000000; ItemManager
+    // update bg3.exe+0x33A3990 line ~163 copies a 64-bit handle from the list value +0. Live (3):
+    // entity handles. Probably the target inventory / mover; not established.
+    EntityHandle field_0;
+    // inferred: Creator default 1; bg3.exe+0x33A3990 line ~166-167 writes
+    // esv::Item::GetAmount(item) here. Live: always 1.
+    int32_t Amount;
+    // unknown: Creator default 2; bg3.exe+0x33A3990 line ~164 copies a byte from the list value +8
+    // (an enum: result / move kind?). Live: 0.
+    uint8_t field_C;
+};
 
 // Event entity created by the equipment system when an item is equipped (seen alive in the
 // equipment, shove-throw, spells and death situations, where goblins were spawned with a longsword
@@ -8541,6 +11752,39 @@ END_NS()
 
 BEGIN_NS(esv::item::animation)
 
+// Server per-item float timer of esv::item::animation::StateTransitionSystem: Toolkit
+// EoCServer.dll+0x13AF810 StateTransitionSystem::EvaluateFallbackTimers walks it
+// (WorldView<FallbackTimerComponent, StateChangedEventOneFrameComponent, StateComponent, ...>);
+// FinalizeState (EoCServer.dll+0x13B03A0) takes it as an optional view member. Server twin of
+// ecl::item::animation::FallbackTimerComponent (layouts/alive: float Time). A fallback for item
+// animations that never report completion (doors, chests). Savegame model
+// ls::model::game::item::animation::v0::FallbackTimerComponent.
+struct FallbackTimerComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerItemAnimationFallbackTimer, "esv::item::animation::FallbackTimerComponent")
+
+    // inferred: Registry size 4; same 4-byte float as the client twin
+    // (ecl::item::animation::FallbackTimerComponent.Time). FinalizeState gets a float* from the
+    // view (FUN_1813ad890) for it. Live (48): 0..3.74, counting time.
+    float Time;
+};
+
+// Server: an item animation state request that is held back while the item is inactive or off-
+// stage (Toolkit esv::item::animation::RequestsSystem::FinalizeRequests logs 'Active added to
+// Pending item: (%s)', 'Offstage removed from Pending item: (%s)', 'Request in same frame,
+// ignoring pending state'). Written by RequestsSystem::Update (macOS index). Savegame Ops with
+// esv::item::animation::Loader.
+struct PendingRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerItemAnimationPendingRequest, "esv::item::animation::PendingRequestComponent")
+
+    // inferred: Registry size 2 = one eoc::item::animation::EAnimationState (16-bit enum, see
+    // esv.item.animation.StateComponent / RequestSingletonComponent HashMap<EntityHandle,
+    // uint16_t> in layouts/alive). Live (1): 4, the usual state value of item animation
+    // components.
+    uint16_t State;
+};
+
 // Server singleton: requested item animation states per item (doors, chests, levers),
 // ls::HashMap<EntityHandle, eoc::item::animation::EAnimationState>. Written by
 // esv::item::animation::RequestsSystem, read by esv::item::animation::StateTransitionSystem.
@@ -8557,6 +11801,21 @@ struct RequestSingletonComponent : public BaseComponent
     // bucket count 0x2F/0x185 at +8, keys cap 0x20/0x100 at +0x18 and +0x28, values count at +0x38
     // - the 64-byte HashMap shape.
     HashMap<EntityHandle, uint16_t> Requests;
+};
+
+// Server one-frame event: an item's animation state changed (door/chest opened, closed ...). Added
+// by Toolkit EoCServer.dll+0x13B03A0 esv::item::animation::StateTransitionSystem::FinalizeState
+// after 'transitioning to (%s)'; read by
+// esv::invisibility::ChangesSystem::ProcessItemAnimationStateChanges (macOS index).
+struct StateChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerItemAnimationStateChangedEvent, "esv::item::animation::StateChangedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x35A3260 allocates 2 bytes, default 4. In FinalizeState the added
+    // component (FUN_1813acd60) gets StateComponent +2 (CurrentState) before the transition; then
+    // StateComponent +4 = old +2 and +2 = the new state. So it carries the state left
+    // (eoc::item::animation::EAnimationState, 16-bit). Live (3): 4, 6, 7.
+    uint16_t PreviousState;
 };
 
 // Server per-item animation state machine (doors, chests, levers): three 16-bit
@@ -8650,9 +11909,74 @@ END_NS()
 
 BEGIN_NS(esv::lock)
 
+// Server one-frame event on a lock (door/chest) that was just unlocked. Written by
+// esv::lock::LockSystem::FinalizeLockRequests (macOS index; bg3.exe helper 0x2D45320 called from
+// 0x2D45B50). Seen.py context: locked:<chest/door> situations (unlocking with a key or by script).
+struct UnlockedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerLockUnlockedEvent, "esv::lock::UnlockedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2D475D0 allocates 8 bytes, default null handle.
+    // bg3.exe+0x2D45320 takes a variant (index 0 = FixedString key id, index 1 = EntityHandle);
+    // the handle local starts as 0xffc0000000000000 and only for variant 1 is set to the variant's
+    // entity (the key item); after a successful unlock it calls 0x2D475D0 on the lock entity and
+    // writes that handle. Live (2 instances): one null, one valid handle - matches unlocking by
+    // key name vs key item.
+    EntityHandle Key;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::lock, ActiveRollRequestOneFrameComponent, ServerLockActiveRollRequest)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::lock, AnimationRequestOneFrameComponent, ServerLockAnimationRequest)
 DEFINE_TAG_COMPONENT(esv::lock, StateChangeComponent, ServerLockStateChange)
+
+END_NS()
+
+BEGIN_NS(esv::lookat)
+
+// Server one-frame event: an entity got a new look-at target. Written by bg3.exe+0x2B41AB0 (called
+// from the per-frame update of esv::lookat::StateSystem, bg3.exe+0x238BFF0) from the last element
+// (stride 0x28) of a per-entity request list; the same id and time travel into
+// esv::lookat::LifetimeComponent. Shape mirrors eoc::lookat::TargetComponent (EntityHandle Target
+// + FixedString). Seen.py context: dialogues and fights (characters turning to look at each
+// other).
+struct ChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerLookAtChanged, "esv::lookat::ChangedOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2B431B0 (AllocRaw 0x20) default null handle; 0x2B41AB0 checks
+    // the request's handle is alive, then writes it here. Same first member as
+    // eoc::lookat::TargetComponent.Target. Live: entity handles.
+    EntityHandle Target;
+    // unknown: Creator default 0xFFFFFFFF; 0x2B41AB0 copies request +8 with FixedString
+    // IncRef/DecRef. Like eoc::lookat::TargetComponent field_8 (bone/attachment name?). Live:
+    // always empty (0xFFFFFFFF).
+    FixedString field_8;
+    // inferred: Creator default 0x7f7fffff (FLT_MAX); 0x2B41AB0 copies request +0x20. Live:
+    // 2.3..2.5 s or 9999999 (endless); LifetimeComponent's float holds the same values counting
+    // down.
+    float Duration;
+    // inferred: Creator zeroes +0x10/+0x18; 0x2B41AB0 copies 16 bytes from request +0x10, the
+    // value 0x2B419C0 compares. Live: random 16-byte values, the same set as
+    // esv::lookat::LifetimeComponent +0 (request id).
+    Guid Id;
+};
+
+// Server component of esv::lookat::StateSystem: how long the current look-at request of an entity
+// still lasts. Holds the request id and a timer; its values match
+// esv::lookat::ChangedOneFrameComponent (+0x10 id, +0xC duration). Seen.py context: dialogues and
+// fights.
+struct LifetimeComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerLookAtLifetime, "esv::lookat::LifetimeComponent")
+
+    // inferred: Creator bg3.exe+0x2B42C30 (AllocRaw 0x18) zeroes +0 and +8. Live (48): random
+    // 16-byte values, the same set of values as ChangedOneFrameComponent +0x10 (look-at request
+    // id).
+    Guid Id;
+    // inferred: Creator default 0x7f7fffff (FLT_MAX). Live: 1.47..2.16 s or 9999999 - below the
+    // Duration of the matching ChangedOneFrameComponent (2.3..2.5), so a countdown.
+    float TimeLeft;
+};
 
 END_NS()
 
@@ -8682,6 +12006,32 @@ struct EnterAttackRangeEventOneFrameComponent : public BaseComponent
     uint8_t field_1C;
 };
 
+// Server event (registry does not mark it one-frame) emitted when a moving entity leaves the
+// attack range of an entity that can react (attacks of opportunity). Twin of
+// esv::move::EnterAttackRangeEventOneFrameComponent (layouts/alive, status confirmed): both are
+// written by esv::move::ReactionSystem::TriggerInAttackRangeChangedEvents (macOS index: the only
+// writer) from the same InAttackRangeChangedEventData and declared together in bg3.exe+0x2E227B0.
+// Seen in fights / shove-throw / spell steps whenever something moved near enemies.
+struct LeaveAttackRangeEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerMoveLeaveAttackRangeEvent, "esv::move::LeaveAttackRangeEventOneFrameComponent")
+
+    // inferred: Same layout as EnterAttackRangeEventOneFrameComponent.Observer:
+    // EoCServer.dll+0x422760 TriggerInAttackRangeChangedEvents builds
+    // InAttackRangeChangedEventData (stride 0x20) with +0 = the candidate reactor. Live (43
+    // instances): entity handles.
+    EntityHandle Observer;
+    // inferred: As in EnterAttackRangeEvent: +8 = the moving entity (EntityView param +0x38).
+    // Live: entity handles, different from +0.
+    EntityHandle Mover;
+    // inferred: As in EnterAttackRangeEvent: three floats from the candidate +0x10/+0x18. Live:
+    // world coordinates (x 24..55, y 0.1..3.9, z 21..140 / negative).
+    glm::vec3 Position;
+    // unknown: As in EnterAttackRangeEvent: low byte from candidate +0x20. Live low byte
+    // 00/01/03/8e (upper bytes stack leftovers).
+    uint8_t field_1C;
+};
+
 END_NS()
 
 BEGIN_NS(esv::multiplayer)
@@ -8701,6 +12051,27 @@ DEFINE_TAG_COMPONENT(esv::multiplayer, UserLoadedLevelComponent, ServerMultiplay
 
 END_NS()
 
+BEGIN_NS(esv::osiris)
+
+// Server one-frame request from Osiris story scripts to switch an entity's Anubis (AI behaviour)
+// config. Added by the per-frame update of esv::LegacyRequestProxySystem (bg3.exe+0x3148B50) from
+// queued legacy requests; a related ls::anubis::ScriptCmdChangeAnubisConfigOneFrameComponent
+// exists. Seen.py context: level events (S_GOB_SpiderNest_EventTrigger), level changes, dialogues,
+// scenes - story scripts changing AI.
+struct ChangeAnubisConfigRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerOsirisChangeAnubisConfigRequest, "esv::osiris::ChangeAnubisConfigRequestOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x314B420 (AllocRaw 0x18) zeroes 24 bytes, then moves a string in:
+    // copies 16 bytes (inline buffer / heap pointer) and the 8-byte size/capacity pair from its
+    // argument, resetting the source to an empty SSO string (size 0, capacity 0xF).
+    // bg3.exe+0x3148B50 builds that argument with ls::STDString::STDString(char*). Live (24): +0
+    // heap pointers (or inline text), +0x10 size 13..35, +0x14 capacity 15..47.
+    STDString Config;
+};
+
+END_NS()
+
 BEGIN_NS(esv::ownership)
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::ownership, OwnershipChangedEventOneFrameComponent, ServerOwnershipChangedEvent)
@@ -8708,6 +12079,81 @@ DEFINE_ONEFRAME_TAG_COMPONENT(esv::ownership, OwnershipChangedEventOneFrameCompo
 END_NS()
 
 BEGIN_NS(esv::party)
+
+// Server event (registry does not mark it one-frame) of esv::party::DataSystem (macOS index:
+// writers DataSystem::Update / ProcessRecipeRequests): a party member was attached to another
+// group. Created on a fresh event entity by bg3.exe+0x2BC2690 when the old and new 16-byte group
+// values differ; read by esv::StoryCharacterEventManager::Init (Osiris events). Seen.py context:
+// party changes (recruiting / dismissing companions, summons).
+struct AttachedToGroupEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPartyAttachedToGroupEvent, "esv::party::AttachedToGroupEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2BC5370 (AllocRaw 0x18) default null handle at +0;
+    // bg3.exe+0x2BC2690 line ~104 writes the member entity. Live (6): entity handles.
+    EntityHandle Entity;
+    // inferred: Creator zeroes +8/+0x10; bg3.exe+0x2BC2690 returns early when param_5 == param_6
+    // (two 16-byte values compared as two qwords) and writes param_6 (the new value) here. 16-byte
+    // value compared and copied as a pair of qwords: a group Guid. Live: always zero (attached to
+    // the default/empty group).
+    Guid Group;
+};
+
+// Server event (registry does not mark it one-frame) of esv::party::DataSystem: an entity moved
+// from one party to another. Created on a fresh event entity by bg3.exe+0x2BC1DA0, which also
+// creates/updates eoc::party::MemberComponent (its Party handle at +0x18 is the new party); read
+// by esv::StoryCharacterEventManager::Init. Seen.py context: party changes (recruit / dismiss /
+// summon).
+struct EntityChangedPartyEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPartyEntityChangedPartyEvent, "esv::party::EntityChangedPartyEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2BC47C0 (AllocRaw 0x18) sets all three handles to null.
+    // bg3.exe+0x2BC1DA0 line ~228 writes param_5, the entity whose MemberComponent is checked.
+    // Live (11): entity handles.
+    EntityHandle Entity;
+    // inferred: bg3.exe+0x2BC1DA0 line ~229 writes lVar19 = the Party handle (+0x18) of the
+    // entity's existing eoc::party::MemberComponent (null when it had none). Live: one valid
+    // handle, others null.
+    EntityHandle OldParty;
+    // inferred: bg3.exe+0x2BC1DA0 line ~230 writes *param_3, the party handle it stores into
+    // MemberComponent +0x18; the event is only raised when it differs from OldParty. Live: valid
+    // handles or null.
+    EntityHandle NewParty;
+};
+
+// Server event (registry does not mark it one-frame) of
+// esv::party::DataSystem::ProcessRecipeRequests (bg3.exe+0x2BD0DA0 / Toolkit
+// EoCServer.dll+0xAD2100, logs 'Recipe request: party (%s)', 'recipe (%s)'): recipes unlocked for
+// a party in this frame. Read by esv::StoryCharacterEventManager::Init and the per-frame update of
+// esv::party::DataSystem. Seen.py context: crafting / item combine (use-Combine) steps.
+struct RecipesUnlockedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPartyRecipesUnlockedEvent, "esv::party::RecipesUnlockedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2BD3D20 allocates 0x40 and zeroes it as a hash map.
+    // ProcessRecipeRequests (bg3.exe+0x2BD0DA0 lines ~493-501) walks a request's 4-byte keys
+    // (FixedString recipe ids) and inserts each (FUN_140ca9830), then stores a 1-byte value at
+    // values[+0x30][index]. The Toolkit version names the type in an assert: IndexedStorage<class
+    // ls::HashMap<class ls::FixedString,bool,struct ls::HashTableOpsDefault>. Live (1): buckets 5,
+    // 2 keys, values size 2.
+    HashMap<FixedString, bool> Recipes;
+};
+
+// Server request (registry does not mark it one-frame) to recompute party followers. Created on a
+// fresh request entity by bg3.exe+0x2BC1120 (~ esv::party::PartySystem::ProcessUpdatePartyViews,
+// per-frame update of esv::party::PartySystem); macOS names PartySystem::ProcessPartyFollowers as
+// the consumer (HashMap template over the same WorldView). Seen.py context: party changes.
+struct UpdatePartyFollowersRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPartyUpdatePartyFollowersRequest, "esv::party::UpdatePartyFollowersRequestOneFrameComponent")
+
+    // unknown: Creator bg3.exe+0x2BC4220 allocates 8 bytes, default null handle; bg3.exe+0x2BC1120
+    // line ~582 writes the handle at the start of the 64-byte record it iterates (pIVar21, stride
+    // 8 handles). Live (5): entity handles. Probably the party (view) entity whose followers must
+    // be updated; not established.
+    EntityHandle field_0;
+};
 
 DEFINE_TAG_COMPONENT(esv::party, BlockDismissComponent, ServerPartyBlockDismiss)
 DEFINE_TAG_COMPONENT(esv::party, BlockDismissRemovedOneFrameComponent, ServerPartyBlockDismissRemoved)
@@ -8719,6 +12165,54 @@ END_NS()
 BEGIN_NS(esv::party_preset)
 
 DEFINE_TAG_COMPONENT(esv::party_preset, LevelUpStateComponent, ServerPartyPresetLevelUpState)
+
+END_NS()
+
+BEGIN_NS(esv::passive)
+
+struct ActiveRollPassivesRequest
+{
+    // inferred: Same layout as SE esv::ExecutePassiveRequest (Components/Passives.h): EntityHandle
+    // Passive at +0.
+    EntityHandle Passive;
+    // inferred: Storage of std::variant<AttackTargetContextData, AttackPositionContextData,
+    // MoveContextData, SourceContextData, TargetContextData, NearbyAttackedContextData,
+    // NearbyAttackingContextData, EquipContextData> (SE ExecutePassiveRequest.Context). The
+    // element destructor bg3.exe+0x22E39A0 calls the variant's destructor at element+8 for index
+    // values 0..7 (8 alternatives) - storage 0x328 bytes. Kept opaque: those SE stats structs may
+    // not be referenced here.
+    std::array<uint8_t, 808> Context;
+    // inferred: bg3.exe+0x22E39A0 reads the variant index byte at element+8+0x328 = +0x330 and
+    // compares it with 0..7.
+    uint8_t ContextIndex;
+    // inferred: SE ExecutePassiveRequest.RollGuid follows the variant (+0x338).
+    Guid RollGuid;
+    // inferred: SE ExecutePassiveRequest's last byte member (named field_338 there); total stride
+    // 0x350 matches bg3.exe+0x22E39A0 (lVar4 += 0x350).
+    uint8_t field_348;
+};
+
+// Server component holding passive executions gathered for a roll in progress. Created/fetched by
+// esv::GetActiveRollPassivesComponent (Toolkit EoCServer.dll+0x1133720, returns
+// ActiveRollPassivesComponent*, store stride 0x18) and filled by
+// esv::LEGACY_GatherSpellPassiveRequests (EoCServer.dll+0x11365E0, returns
+// DynamicArray<esv::ExecutePassiveRequest>). Seen.py context: fights and spell casts (attack rolls
+// triggering passives).
+struct ActiveRollPassivesComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPassiveActiveRollPassives, "esv::passive::ActiveRollPassivesComponent")
+
+    // unknown: Creator bg3.exe+0x36FB900 (AllocRaw 0x18) writes its second argument here and
+    // zeroes the array. Live (41): entity handles, distinct per holder. Probably the roll / roller
+    // entity; not established.
+    EntityHandle field_0;
+    // inferred: Creator zeroes +8 (pointer), +0x10, +0x14 (capacity, size). The component
+    // destructor bg3.exe+0x22B7840 (registered by bg3.exe+0x21FDAA0) frees the array at +8 through
+    // bg3.exe+0x22E39A0, which destroys elements of stride 0x350 = SE esv::ExecutePassiveRequest
+    // (Passives.h), the element type LEGACY_GatherSpellPassiveRequests returns. Live: heap
+    // pointer, capacity 1, size 1.
+    Array<ActiveRollPassivesRequest> Requests;
+};
 
 END_NS()
 
@@ -8765,6 +12259,51 @@ struct SessionFailedEventSingletonComponent : public BaseComponent
 END_NS()
 
 BEGIN_NS(esv::pickup)
+
+// Marks each item of a pick-up split list while its transfer runs. Added by
+// esv::pickup::PickUpExecutionSystem::ProcessTransferRequests (Toolkit EoCServer.dll+0xD4A630) to
+// every entity of esv::pickup::PickUpSplitListComponent, filled from the request entity and its
+// esv::pickup::PickUpRequestComponent; read by PickUpExecutionFinishedSystem and
+// invisibility::RevealingSystem. Seen.py context: tree3 dialogue UND_PanicRoom_HiddenGnome (item
+// picked up).
+struct BeingPickedUpComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPickupBeingPickedUp, "esv::pickup::BeingPickedUpComponent")
+
+    // inferred: ProcessTransferRequests: *puVar15 = the query entity (entity list +0x40 at the row
+    // index) - the entity that holds the PickUpRequestComponent. Live 0x1470A / 0x0200001C.
+    EntityHandle Requester;
+    // unknown: puVar15[1] = PickUpRequestComponent+0 (field_0 there). Live 0x13727, equal to
+    // PickUpRequestComponent+0 of the same step.
+    EntityHandle field_8;
+    // inferred: puVar15[2..3] = PickUpRequestComponent+0x20/+0x28 (target rotation). Live (0,
+    // 0.5509, 0, 0.8346).
+    glm::quat TargetRotation;
+    // inferred: puVar15[4] = request+0x30 and dword +0x28 = request+0x38 (target translation).
+    // Live (-525.5, 28.8, 465.3).
+    glm::vec3 TargetPosition;
+    // inferred: Qword +0x2C = PickUpRequestComponent+0x10 (Optional<int> value + presence). Live
+    // 0.
+    int32_t Amount;
+    // inferred: Presence byte of that Optional<int>. Live 0x00 (+0x31..+0x33 garbage 00 c0 ff).
+    bool HasAmount;
+    [[bg3::hidden]] std::array<uint8_t, 3> _Pad31;
+    // unknown: Dword +0x34 = PickUpRequestComponent+0x18 (Optional<short> value + presence). Live
+    // 0.
+    int16_t field_34;
+    // inferred: Optional<short> presence byte.
+    bool Has_field_34;
+    // unknown: Dword +0x38 = PickUpRequestComponent+0x1C (Optional<unsigned short>). Live 0xE9C8,
+    // presence 0 - same bytes as the request's +0x1C.
+    uint16_t field_38;
+    // inferred: Optional<unsigned short> presence byte; macOS default ctor stores a zero byte here
+    // (strb wzr [x19,#0x3a]).
+    bool Has_field_38;
+    [[bg3::hidden]] std::array<uint8_t, 1> _Pad3B;
+    // unknown: Byte +0x3C = PickUpRequestComponent+0x3C (trailing bool of LEGACY_RequestPickUp).
+    // Live 0.
+    bool field_3C;
+};
 
 struct LegacyPickUpRequestVariant
 {
@@ -8839,6 +12378,25 @@ struct PickUpExecutionFailedSingletonComponent : public BaseComponent
     Array<EntityHandle> Items;
 };
 
+// Tracks a pick-up whose item transfers are running. Added by
+// PickUpExecutionSystem::ProcessTransferRequests (Toolkit EoCServer.dll+0xD4A630, FUN_180d48510
+// default-constructs it) and updated by PickUpExecutionFinishedSystem::UpdateTrackComponents
+// (EoCServer.dll+0xD47E60). Seen.py context: tree3 dialogue UND_PanicRoom_HiddenGnome.
+struct PickUpExecutionInFlightComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPickupPickUpExecutionInFlight, "esv::pickup::PickUpExecutionInFlightComponent")
+
+    // inferred: UpdateTrackComponents reads *(int*)(element+0) of an 8-byte-stride storage and
+    // acts when it reaches 0. Live 1 (one transfer in flight).
+    int32_t PendingCount;
+    // unknown: Byte +4 tested in UpdateTrackComponents ((char)... != 0). Live 0.
+    uint8_t field_4;
+    // inferred: UpdateTrackComponents: if byte +5 == 0x0E it is replaced by a new value; live 0x0E
+    // (default/pending result code of the pick-up result enum, same family as the 0x13/0x14 codes
+    // in PickUpExecutionFinishedSystem).
+    uint8_t Result;
+};
+
 // Server singleton of the pick-up pipeline: pick-ups that failed because the action resource could
 // not be spent this frame. Seen.py context: lives in any idle level. Read by
 // esv::pickup::PickUpExecutionFinishedSystem.
@@ -8864,6 +12422,83 @@ struct PickUpFinishedComponent : public BaseComponent
     // build (address 103B706AC) stores it (strb w0, [x23]; default a value computed in the
     // constructor). What the byte means is not established.
     uint8_t field_0;
+};
+
+// A pending permission request (Osiris may veto a pick-up) for a validated pick-up request. Added
+// by esv::pickup::PickUpPermissionSystem::ProcessValidatedPickUpRequests (Toolkit
+// EoCServer.dll+0xD3EAB0) to the request entity; answered through
+// ScriptPermissionResponsesSingletonComponent (RequestId compared there). Seen.py context: tree3
+// dialogue UND_PanicRoom_HiddenGnome.
+struct PickUpPermissionComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPickupPickUpPermission, "esv::pickup::PickUpPermissionComponent")
+
+    // inferred: *puVar11 = esv::pickup::PickUpRequestComponent+8 (Target). Live 0x19F6D =
+    // request's +8.
+    EntityHandle Target;
+    // unknown: puVar11[1] = PickUpRequestComponent+0. Live 0x13727.
+    EntityHandle field_8;
+    // inferred: puVar11[2..3] = first 16 bytes of eoc::pickup::PickUpRequestComponent (stride
+    // 0x18; SE Data.h field_0 Guid). Live random 16 bytes.
+    Guid RequestGuid;
+    // inferred: *(int*)(puVar11+4) = global counter DAT_18221449c, post-incremented - a unique
+    // permission request id (compared with esv::pickup ScriptPermissionResponse.RequestId). Live
+    // 256.
+    int32_t RequestId;
+    // unknown: Set to 1.0f (0x3f800000) on creation. Live 1.0. Possibly a timeout/time left; not
+    // established.
+    float field_24;
+    // unknown: Byte +0x28 set to 0 on creation; macOS default ctor zeroes the qword +0x28. Live 0
+    // (+0x29.. garbage ff).
+    bool field_28;
+};
+
+// Server half of a pick-up request (eoc::pickup::PickUpRequestComponent holds the Guid and state).
+// Added by esv::pickup::PickUpRequestSystem::HandleValidatedPickUpRequests (Toolkit
+// EoCServer.dll+0xD384C0) to the request's first entity, copying an
+// esv::pickup::ValidatedPickUpRequest (see esv.pickup.ValidatedPickUpRequestsSingletonComponent)
+// and the target's transform. Read by PickUpSplitFinishedSystem / PickUpExecutionSystem /
+// PickUpPermissionSystem. Seen.py context: tree3 dialogue UND_PanicRoom_HiddenGnome (an item was
+// picked up), born with the other pickup components of this batch.
+struct PickUpRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPickupPickUpRequest, "esv::pickup::PickUpRequestComponent")
+
+    // unknown: HandleValidatedPickUpRequests: *plVar6 = plVar10[-1] = ValidatedPickUpRequest+8
+    // (second ID argument of LEGACY_RequestPickUp). Copied to BeingPickedUpComponent+8 and
+    // PickUpPermissionComponent+8. Live 0x13727 / 0x0200001E.
+    EntityHandle field_0;
+    // inferred: plVar6[1] = ValidatedPickUpRequest+0x10; the same function adds
+    // esv::pickup::OriginalPickUpTargetComponent to that entity and reads its
+    // ls::TransformComponent into +0x20. Live 0x19F6D / 0x0200001C (also
+    // PickUpPermissionComponent+0).
+    EntityHandle Target;
+    // inferred: plVar6[2] = ValidatedPickUpRequest+0x18 (ls::Optional<int> argument: value). Live
+    // 0.
+    int32_t Amount;
+    // inferred: Presence byte of the Optional<int> (copied with the value as one qword). Live 0x00
+    // (+0x15..+0x17 garbage 00 c0 ff).
+    bool HasAmount;
+    [[bg3::hidden]] std::array<uint8_t, 3> _Pad15;
+    // unknown: *(int*)(plVar6+3) = ValidatedPickUpRequest+0x30 (ls::Optional<short> argument,
+    // value). Live 0.
+    int16_t field_18;
+    // inferred: Optional<short> presence byte (4-byte copy). Live 0.
+    bool Has_field_18;
+    // unknown: +0x1C = ValidatedPickUpRequest+0x34 (ls::Optional<unsigned short> argument, value).
+    // Live 0xE9C8 with presence 0 (stale value).
+    uint16_t field_1C;
+    // inferred: Optional<unsigned short> presence byte. Live 0.
+    bool Has_field_1C;
+    // inferred: plVar6[4..5] = first 16 bytes of the Target's ls::TransformComponent (rotation
+    // quaternion). Live (0, 0.5509, 0, 0.8346) - a unit quaternion.
+    glm::quat TargetRotation;
+    // inferred: plVar6[6] and +0x38 = next 12 bytes of the transform (translation). Live (-525.5,
+    // 28.8, 465.3).
+    glm::vec3 TargetPosition;
+    // unknown: +0x3C = byte ValidatedPickUpRequest+0x38 (trailing bool argument of
+    // LEGACY_RequestPickUp). Live 0 (+0x3D..+0x3F garbage ff).
+    bool field_3C;
 };
 
 struct PickUpResultEntry
@@ -8892,6 +12527,21 @@ struct PickUpResultsSingletonComponent : public BaseComponent
     // ls::IndexedStorage<esv::pickup::PickUpResult> element (stride 0x20) per finished or dead
     // request. Live (idle): all zero.
     Array<PickUpResultEntry> Results;
+};
+
+// The entities a pick-up request was split into (stack split before transfer). Read by
+// esv::pickup::PickUpExecutionSystem::ProcessTransferRequests (Toolkit EoCServer.dll+0xD4A630),
+// which adds BeingPickedUpComponent to every listed entity; removed by PickUpSplitFinishedSystem
+// (per-frame update bg3.exe+0x23A2070). Seen.py context: tree3 dialogue UND_PanicRoom_HiddenGnome.
+struct PickUpSplitListComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPickupPickUpSplitList, "esv::pickup::PickUpSplitListComponent")
+
+    // inferred: ProcessTransferRequests reads the component (stride 0x10) as pointer *plVar14 and
+    // size *(int*)(plVar14+0xC), iterating 8-byte ls::ID<EntityHandleTraits> entries and adding a
+    // component to each. Destructor bg3.exe+0x686280 clears and frees the pointer at +0. Live:
+    // heap pointer, capacity 1, size 1.
+    Array<EntityHandle> Items;
 };
 
 struct PickupScriptPermissionResponse
@@ -9030,11 +12680,169 @@ END_NS()
 
 BEGIN_NS(esv::placement)
 
+// One-frame result of a placement, written by esv::placement::ExecutionSystem::ProcessResults from
+// its frame data map (entity -> 2-byte result) filled in ProcessPlacementRequests /
+// ProcessPlacements. Seen.py context: dialogues with several NPCs (CAMP_GoblinHuntCelebration,
+// DEN) and scripted events.
+struct PlacementResultEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerPlacementPlacementResultEvent, "esv::placement::PlacementResultEventOneFrameComponent")
+
+    // inferred: Enum esv::placement::EFailureType (1 byte; macOS names HashMap<EntityHandle,
+    // EFailureType>, assert ls::IndexedStorage<enum esv::placement::EFailureType> in
+    // ValidationSystem). Toolkit ExecutionSystem::ProcessPlacementRequests
+    // (EoCServer.dll+0x2FD330) stores the ushort 0x104/0x102 (low byte 4 = invalid entity, 2 =
+    // dead entity, also 3, 5, 0xC) into the frame-data value; ProcessPlacements writes *value = 2
+    // or 3. Creator bg3.exe+0x2F078A0 allocates 2 bytes. Live 0 and 2.
+    uint8_t Failure;
+    // inferred: High byte of that ushort: set to 1 whenever a failure code is stored (if (value[1]
+    // == 0) value[1] = 1). Live 0 (with Failure 0) and 1 (with Failure 2).
+    bool Failed;
+};
+
+struct PlacementStateEntityPlacement
+{
+    // unknown: Not read in the functions seen.
+    uint64_t field_0;
+    // unknown: Not read in the functions seen.
+    uint64_t field_8;
+    // unknown: Not read in the functions seen.
+    uint64_t field_10;
+    // unknown: Toolkit ExecutionSystem::ProcessPlacementRequests (EoCServer.dll+0x2FD330): when
+    // byte +0x29 is 0, FUN_1802c1830(&out, element+0x18, world) turns these 16 bytes into an
+    // entity handle (uuid -> entity lookup); a null/dead result fails the placement with codes
+    // 5/3.
+    Guid field_18;
+    // unknown: Byte between the Guid and the flag; not read in the functions seen.
+    uint8_t field_28;
+    // inferred: ProcessPlacementRequests: if byte +0x29 != 0 the 40 bytes at +0x2C are copied as
+    // the destination transform instead of resolving the Guid at +0x18.
+    bool HasTransform;
+    // inferred: Copied dword by dword (+0x2C..+0x53) into the first 40 bytes of the 0x78 placement
+    // entry whose defaults are an identity transform (quat w=1, scale 1).
+    Transform Transform;
+    // unknown: Tail of the 0x58 stride; not read.
+    uint32_t field_54;
+};
+
+// A placement (moving a group of actors to positions, used by behaviour/dialogue timelines) in
+// progress: its id, the per-entity placements and an entity set. Built by
+// esv::placement::StateSystem::ProcessPlacementRequests from
+// esv::timeline::PlacementStartRequestOneFrameComponent (same 0x78 shape: map at 0, set at 0x40,
+// id at 0x70) and read by placement::ExecutionSystem / ValidationSystem and the timeline helpers
+// (macOS: TimelineProcessPrepareRequestsHelper::TriggerBehaviorTimelinePlacement,
+// TimelineSystem::StopBehaviorTimelinePlacement). Seen.py context: dialogues with several NPCs
+// (CAMP_GoblinHuntCelebration, DEN refugees) and scripted events, born with PlacementComponent,
+// ValidationComponent and PlacementResultEvent.
+struct StateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPlacementState, "esv::placement::StateComponent")
+
+    // inferred: Creator bg3.exe+0x2F09F80 (size 0x78, destructor bg3.exe+0x22D31E0) zeroes the
+    // dword +0. ProcessPlacementRequests hashes *(uint*)component % buckets to look it up in a
+    // HashMap<uint, PlacementData> of its frame data (macOS names ls::HashMap<unsigned int,
+    // esv::placement::PlacementData>). Live 6..0x33 (increasing ids).
+    uint32_t Id;
+    // inferred: ProcessPlacementRequests walks keys *(component+0x28) for size *(+0x34) as entity
+    // handles (validity and IsEntityAlive checks) and the values *(component+0x38) with stride
+    // 0x58 (puVar27 += 0x16 dwords); its assert names
+    // ls::IndexedStorage<esv::placement::EntityPlacement>; the map copy FUN_1802f7580 allocates
+    // values with element size 0x58. Destructor frees +0x38 and destroys the set at +8. Live:
+    // bucket table 5, one entry.
+    HashMap<EntityHandle, PlacementStateEntityPlacement> Placements;
+    // inferred: ProcessPlacementRequests iterates *(component+0x68) for size *(+0x74), 8-byte
+    // entity handles; destructor destroys a set at +0x48. Live: empty in 18 of 48 instances, else
+    // one key. Meaning (extra actors?) not established.
+    HashSet<EntityHandle> field_48;
+};
+
+// One-frame request from esv::placement::ExecutionSystem to abort a steering (turning) it started;
+// read by esv::steering::StateSystem. Seen.py context: dialogues and lock interactions where a
+// placement was interrupted.
+struct SteeringAbortRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerPlacementSteeringAbortRequest, "esv::placement::SteeringAbortRequestOneFrameComponent")
+
+    // unknown: Creator bg3.exe+0x2F075E0 allocates 0x10 and zeroes two qwords. Live: 20 instances,
+    // 20 distinct random 16-byte values - a Guid, presumably the id of the steering request to
+    // abort (SteeringRequestOneFrameComponent carries a Guid at +0x18).
+    Guid field_0;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::placement, ReposeEndRequestOneFrameComponent, ServerPlacementReposeEndRequest)
 
 END_NS()
 
 BEGIN_NS(esv::platform)
+
+// Server state of a moving platform: the FixedString of the running movement request. Written by
+// esv::platform::MovementSystem (macOS index: only writer MovementSystem::Update). Seen.py
+// context: level change.
+struct MovementComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPlatformMovement, "esv::platform::MovementComponent")
+
+    // inferred: Registration bg3.exe+0x26FE670 sets the destructor bg3.exe+0x698FE0, which
+    // releases a FixedString at +0 (GlobalStringTable DecRef unless -1). Live 0x02502591 = the
+    // FixedString at +0x30 of esv::platform::MovementRequestComponent of the same step (the story
+    // event / movement id passed to StoryGameEventManager).
+    FixedString field_0;
+    // unknown: macOS default ctor stores wzr at +4 after the FixedString. Live 0.
+    uint32_t field_4;
+};
+
+// Why a moving platform is paused: a bit mask maintained by
+// esv::platform::MovementSystem::ProcessPlatformPauseReasons (Toolkit EoCServer.dll+0x648850),
+// which ORs in bit 1 and bit 2 for different conditions (combat / turn-based checks of the queried
+// components) and tests them. Seen.py context: trigger S_UND_KethericCity_Firewall_EventTrigger_2
+// and a trader scene.
+struct MovementPausedReasonsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPlatformMovementPausedReasons, "esv::platform::MovementPausedReasonsComponent")
+
+    // inferred: ProcessPlatformPauseReasons: *(ulonglong*)(x) = *(ulonglong*)(x) | 1 and *puVar22
+    // | 2, and tests (byte & 1) / (byte >> 1 & 1) on the 8-byte-stride component storage. macOS
+    // default ctor zeroes one qword. Live 1.
+    uint64_t Reasons;
+};
+
+// A request to move a movable platform (elevator, lift): an entity followed by one
+// esv::platform::MoveRequest (0x30 bytes, the element type of the system map
+// ls::HashMap<EntityHandle, DynamicArray<esv::platform::MoveRequest>> named in the macOS build).
+// Consumed by esv::platform::MovementSystem::ProcessMoveRequests (Toolkit EoCServer.dll+0x644CB0),
+// which appends component+8 (FUN_180642720, element stride 0x30) to the per-platform request list.
+// Seen.py context: level change (a platform got a scripted move on level load).
+struct MovementRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPlatformMovementRequest, "esv::platform::MovementRequestComponent")
+
+    // unknown: ProcessMoveRequests reads the component with stride 0x38 and copies from +8 onward;
+    // +0 is an entity (live 0x8B0A / 0x02000001). Probably the platform or the requester.
+    EntityHandle field_0;
+    // unknown: MoveRequest+0. macOS default ctor zeroes it (stp xzr,xzr [x23,#8]). Live 0.
+    uint64_t field_8;
+    // inferred: MoveRequest+8..+0x13: MovementSystem compares *(float*)(request+8/+0xC/+0x10) with
+    // the platform's current target floats (ABS(a-b) checks) and copies them into the target. Live
+    // (-413.2, -5.575, 565.1).
+    glm::vec3 TargetPosition;
+    // inferred: Destructor bg3.exe+0x22CAAC0 -> bg3.exe+0x22D5ED0(this+8) releases FixedStrings at
+    // +8+0x14 = +0x1C and +8+0x28 = +0x30. Live -1 (null FixedString). Meaning not established.
+    FixedString field_1C;
+    // unknown: MoveRequest+0x18; macOS ctor zeroes it. Live 0.
+    uint64_t field_20;
+    // unknown: MoveRequest+0x20. Live 1.5 (a speed or duration).
+    float field_28;
+    // unknown: MoveRequest+0x24 byte. Live 0.
+    uint8_t field_2C;
+    // unknown: MoveRequest+0x25 byte, copied by MovementSystem into the platform state (+9 of the
+    // target struct). Live 0.
+    uint8_t field_2D;
+    // inferred: FixedString released by the destructor (MoveRequest+0x28); MovementSystem passes
+    // request+0x28 as FixedString to esv::StoryGameEventManager (the Osiris event raised when the
+    // movement finishes). Live 0x02502591, equal to esv::platform::MovementComponent+0 of the same
+    // platform.
+    FixedString field_30;
+};
 
 // Server singleton of esv::platform::MovementSystem: the moving-platform entities whose movement
 // started in this update. MovementSystem::ProcessStartedPlatforms appends the frame's started
@@ -9116,6 +12924,73 @@ struct UpdateShownTutorialsRequestOneFrameComponent : public BaseComponent
 
 END_NS()
 
+BEGIN_NS(esv::projectile)
+
+struct ImpactInterruptHit
+{
+    // inferred: Element destructor in bg3.exe+0x22E3E00 (stride 0x1E8) calls FUN_1405f19c0 (~
+    // eoc::HitDesc::~HitDesc, pseudo-code match) on element+0: an eoc::HitDesc copy (Script
+    // Extender type, not redeclared here).
+    std::array<uint8_t, 448> Hit;
+    // unknown: Element destructor clears (FUN_1405bd630) and frees the buffer at +0x1C0: a
+    // container (pointer, then capacity/size).
+    [[bg3::hidden]] void* field_1C0;
+    // unknown: Container capacity (assumed).
+    uint32_t field_1C8;
+    // unknown: Container size (assumed).
+    uint32_t field_1CC;
+    // unknown: Not read.
+    uint64_t field_1D0;
+    // unknown: Not read.
+    uint64_t field_1D8;
+    // unknown: Not read.
+    uint64_t field_1E0;
+};
+
+struct ImpactInterruptSpellId
+{
+    // inferred: Same members as Script Extender's SpellId (Base/ExposedTypes.h, 0x38 bytes).
+    // Creator default -1.
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SpellSourceType (1 byte); creator default 0x17 = Sentinel.
+    uint8_t SourceType;
+    // inferred: SpellId.Source; creator zero.
+    Guid Source;
+    // inferred: SpellId.ProgressionSource; creator zero.
+    Guid ProgressionSource;
+    // inferred: SpellId.Prototype; creator default -1.
+    FixedString Prototype;
+};
+
+// One-frame event raised when a projectile impact can be interrupted (reactions such as Shield /
+// Deflect Missiles): the hits it would deal, the spell, an entity and the impact position. Read by
+// esv::interrupt::EventSystem::ProcessInterruptionEvents (Toolkit EoCServer.dll+0x10E0910; its
+// WorldView lists this component). Seen.py context: fights with ranged enemies (gnoll rangers,
+// minotaur bait), traps on locked chests/doors.
+struct ImpactInterruptEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerProjectileImpactInterruptEvent, "esv::projectile::ImpactInterruptEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2AE5990 zeroes +0 and the dwords +8/+0xC; destructor
+    // bg3.exe+0x22B8270 calls FUN_1422e3e00(this, 0) (resize to 0: element stride 0x1E8, each
+    // holding a HitDesc) and frees *(this+0). Live: heap pointer, capacity 1..0x10, size 1..0xE.
+    Array<ImpactInterruptHit> Hits;
+    // inferred: Destructor calls eoc::spell::SpellId::~SpellId(this+0x10); creator writes -1 at
+    // +0x10 and +0x40 (the two FixedStrings), 0x17 at +0x18 (SourceType Sentinel) and zeroes
+    // +0x20..+0x3F. Equals Script Extender's SpellId (0x38 bytes). Live: +0x10 and +0x40 hold the
+    // same FixedString index (OriginatorPrototype == Prototype).
+    ImpactInterruptSpellId Spell;
+    // unknown: Creator default 0xFFC0000000000000 (null entity). Live entity handles (e.g. 0x1819C
+    // / 0x0200000A) or null. Probably the projectile or its caster; not established.
+    EntityHandle field_48;
+    // unknown: Creator zeroes qword +0x50 and dword +0x58. Live world coordinates (146.8, 29.2,
+    // 10.26), probably the impact position.
+    glm::vec3 field_50;
+};
+
+END_NS()
+
 BEGIN_NS(esv::relation)
 
 // Server one-frame event of esv::relation::RelationSystem (ProcessSetBaseFactionRequests /
@@ -9154,6 +13029,90 @@ struct FactionsChangedEventOneFrameComponent : public BaseComponent
     // ls::IndexedStorage<ls::ID<ecs::EntityHandleTraits>>. Live: +0 heap, +8 capacity = +0xC size
     // (1..12).
     Array<EntityHandle> Entities;
+};
+
+// Event of esv::relation::RelationSystem (per-frame update bg3.exe+0x2C1D0F0): a relation between
+// two Guid-identified parties (factions or characters) changed. Registered with an ordinary (not
+// one-frame) type index in bg3.exe; cleared by RelationSystem::ClearOneFrameComponents. Seen.py
+// context: dialogues and trigger zones that change factions (DEN, GOB, UND), idle levels.
+struct RelationChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerRelationRelationChangedEvent, "esv::relation::RelationChangedEventOneFrameComponent")
+
+    // unknown: Toolkit ctor EoCServer.dll+0x50B550 constructs ls::Guid at +0; operator=
+    // EoCServer.dll+0x50B950 copies two qwords. Live: 18 distinct random 16-byte values (faction-
+    // like Guids, the same set as +0x10).
+    Guid field_0;
+    // unknown: Toolkit ctor constructs ls::Guid at +0x10; operator= copies +0x10/+0x18. Live: 17
+    // distinct values from the same set as +0.
+    Guid field_10;
+    // unknown: Toolkit ctor writes the uint16 0x0032 at +0x20, i.e. byte +0x20 = 50; operator=
+    // copies bytes +0x20 and +0x21 separately. Live byte values 0x00, 0x32 (50), 0x64 (100): a
+    // relation value on the 0..100 scale (50 = neutral default) - probably the new relation, not
+    // proven.
+    uint8_t field_20;
+    // unknown: Ctor default 0 (high byte of 0x0032); operator= copies it separately. Live 0/1.
+    bool field_21;
+};
+
+// One-frame event of esv::relation::RelationSystem: a summon got its faction set (from its owner).
+// Seen.py context: fights with summoners (mud mephits, woad, cloaker), spell casts (spells-5) and
+// dialogues that summon.
+struct SummonedFactionSetEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerRelationSummonedFactionSetEvent, "esv::relation::SummonedFactionSetEventOneFrameComponent")
+
+    // unknown: Toolkit ctor EoCServer.dll+0x23B250
+    // SummonedFactionSetEventOneFrameComponent(ls::ID<ecs::EntityHandleTraits> const&) copies the
+    // 8-byte entity id to +0. Live: 9 instances, values like 0x7C3..0x19047 with high dword
+    // 0x00800001..0x02000013 (entity handles). Which entity (summon owner or faction source) is
+    // not established.
+    EntityHandle field_0;
+};
+
+// One-frame event: a set of entities towards which a temporary hostile relation was created this
+// frame. Written by esv::hit::HitSystem::ProcessHitRequests (Toolkit EoCServer.dll+0x3CB050),
+// which builds a local HashMap<EntityHandle, this component> (value stride 0x30), inserts the hit
+// entity into each value set and adds one component per map key; read by
+// esv::relation::RelationSystem (AddRemovedTempRelations). Seen.py context: dialogues/scenes that
+// end in fights (DEN_AttackOnDen, HAV barricade, MOO execution), born with the Removed event and
+// combat merge components.
+struct TemporaryHostileRelationCreatedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerRelationTemporaryHostileRelationCreatedEvent, "esv::relation::TemporaryHostileRelationCreatedEventOneFrameComponent")
+
+    // inferred: Toolkit ctor EoCServer.dll+0x50B5A0 zeroes the 48-byte HashSet shape (+0x1C and
+    // +0x2C dwords); move operator= EoCServer.dll+0x50B970 moves bucket table +0/+8, NextIds
+    // +0x10/+0x18/+0x1C and Keys +0x20/+0x28/+0x2C. ProcessHitRequests inserts with
+    // FUN_18021e210(set, hash, pIVar19) - the same generic 8-byte-key insert it uses for the
+    // entity keys of its map - so keys are entity handles. Live: 48 instances, heap pointers at
+    // +0/+0x10/+0x20, bucket count 5..17, keys 1..10. Whether the entities are the hit targets or
+    // the attackers is not established; the name is neutral.
+    HashSet<EntityHandle> Entities;
+};
+
+// One-frame event of esv::relation::RelationSystem (per-frame update bg3.exe+0x2C1D0F0 = Toolkit
+// RelationSystem::Update -> ProcessTemporaryRelations / AddRemovedTempRelations). The system
+// collects a HashMap<EntityHandle, std::tuple<Guid, DynamicArray<Guid>>> (Toolkit template text)
+// and creates one event per key. Seen.py context: born during dialogues/scenes that end in fights
+// (DEN_AttackOnDen, GOB raider scenes) together with
+// TemporaryHostileRelationCreatedEventOneFrameComponent, combat::MergeComponent,
+// CombatSwitchedComponent.
+struct TemporaryHostileRelationRemovedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerRelationTemporaryHostileRelationRemovedEvent, "esv::relation::TemporaryHostileRelationRemovedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2C27170 allocates 0x20 and copies 16 bytes from param_3 (the
+    // tuple's Guid, value+0x10 in the caller bg3.exe+0x2C1D0F0) to +0. Toolkit
+    // EoCServer.dll+0x88B5B0 ProcessTemporaryRelations passes HashMap<ID<EntityHandleTraits>,
+    // std::tuple<ls::Guid, ls::DynamicArray<ls::Guid>>>. Live: 17 distinct 16-byte random values.
+    // Meaning (UUID of the holder or of the other party) not established; name is a guess.
+    Guid Uuid;
+    // inferred: Creator copy-constructs +0x10 from param_4 with FUN_1405cb760 (array copy, element
+    // 0x10, plain 16-byte copy); destructor FUN_1406a2d80 frees +0x10. AddRemovedTempRelations
+    // (EoCServer.dll) pushes Guids into it (assert ls::IndexedStorage<class ls::Guid>). Live: heap
+    // pointer, capacity 1..4, size 1..3.
+    Array<Guid> OtherUuids;
 };
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::relation, AnyRelationChangedEventOneFrameComponent, ServerRelationAnyRelationChangedEvent)
@@ -9210,6 +13169,30 @@ DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, ScriptPhaseStartedEventOneFrameComponen
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, ScriptRestConfirmedEventOneFrameComponent, ServerRestScriptRestConfirmedEvent)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, StartRequestFailedEventOneFrameComponent, ServerRestStartRequestFailedEvent)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, UserCharacterRestedEventOneFrameComponent, ServerRestUserCharacterRestedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::restore)
+
+// One-frame event raised for Osi.RestoreParty (seen.py context: every 'spells-1' step that ran
+// Osi.RestoreParty(host) before casting). Read by esv::SpellCooldownSystem
+// (ProcessStartCooldownRequests) and esv::summon::DespawnSystem (macOS names). macOS:
+// EntityCommandBuffer::AddComponentUnchecked<RestorePartyEventOneFrameComponent, EntityHandle
+// const&, EntityHandle const&> - two entity handles.
+struct RestorePartyEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerRestorePartyEvent, "esv::restore::RestorePartyEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x2D54A60 allocates 0x10 and stores *param_3 at +0; caller
+    // bg3.exe+0x2D54620 passes the entity of each 16-byte request (request.flag at +8 == 1) of the
+    // restore request list. Live: valid entity handles.
+    EntityHandle Entity;
+    // inferred: Caller bg3.exe+0x2D54620 passes either a constant null handle (DAT_1457c3a78) or
+    // the value at +0x18 of a component fetched by FUN_140afe060 -
+    // eoc::party::MemberComponent.Party sits at +0x18 in SE (UserId, Uuid, Party); the caller also
+    // deduplicates by this handle. Live: a handle or 0xFFC0000000000000 (null).
+    EntityHandle Party;
+};
 
 END_NS()
 
@@ -9327,6 +13310,61 @@ END_NS()
 
 BEGIN_NS(esv::screen_fade)
 
+struct ClearScreenFadeFinishedNameData
+{
+    // the game's own member name: esv::screen_fade::ScreenFadeNameData; log
+    // 'FinalizeComponents::m_ClearFadeFinishedData: Guid[%s], Name[%s], User[%d]'
+    // (EoCServer.dll+0x399FD0) prints the STDString copied to element+0.
+    STDString Name;
+    // the game's own member name: Same log 'User[%d]'; 4 bytes at element+0x18; net::UserID.
+    int32_t User;
+};
+
+// One-frame singleton event of esv::screen_fade::ScreenFadeSystem::FinalizeComponents: per screen-
+// fade id, the clear-fade requests that finished this frame (name + user). Same shape as
+// ScreenFadeToFinishedOneFrameComponent. Seen.py context: exploration (Expl_UND_ZhentElelvator),
+// scenes and dialogues that fade the screen.
+struct ClearScreenFadeFinishedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerClearScreenFadeFinished, "esv::screen_fade::ClearScreenFadeFinishedOneFrameComponent")
+
+    // inferred: bg3.exe+0x2EEF5E0 allocates 0x40 zeroed, HashMap shape. macOS template
+    // ls::HashMap<ls::Guid, ls::DynamicArray<esv::screen_fade::ScreenFadeNameData>>.
+    // EoCServer.dll+0x399FD0 adds it, gets/inserts the array for a Guid (FUN_1803931f0) and pushes
+    // a 0x20 ScreenFadeNameData, then logs m_ClearFadeFinishedData. Live: buckets 5, 1 key, value
+    // array present.
+    HashMap<Guid, Array<ClearScreenFadeFinishedNameData>> Finished;
+};
+
+struct ScreenFadeIdToFadeNameData
+{
+    // the game's own member name: esv::screen_fade::ScreenFadeNameData (macOS type name); log
+    // 'FinalizeComponents::m_FadeToFinishedData: Guid[%s], Name[%s], User[%d]' prints this
+    // STDString (EoCServer.dll+0x399FD0 copies an STDString to element+0).
+    STDString Name;
+    // the game's own member name: Same log 'User[%d]'; copied as 4 bytes at element+0x18
+    // (EoCServer.dll+0x399FD0). macOS GetScreenFadeIdFromNameAndUser(StringView, net::UserID
+    // const&) compares it. net::UserID (4 bytes).
+    int32_t User;
+};
+
+// Server singleton of esv::screen_fade::ScreenFadeSystem: screen-fade id (Guid) -> the fade's
+// script name and the user it belongs to. Written in ScreenFadeSystem::FinalizeComponents,
+// searched by FrameDataWrapper::GetScreenFadeIdFromNameAndUser. Sibling of
+// ScreenFadeTimerComponent (HashMap<Guid, float>). Seen.py context: present from exploration/scene
+// steps on WLD_Main_A / SCL_Main_A; samples held one entry.
+struct ScreenFadeIdToFadeNameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScreenFadeIdToFadeName, "esv::screen_fade::ScreenFadeIdToFadeNameComponent")
+
+    // inferred: bg3.exe+0x2EEF260 allocates 0x40 zeroed in HashMap shape. macOS
+    // ScreenFadeSystem::FrameDataWrapper::GetScreenFadeIdFromNameAndUser walks keys (+0x20, stride
+    // 0x10 = Guid) and values (+0x30) comparing name string and user. EoCServer.dll+0x399FD0
+    // writes values at index*0x20 (STDString copy + int at +0x18). Live: buckets 5, 1 key, values
+    // pointer. ScreenFadeNameData equals no SE struct (declared here).
+    HashMap<Guid, ScreenFadeIdToFadeNameData> Names;
+};
+
 // Server singleton of esv::screen_fade::ScreenFadeSystem: per screen-fade id (Guid), the game time
 // at which the fade times out. FinalizeComponents inserts 'current time + 30' for every fade-to
 // request it registers (and logs 'Trying to finish a FadeTo for a ScreenFade that doesn't exist'
@@ -9344,6 +13382,32 @@ struct ScreenFadeTimerComponent : public BaseComponent
     // bg3.exe+0x5C4870 frees the values block and the key set (trivial values). Live: buckets 5,
     // one key.
     HashMap<Guid, float> Timers;
+};
+
+struct ScreenFadeToFinishedNameData
+{
+    // the game's own member name: esv::screen_fade::ScreenFadeNameData; log
+    // 'FinalizeComponents::m_FadeToFinishedData: Guid[%s], Name[%s], User[%d]'
+    // (EoCServer.dll+0x399FD0) prints the STDString copied to element+0.
+    STDString Name;
+    // the game's own member name: Same log 'User[%d]'; 4 bytes at element+0x18; net::UserID.
+    int32_t User;
+};
+
+// One-frame singleton event of esv::screen_fade::ScreenFadeSystem::FinalizeComponents: per screen-
+// fade id, the fade-to requests that finished this frame (name + user). Read by
+// esv::timeline::FadeSystem::Update (macOS). Seen.py context: born with ScreenFadeIdToFadeName in
+// exploration/scene steps.
+struct ScreenFadeToFinishedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerScreenFadeToFinished, "esv::screen_fade::ScreenFadeToFinishedOneFrameComponent")
+
+    // inferred: bg3.exe+0x2EEF420 allocates 0x40 zeroed, HashMap shape. macOS template
+    // ls::HashMap<ls::Guid, ls::DynamicArray<esv::screen_fade::ScreenFadeNameData>>.
+    // EoCServer.dll+0x399FD0 (FinalizeComponents) adds the component, gets/inserts the array for a
+    // Guid (FUN_1803931f0) and pushes a 0x20 ScreenFadeNameData, then logs m_FadeToFinishedData.
+    // Live: buckets 5, 1 key, value array present.
+    HashMap<Guid, Array<ScreenFadeToFinishedNameData>> Finished;
 };
 
 END_NS()
@@ -9468,8 +13532,6 @@ struct EscortSetLeaderPriorityRequestsEntry
 // esv::script::RequestSystem's requests). Pushed by OsirisGameFunctions::EscortSetLeaderPriority
 // (character, group, integer); filled by esv::script::RequestSystem::ProcessEmitRequests. Seen.py
 // context: singleton present in the idle level, all zero.
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct EscortSetLeaderPriorityRequestSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerScriptEscortSetLeaderPriorityRequests, "esv::script::EscortSetLeaderPriorityRequestSingletonComponent")
@@ -9505,6 +13567,91 @@ struct EscortSetLeaderRequestSingletonComponent : public BaseComponent
     Array<EscortSetLeaderRequestsEntry> Requests;
 };
 
+// Put by esv::script::RequestSystem (Toolkit EoCServer.dll+0x4FCCE0 Update ->
+// ProcessUpdateRequests; game factory bg3.exe+0x2372B70, update bg3.exe+0x2EA0290) on the entity
+// of a script request (Osiris EnterCombat / SetRelation / SetCombatGroup / Escort* /
+// ResetTutorialsMessage) while it executes; CompleteRequestSystem later lists finished request
+// entities in CompletedRequestsSingletonComponent. The component holds one
+// ls::Variant<EnterCombatRequest, SetRelationRequest, SetCombatGroupRequest,
+// EscortSetCharacterGroupRequest, EscortRemoveAllRequest, EscortSetLeaderPriorityRequest,
+// EscortSetLeaderRequest, ResetTutorialsMessageRequest> (order from macOS
+// esv::script::request::Loader::Save signature). Seen.py context: born in an event-trigger step
+// (S_CHA_Outside_BoulderTrigger) with QueuedRequestsSingletonComponent and combat/relation
+// RequestCompletedEvent; also alive in idle levels.
+struct ExecutingRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScriptExecutingRequest, "esv::script::ExecutingRequestComponent")
+
+    // the game's own member name: Savegame model ls::model::game::script::request::v0 has
+    // m_Request (macOS names). Variant storage of 0x28 bytes: bg3.exe+0x2EA0290 allocates 0x30,
+    // zeroes it and writes 0xFFC0000000000000 to +0 and +8 (default = alternative 0
+    // EnterCombatRequest {m_Combatant1, m_Combatant2} two null handles); copy FUN_142ea1ff0 copies
+    // per alternative: 0 = 16 bytes (two EntityHandles), 1 = 0x28 bytes (SetRelationRequest: two
+    // Guids + 8 bytes), 2/3 = EntityHandle + FixedString at +8 (SetCombatGroupRequest
+    // m_Entity/m_CombatGroupID, EscortSetCharacterGroupRequest m_Entity/m_Group), 4 = FixedString
+    // at +0 (EscortRemoveAll m_Group), 5 = EntityHandle + FixedString +8 + int32 +0xC
+    // (EscortSetLeaderPriority m_Entity/m_Group/m_Priority), 6 = EntityHandle + FixedString, 7 = 8
+    // bytes. Live: 16 random bytes at +0 (SetRelation Guids) or handles.
+    std::array<uint64_t, 5> Request;
+    // inferred: Variant index byte: FUN_142ea0c30 / FUN_142ea1ff0 switch on *(byte*)(p+0x28)
+    // (0..7, order above). Live: 1 (SetRelation) or 3 (EscortSetCharacterGroup).
+    uint8_t RequestType;
+};
+
+// Singleton-like component of esv::script::LevelLoadSystem (Toolkit EoCServer.dll+0xE94830 Update,
+// WorldView<LevelLoadStartedComponent, eoc::gamestate::RunningComponent const>; game update
+// bg3.exe+0x345F1A0): holds the name of the level whose load started, for the script side. Seen.py
+// context: born at level-change and in the character-creation level (SYS_CC_I).
+struct LevelLoadStartedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScriptLevelLoadStarted, "esv::script::LevelLoadStartedComponent")
+
+    // inferred: Creator bg3.exe+0x345F610 allocates 4 bytes and writes 0xFFFFFFFF (null
+    // FixedString); bg3.exe+0x345F1A0 assigns the system's FixedString member (+0x10) with
+    // IncRef/DecRef; Toolkit LevelLoadSystem::Update does FixedString::operator=(component,
+    // this+0x10) then FixedString::Reset(this+0x10). Live: FixedString-shaped indices. That the
+    // string is the level name is inferred from the system and the context (level change).
+    FixedString Level;
+};
+
+struct ScriptQueuedRequest
+{
+    // the game's own member name: Savegame model
+    // ls::model::game::script::request::v0::QueuedRequest: m_Request (macOS
+    // Visit<..._Field_m_Request, _Field_m_DependsOnPrevious, ...>). Same
+    // ls::Variant<EnterCombatRequest, SetRelationRequest, SetCombatGroupRequest,
+    // EscortSetCharacterGroupRequest, EscortRemoveAllRequest, EscortSetLeaderPriorityRequest,
+    // EscortSetLeaderRequest, ResetTutorialsMessageRequest> as ExecutingRequestComponent: copied
+    // with FUN_142ea1ff0 (bg3.exe+0x2EA0290) / FUN_1804f41c0 (EoCServer.dll
+    // ProcessUpdateRequests).
+    std::array<uint64_t, 5> Request;
+    // inferred: Variant index: copied first as a byte at +0x28 in both copy loops.
+    uint8_t RequestType;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad29;
+    // the game's own member name: model field m_DependsOnPrevious (second); copy loop copies a
+    // byte at +0x30 (bg3.exe+0x2EA0290, EoCServer.dll ProcessUpdateRequests).
+    bool DependsOnPrevious;
+    // the game's own member name: model field m_DependsOnRequest (third); copy loop copies 8 bytes
+    // at +0x38. Request entities are what CompletedRequestsSingletonComponent
+    // (HashSet<EntityHandle>) holds, which request::IsDependent consults.
+    EntityHandle DependsOnRequest;
+};
+
+// Singleton of esv::script::RequestSystem: script requests waiting for a request they depend on
+// (DynamicArray<esv::script::QueuedRequest>, macOS template). ProcessUpdateRequests
+// (EoCServer.dll) moves them to ExecutingRequestComponent once request::IsDependent says so.
+// Seen.py context: born in an event-trigger step with ExecutingRequestComponent; samples held 0 or
+// 1 entries (capacity 2/7).
+struct QueuedRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScriptQueuedRequests, "esv::script::QueuedRequestsSingletonComponent")
+
+    // inferred: bg3.exe+0x2EA0290 allocates the singleton (0x10, zeroed) and appends elements with
+    // stride 0x40 (IndexedStorage<esv::script::QueuedRequest> assert in EoCServer.dll
+    // ProcessUpdateRequests). Live: heap pointer, capacity 2/7, size 0/1.
+    Array<ScriptQueuedRequest> Requests;
+};
+
 struct SetCombatGroupRequestsEntry
 {
     // inferred: esv::script::Requester<T> +0: request entity copied by EoCServer.dll+0x4FA900.
@@ -9522,8 +13669,6 @@ struct SetCombatGroupRequestsEntry
 // esv::script::RequestSystem::ProcessEmitRequests; pushed by
 // OsirisGameFunctions::SetCombatGroupAndEnterCombat. Seen.py context: singleton present in the
 // idle level, all zero.
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct SetCombatGroupRequestSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerScriptSetCombatGroupRequests, "esv::script::SetCombatGroupRequestSingletonComponent")
@@ -9575,11 +13720,80 @@ END_NS()
 
 BEGIN_NS(esv::script::light)
 
+// On a scripted light: the entity of the effect esv::script::light::EffectRequestSystem (per-frame
+// update bg3.exe+0x2EA97F0) created for it from EffectParametersComponent. Saved with the savegame
+// (esv::script::light::Loader). Seen.py context: alive in idle levels (WLD_Main_A), up to 15
+// holders.
+struct EffectComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScriptLightEffect, "esv::script::light::EffectComponent")
+
+    // inferred: Layout of the sibling esv::script::light::PlayEffectRequestsSingletonComponent
+    // (layouts/alive): EffectRequestSystem::UpdateScriptedLightEffects (EoCServer.dll+0x4EC920)
+    // creates an effect entity and stores the same handle in the request and in the light's
+    // EffectComponent. Live: 48 entity-handle-shaped values (index in the low dword, 0x0200000x in
+    // the high dword).
+    EntityHandle Effect;
+};
+
+// On a scripted light: which effect to play and on which bone. Read by
+// esv::script::light::EffectRequestSystem::UpdateScriptedLightEffects to fill
+// PlayEffectRequestsSingletonComponent; saved with the savegame (esv::script::light::Loader, model
+// ls::model::game::script::light::v0::EffectParametersComponent). Seen.py context: alive in idle
+// levels (WLD_Main_A), up to 17 holders.
+struct EffectParametersComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScriptLightEffectParameters, "esv::script::light::EffectParametersComponent")
+
+    // the game's own member name: Savegame model field order m_EffectName, m_BoneName (macOS
+    // Visit<...EffectParametersComponent, _Field_m_EffectName, _Field_m_BoneName>).
+    // UpdateScriptedLightEffects copies +0 into the PlayEffectOnEntityRequest FixedString at +8
+    // (sibling layout esv.script.light.PlayEffectRequestsSingletonComponent). Live: FixedString
+    // indices.
+    FixedString EffectName;
+    // the game's own member name: Second model field m_BoneName; copied into the request's
+    // FixedString at +0x18. Live: 0xFFFFFFFF (null) in some samples.
+    FixedString BoneName;
+};
+
+struct ScriptLightPlayEffectOnEntityRequest
+{
+    // inferred: ls::PlayEffectOnEntityRequest (name from the IndexedStorage assert in
+    // EoCServer.dll+0x4E98F0). The adder defaults +0 to the null handle;
+    // UpdateScriptedLightEffects (EoCServer.dll+0x4EC920) stores the entity it has just created
+    // for the effect (the same handle it puts into the light's EffectComponent).
+    EntityHandle EffectEntity;
+    // unknown: Adder constructs a FixedString at +8; UpdateScriptedLightEffects assigns the first
+    // FixedString (+0) of the light's 8-byte effect-parameters component
+    // (esv::script::light::EffectParametersComponent, read in the same WorldView) - probably the
+    // effect resource.
+    FixedString field_8;
+    // inferred: Adder defaults it to the null handle; UpdateScriptedLightEffects stores the
+    // scripted light entity the query is iterating (the entity holding the effect parameters).
+    EntityHandle Entity;
+    // unknown: Adder constructs a FixedString at +0x18; UpdateScriptedLightEffects assigns the
+    // second FixedString (+4) of the effect-parameters component (perhaps a bone/attachment name).
+    FixedString field_18;
+};
+
+// Singleton of the scripted-light effect requests, filled by
+// esv::script::light::EffectRequestSystem::UpdateScriptedLightEffects. Lives from level load
+// (situation idle); empty in every sample.
+struct PlayEffectRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerScriptLightPlayEffectRequests, "esv::script::light::PlayEffectRequestsSingletonComponent")
+
+    // inferred: Creator bg3.exe+0x2EAA9B0 allocates 0x10 and zeroes pointer, capacity, size.
+    // EoCServer.dll+0x4EC920 (EffectRequestSystem::UpdateScriptedLightEffects) clears it per frame
+    // destroying FixedStrings at +8/+0x18 of 0x20-byte elements ('ls::IndexedStorage<struct
+    // ls::PlayEffectOnEntityRequest>') and appends with EoCServer.dll+0x4E98F0 (stride 0x20).
+    // Live: one instance, all zero (empty array).
+    Array<ScriptLightPlayEffectOnEntityRequest> Requests;
+};
+
 // Singleton of scripted-light effect entities to stop, filled by
 // esv::script::light::EffectRequestSystem::UpdateScriptedLightEffects. Lives from level load;
 // empty in the sample.
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct StopEffectRequestsSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerScriptLightStopEffectRequests, "esv::script::light::StopEffectRequestsSingletonComponent")
@@ -9598,6 +13812,49 @@ DEFINE_TAG_COMPONENT(esv::script::light, LitComponent, ServerScriptLightLit)
 END_NS()
 
 BEGIN_NS(esv::shapeshift)
+
+struct ServerShapeshiftAnubisStateOverride
+{
+    // unknown: element of ParameterOverrides, stride 0x40 (array helper bg3.exe+0xF4CEC0 allocates
+    // count << 6); non-trivial destructor bg3.exe+0xF4D0F0; savegame model
+    // engine.v0.GlobalConfigParameterSimpleValue (56 bytes) is written per element
+    uint64_t field_0;
+    // unknown: unknown
+    uint64_t field_8;
+    // unknown: unknown
+    uint64_t field_10;
+    // unknown: unknown
+    uint64_t field_18;
+    // unknown: unknown
+    uint64_t field_20;
+    // unknown: unknown
+    uint64_t field_28;
+    // unknown: unknown
+    uint64_t field_30;
+    // unknown: unknown
+    uint64_t field_38;
+};
+
+// Server-only, saved (model game.shapeshift.v0.AnubisStateComponent, 32 bytes, members m_Config,
+// m_ParameterOverrides; other model written along: engine.v0.GlobalConfigParameterSimpleValue). 48
+// holders seen: shapeshifted characters keep the Anubis (behaviour script) config they had before,
+// so it can be restored; read by ls::anubis::game::ConfigChangeSystem (per-frame update
+// bg3.exe+0x2810C50).
+struct AnubisStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerShapeshiftAnubisState, "esv::shapeshift::AnubisStateComponent")
+
+    // the game's own member name: savegame model game.shapeshift.v0.AnubisStateComponent, member 0
+    // m_Config (savefields.py). Windows creator bg3.exe+0x26E0E30 moves a 24-byte ls string into
+    // +0..+0x18 (source reset to size 0 / capacity 0xF, the small-string pattern); destructor
+    // bg3.exe+0x22D59D0 frees *(comp+0) only if *(uint32*)(comp+0x14) > 0xF and resets
+    // size/capacity. Live: heap buffer, size 0x15, capacity 0x1F
+    STDString Config;
+    // the game's own member name: savegame model member 1 m_ParameterOverrides (savefields.py).
+    // Windows creator moves ptr +0x18, uint32 +0x20, uint32 +0x24 (Array); destructor calls
+    // bg3.exe+0xF4CEC0(comp+0x18, 0) (64-byte elements) and frees the buffer. Live: empty (0/0/0)
+    Array<ServerShapeshiftAnubisStateOverride> ParameterOverrides;
+};
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::shapeshift, StateRefreshedOneFrameComponent, ServerShapeshiftStateRefreshed)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::shapeshift, StatesChangedEventOneFrameComponent, ServerShapeshiftStatesChangedEvent)
@@ -9733,6 +13990,38 @@ struct DistantSoundStateUserMapComponent : public BaseComponent
     HashMap<EntityHandle, HashSet<UserId>> Users;
 };
 
+// Put on a request entity by esv::ServerSoundSystem (bg3.exe+0x2D92180 drains the system's queue
+// of ls::Variant<ServerSoundSystem::PlayRequest, PlayHUDRequest>, 0x18-byte elements with the
+// index at +0x10) and consumed by ServerSoundSystem::ProcessServerSoundRequests
+// (EoCServer.dll+0x4CA630), which forwards it to clients
+// (eoc::notification::PlayServerSoundComponent). macOS:
+// ServerSoundSystem::RequestPlaySound(EntityHandle const&, FixedString const&, bool) /
+// RequestPlayHUDSound. Seen.py context: born at the first shove/throw step together with
+// drop/thrown/steering types; very common afterwards (up to 787 holders).
+struct PlayServerSoundRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerSoundPlayServerSoundRequest, "esv::sound::PlayServerSoundRequestOneFrameComponent")
+
+    // inferred: Both writers bg3.exe+0x2D922B0 (PlayRequest) and bg3.exe+0x2D924B0
+    // (PlayHUDRequest) copy the request's EntityHandle (+0) after checking IsEntityAlive. Live:
+    // entity handles.
+    EntityHandle Entity;
+    // inferred: Writers copy the request FixedString at +8 with IncRef; ProcessServerSoundRequests
+    // destroys a FixedString at +8. RequestPlaySound(entity, FixedString, bool): the sound event
+    // name. Live: FixedString indices.
+    FixedString Event;
+    // inferred: PlayRequest writer stores the 0..3 result of a virtual call on the system's sound
+    // helper (rejects 2 and >=4); PlayHUDRequest writer stores constant 2. Live: 0..2. Enum name
+    // not established (an ESoundObjectType-like value, 4 bytes).
+    uint32_t SoundObjectType;
+    // unknown: Both writers copy the request byte at +0xC here (the bool of RequestPlaySound /
+    // RequestPlayHUDSound). Live: 0/1.
+    uint8_t field_10;
+    // unknown: PlayRequest writer copies request byte +0xD (when it is set, object type 1 is
+    // rejected); PlayHUDRequest writer stores 1.
+    uint8_t field_11;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::sound, PerformerRemovedEventOneFrameComponent, ServerSoundPerformerRemovedEvent)
 
 END_NS()
@@ -9750,6 +14039,39 @@ struct ModificationsChangedEventOneFrameComponent : public BaseComponent
     // U?$ID@UEntityHandleTraits@ecs@@@ls@@@Z takes one EntityHandle; registry size 8. Live: 48
     // entity handles (high dword 0x18xxxxx/0x20xxxxx).
     EntityHandle Entity;
+};
+
+struct NewSpellsAddedFromCCSpellMetaId
+{
+    // inferred: Same layout as SE SpellMetaId (Base/ExposedTypes.h) = eoc::spell::MetaId (0x30
+    // bytes, IndexedStorage<struct eoc::spell::MetaId> assert in EoCServer.dll+0x357EF0).
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SE SpellMetaId.SourceType (SpellSourceType, 1-byte enum)
+    uint8_t SourceType;
+    // inferred: SE SpellMetaId.Source
+    Guid Source;
+    // inferred: SE SpellMetaId.ProgressionSource
+    Guid ProgressionSource;
+};
+
+// Spells a character got from character creation / level-up (eoc::spell::MetaId list), added by
+// esv::SpellSystem::ProcessNewSpellsPreparedFromCC (EoCServer.dll+0x1211240; game
+// bg3.exe+0x3382A50) and read by SpellSystem's prepare logic (macOS: FilterQuery with
+// StatsComponent, spell::ContainerComponent, BookPreparesComponent, PlayerPrepareSpellComponent).
+// Seen.py context: born when Shadowheart was recruited (ShadowHeart_Recruitment_Den dialog)
+// together with
+// recruit/approval/character_creation::InitialLevelComponent/progression::LevelUpChanged.
+struct NewSpellsAddedFromCharacterCreationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerSpellNewSpellsAddedFromCharacterCreation, "esv::spell::NewSpellsAddedFromCharacterCreationComponent")
+
+    // inferred: Creator bg3.exe+0x3392B50 allocates 0x10 zeroed (array).
+    // ProcessNewSpellsPreparedFromCC (EoCServer.dll+0x1211240) gets-or-adds the component and
+    // appends each 0x30-byte element with eoc::spell::MetaId::MetaId (FUN_180357ef0,
+    // IndexedStorage<eoc::spell::MetaId>). Live: heap pointer, capacity 4, size 4. The struct
+    // equals SE's SpellMetaId (swap later).
+    Array<NewSpellsAddedFromCCSpellMetaId> Spells;
 };
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::spell, ThrowDetachmentRequestOneFrameComponent, ServerSpellThrowDetachmentRequest)
@@ -9784,6 +14106,73 @@ struct ActivationEventOneFrameComponent : public BaseComponent
     // inferred: Same writer stores the status entity itself (*pIVar14 of the processed status
     // list) at +8. Live: 48 distinct, higher handles (status entities).
     EntityHandle Status;
+};
+
+struct AddConcentrationTargetSpellId
+{
+    // inferred: Equals SE SpellId (Base/ExposedTypes.h, SpellMetaId + Prototype). Creator default
+    // 0xFFFFFFFF.
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SpellSourceType (1-byte enum); creator default 0x17 (Sentinel). Live: 5 / 9.
+    uint8_t SourceType;
+    // inferred: SE SpellMetaId.Source; live zero
+    Guid Source;
+    // inferred: SE SpellMetaId.ProgressionSource; live zero
+    Guid ProgressionSource;
+    // inferred: SE SpellId.Prototype; creator default 0xFFFFFFFF
+    FixedString Prototype;
+};
+
+// Request to add a status entity as a concentration target, raised by the server status execution
+// code (bg3.exe+0x2C4FE90, weak match esv::status::ExecutionSystem::UpdateStatusStates; Toolkit
+// users esv::status::ExecutionSystem::ProcessRequests / ProcessStatusAddition) for each status-add
+// request whose flag (+0x58 of the 0x60-byte request) asks for it; consumed by the concentration
+// system. Seen.py context: born in 'spells-2' (concentration spells) and charm dialogues.
+struct AddConcentrationStatusTargetRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerStatusAddConcentrationStatusTargetRequest, "esv::status::AddConcentrationStatusTargetRequestOneFrameComponent")
+
+    // unknown: Creator bg3.exe+0x2C5B420 defaults to null handle; writer bg3.exe+0x2C4FE90 copies
+    // the status-add request's handle at request+0x10. Live: entity handles.
+    EntityHandle field_0;
+    // unknown: Default null handle; writer stores the entity being processed (lVar26). Live:
+    // entity handles, all distinct (likely the new status entity).
+    EntityHandle field_8;
+    // unknown: Default null handle; writer copies +0xA8 of the status object for the request.
+    // Live: entity handles (same set as field_0).
+    EntityHandle field_10;
+    // inferred: Writer calls eoc::spell::SpellId::operator=(component+0x18, request+0x20). Creator
+    // defaults: FixedString -1 at +0x18, byte 0x17 at +0x20, zeros, FixedString -1 at +0x48.
+    // Struct equals SE SpellId.
+    AddConcentrationTargetSpellId Spell;
+    // unknown: Writer copies 16 bytes from status object +0x140..+0x14F; creator zeroes. Live:
+    // random 16-byte values (a Guid, probably the spell-cast source uuid).
+    Guid field_50;
+};
+
+// Put on an aura status entity (status type 5 = AURA) whose aura prototype is flagged dangerous,
+// by the server status execution code (bg3.exe+0x2C4FE90, weak match to
+// esv::status::ExecutionSystem::UpdateStatusStates); read by
+// esv::danger::GetDangerousAurasForPathfinding (macOS; WorldView<status::ActiveComponent,
+// DangerousAuraComponent, OwnershipComponent, ...>, with an eoc::aura::EDangerousAuraAvoidance
+// argument) so AI pathfinding avoids it. Seen.py context: born in 'spells-5' (aura spells), also
+// in idle/character-creation levels.
+struct DangerousAuraComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerStatusDangerousAura, "esv::status::DangerousAuraComponent")
+
+    // unknown: Creator bg3.exe+0x2C5AFF0 zeroes it; writer bg3.exe+0x2C4FE90 stores
+    // ((statusPrototype+0x10 flags) & 6) != 0. Live: 1.
+    bool field_0;
+    // unknown: Writer stores bit 5 of status-prototype byte +0x122. Live: 0.
+    bool field_1;
+    // unknown: Writer stores bit 6 of status-prototype byte +0x122 (the component is only written
+    // when field_0 or this bit is set). Live: 0.
+    bool field_2;
+    // inferred: Writer stores (float) of eoc::StatusPrototype::GetMappedValue(proto, <FixedString
+    // DAT_14617619c>) and only when it is > 0 - the aura's radius value. Live: 2.0 and 5.0.
+    float Radius;
 };
 
 // Status deactivation event of esv::status::ExecutionSystem, put on a fresh event entity; seen
@@ -9895,7 +14284,132 @@ struct RecoveryRequestsComponent : public BaseComponent
 
 END_NS()
 
+BEGIN_NS(esv::steering)
+
+struct SteeringChangedTarget
+{
+    // inferred: Storage of ls::Variant<eoc::steering::ToDirection, eoc::steering::ToEntity>
+    // (Toolkit name text in EoCServer.dll+0x9BC060): ToDirection writes a normalized vec3 (x, y, z
+    // floats; ProcessBeginRequests normalizes position deltas into +0/+8); ToEntity holds an
+    // EntityHandle in +0 (checked for validity after FUN_1809bc060 when index == 1). Live: floats
+    // such as 0xBF7FFFFF (-1.0) and handles.
+    std::array<uint32_t, 3> Data;
+    // inferred: Variant index at +0xC (FUN_1809bc060 switches on it: 0 = ToDirection, 1 =
+    // ToEntity). Live: 0/1.
+    uint8_t Type;
+};
+
+// One-frame copy of the steering request (esv::steering::Request, 0x30 bytes) that
+// esv::steering::StateSystem started this frame for an entity (Toolkit EoCServer.dll+0x9BC9C0
+// StateSystem::ProcessBeginRequests copies the whole request into it after WasAborted(request
+// Guid) is false). Requests come from lock/trap/placement SteeringRequestOneFrameComponents.
+// Seen.py context: born at the first shove/throw step (thrown items turn to a direction) and in
+// dialogues where characters turn.
+struct ChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerSteeringChanged, "esv::steering::ChangedOneFrameComponent")
+
+    // inferred: Request +0..+0xF copied as two qwords (EoCServer.dll+0x9BC9C0).
+    SteeringChangedTarget Target;
+    // inferred: Request +0x10 (4 bytes) copied; ProcessSteering tests bits 1, 2, 4, 8 of the same
+    // value in StateComponent (+0x10). Live: 0 or 0xF.
+    uint32_t Flags;
+    // inferred: Request +0x18 Guid (ls::Guid::Guid constructs it when a request is built;
+    // WasAborted(.., Guid* request+0x18)); copied to LifetimeComponent +0 by ProcessLifetime.
+    // Live: random 16 bytes.
+    Guid RequestId;
+    // inferred: Request +0x28 float, default 0x4B18967F (9999999.0) then set to 1.0 in the built
+    // request; ProcessLifetime copies it into LifetimeComponent +0x10, which counts down. Live: 1,
+    // 1.5, 2.31, 9999999.
+    float Lifetime;
+};
+
+// Remaining lifetime of the active steering request of an entity, kept by
+// esv::steering::StateSystem::ProcessLifetime (Toolkit EoCServer.dll+0x9BD860): created from the
+// started request (ChangedOneFrameComponent), decremented each frame, removed when it runs out.
+// Seen.py context: born with ChangedOneFrameComponent at the first shove/throw step.
+struct LifetimeComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerSteeringLifetime, "esv::steering::LifetimeComponent")
+
+    // inferred: ProcessLifetime writes the request Guid (+0x18 of the changed/request data) to +0
+    // and compares it with ls::operator== against stored request ids. Creator bg3.exe+0x2B48D50
+    // zeroes it. Live: 16 random bytes equal to ChangedOneFrameComponent.RequestId.
+    Guid RequestId;
+    // inferred: ProcessLifetime copies request +0x28 here and later does value -= delta time
+    // (EoCServer.dll+0x9BD860, element stride 0x18). Live: 0.3 .. 9999999.0.
+    float Lifetime;
+};
+
+struct SteeringStateTarget
+{
+    // inferred: Storage of ls::Variant<eoc::steering::ToDirection, eoc::steering::ToEntity>: a
+    // vec3 direction (floats) or an EntityHandle at +0. Same layout as
+    // ChangedOneFrameComponent.Target.
+    std::array<uint32_t, 3> Data;
+    // inferred: Variant index (0 = ToDirection, 1 = ToEntity). Live: 0/1.
+    uint8_t Type;
+};
+
+// Current steering target of an entity, written by esv::steering::StateSystem::ProcessSteering
+// (Toolkit EoCServer.dll+0x9BE470): the first 0x14 bytes of the started esv::steering::Request
+// plus a re-randomised timer. Seen.py context: born with ChangedOneFrameComponent at the first
+// shove/throw step; up to 5 holders.
+struct StateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerSteeringState, "esv::steering::StateComponent")
+
+    // inferred: ProcessSteering copies two qwords from the request to +0 (EoCServer.dll+0x9BE470,
+    // lines after FUN_1809b7640). Creator bg3.exe+0x2B495A0 zeroes 0x18.
+    SteeringStateTarget Target;
+    // inferred: Copied 4 bytes from request +0x10; ProcessSteering tests bit 1 (angle check), bits
+    // 2 and 3 ((flags & 0xC) == 0xC) of *(uint*)(state+0x10). Live: 0 / 0xF.
+    uint32_t Flags;
+    // inferred: Set to ls::Random::GenerateRand(2.0, 5.0) on start and when it expires;
+    // decremented by GetDeltaTimeForEntity each frame (EoCServer.dll+0x9BE470). Live: 0.96 ..
+    // 2.18.
+    float Timer;
+};
+
+END_NS()
+
 BEGIN_NS(esv::summon)
+
+// Countdown put on a new summon while its summoning animation plays; esv::summon::AnimationSystem
+// (per-frame update bg3.exe+0x2DC9410; Toolkit WorldView<summon::AnimationRequestComponent,
+// eoc::animation::GameplayEventsOneFrameComponent const, eoc::summon::AnimationComponent const>)
+// decrements it and removes the component when it reaches 0. Seen.py context: born in 'spells-5'
+// (summoning spells) and fights with summoning enemies.
+struct AnimationRequestComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerSummonAnimationRequest, "esv::summon::AnimationRequestComponent")
+
+    // inferred: Creator bg3.exe+0x2DC9B10 writes 0x40C00000 (6.0); Toolkit
+    // esv::summon::AnimationSystem::Update also writes 0x40C00000, then does value -= frame delta
+    // (GameTime +8) and calls RemoveComponentUnchecked when value <= 0. Live: 6.0 and 1.739.
+    float Timer;
+};
+
+// Request for a 'summoned' combat-log entry, raised by
+// esv::summon::SpawnSystem::ProcessCombatLogRequests (game bg3.exe+0x2DCED30, from a list of
+// 16-byte entity pairs in the system's frame data) and consumed by
+// esv::combat_log::CombatLogSystem::ProcessSummonSpawnRequests (EoCServer.dll+0x46F580), which
+// builds an eoc::CombatLog::SummonedEntry with two CombatLog::NetEntity values from +0 and +8.
+// Seen.py context: born in 'spells-5' (summoning spells) and in fights with summoning enemies
+// (S_HAG_WoodWoad, mud mephits, cloaker).
+struct CombatLogEntryRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerSummonCombatLogEntryRequest, "esv::summon::CombatLogEntryRequestOneFrameComponent")
+
+    // unknown: Creator bg3.exe+0x2DCFBC0 defaults to the null handle; bg3.exe+0x2DCED30 writes the
+    // second handle of the frame-data pair here; ProcessSummonSpawnRequests turns it into the
+    // entry's first NetEntity. Live: entity handles. Summon vs. summoner not established.
+    EntityHandle field_0;
+    // unknown: Default null handle; bg3.exe+0x2DCED30 writes the first handle of the pair (the one
+    // checked by FUN_14302d780 / FUN_140f345b0 before logging); becomes the entry's second
+    // NetEntity. Live: entity handles.
+    EntityHandle field_8;
+};
 
 // Singleton of esv::summon::DespawnSystem (CollectEntitiesToDestroy, ProcessSummonDestruction):
 // summons whose despawn is delayed. Lives from level load; empty in the sample.
@@ -9914,6 +14428,47 @@ struct DespawnDelaySingletonComponent : public BaseComponent
 
 DEFINE_TAG_COMPONENT(esv::summon, RemoveConcentrationRequestOneFrameComponent, ServerSummonRemoveConcentrationRequest)
 DEFINE_TAG_COMPONENT(esv::summon, UseCasterPassivesComponent, ServerSummonUseCasterPassives)
+
+END_NS()
+
+BEGIN_NS(esv::tags)
+
+struct StatusTagChangedEventData
+{
+    // inferred: EoCServer.dll+0xB64C30 ProcessBoostChangedEvents writes request +0 =
+    // *FUN_1803ad100(world, boost owner/source entity) (a component holding an entity, default
+    // DAT_1821ea008); matches the second EntityHandle of ThrowStatusTagSet(ls::ID const&, ls::ID
+    // const&, Guid const&, StoryActionID). Live samples hold entity handles.
+    EntityHandle Cause;
+    // inferred: EoCServer.dll+0xB64C30 copies 16 bytes from the tag Guid returned by FUN_180b563c0
+    // to +8; FUN_180b53db0 copies param_3 (16 bytes) to element +8
+    Guid Tag;
+    // inferred: FUN_180b53db0 copies a 4-byte value to element +0x18; ThrowStatusTagSet takes
+    // TypeWrap<unsigned int, eoc::TStoryActionIDClassname> as last argument; the value comes from
+    // +0x10 of a component in ProcessBoostChangedEvents
+    uint32_t StoryActionId;
+};
+
+// One-frame event written by esv::TagSystem::ProcessStatusTagNotificationRequest
+// (EoCServer.dll+0xB66290): for each entity with queued
+// esv::TagSystem::StatusTagNotificationRequest (32-byte elements: data + bool at +0x1C) it pushes
+// an esv::tags::StatusTagNotificationData (32 bytes, name from the IndexedStorage assert in
+// EoCServer.dll+0xB53DB0) into one of two arrays, chosen by that bool. The data matches
+// esv::StoryGameEventManager::ThrowStatusTagSet/Cleared(entity, entity, Guid tag, StoryActionID).
+// Seen alive on status/tag changes (dialogs, spells, statuses).
+struct StatusTagChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerStatusTagChangedEvent, "esv::tags::StatusTagChangedEventOneFrameComponent")
+
+    // inferred: EoCServer.dll+0xB66290: element stride 0x20; target is the component itself when
+    // request byte +0x1C == 0. Request byte +0x1C = (BoostChangedEvent.field_4 == 0) in
+    // EoCServer.dll+0xB64C30 line 319. Live: pointer + small cap/size. Which of Set/Cleared this
+    // is is not established.
+    Array<StatusTagChangedEventData> field_0;
+    // inferred: EoCServer.dll+0xB66290: target is component+0x10 when request byte +0x1C != 0.
+    // Live: pointer in 44 of 48 samples, sizes 1-2.
+    Array<StatusTagChangedEventData> field_10;
+};
 
 END_NS()
 
@@ -9947,6 +14502,35 @@ DEFINE_ONEFRAME_TAG_COMPONENT(esv::through, ShootThroughTypeChangedOneFrameCompo
 END_NS()
 
 BEGIN_NS(esv::thrown)
+
+// Server one-frame request that an entity is being thrown (seen alive in item-throw and shove-
+// throw). Drained by esv::thrown::ThrowAnimationSystem::ProcessThrownRequests
+// (EoCServer.dll+0x3D3D50), which copies +0xC, +0x10 and +0x18 into eoc::thrown::IsThrownComponent
+// (layouts\alive\eoc.thrown.IsThrownComponent.json: float, byte, EntityHandle) and uses +0..+0xC
+// in the rotation it writes to the frame data; also read by improvised_weapon::PickUpSystem and
+// invisibility::ChangesSystem::ProcessItemAnimationStateChanges.
+struct EntityThrownRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerThrownEntityThrownRequest, "esv::thrown::EntityThrownRequestOneFrameComponent")
+
+    // unknown: Creator bg3.exe+0x2E8F670 zeroes +0..+0xF. EoCServer.dll+0x3D3D50 lines 523-533
+    // read floats +0,+4,+8 together with +0xC and compose them like a quaternion (x,y,z,w) with
+    // the computed spin rotation. Live: (4, -1.3, 1), (17.6, -1.36, 5) ... - not normalised, so
+    // kept as vec3.
+    glm::vec3 field_0;
+    // unknown: EoCServer.dll+0x3D3D50 line 299: request handled only when |+0xC| > FLT_EPSILON;
+    // line 321 copies it to IsThrownComponent +0. Live 0.287 .. 1.313.
+    float field_C;
+    // unknown: Creator bg3.exe+0x2E8F670 writes byte 0 at +0x10; EoCServer.dll+0x3D3D50 line 322
+    // copies the byte into IsThrownComponent +4. Live 3; upper bytes are garbage.
+    uint8_t field_10;
+    // unknown: Creator writes the null handle 0xFFC0000000000000; EoCServer.dll+0x3D3D50 line 323
+    // copies it into IsThrownComponent +8. Live entity handles.
+    EntityHandle field_18;
+    // unknown: Creator writes the null handle 0xFFC0000000000000 at +0x20. Live entity handles
+    // (different from +0x18).
+    EntityHandle field_20;
+};
 
 struct ThrownParametersCondition
 {
@@ -10063,6 +14647,22 @@ struct TraderMapChangesSingletonComponent : public BaseComponent
     HashSet<EntityHandle> Removed;
 };
 
+// Server component of a trader whose map marker is linked to another entity; read by
+// esv::trade::TraderMapTrackingSystem (ProcessAddedTraders EoCServer.dll+0xD0B420,
+// ProcessHiddenTraders, ProcessRemovedTraders, ProcessLevelSwap). Saved: `symbols.py savemodel`
+// shows it copied into the model ls::model::core::v0::EntityId (core.v0.EntityId, 16 bytes) - the
+// whole component is one entity reference. Seen alive on traders (S_GOB_Quartermaster etc.).
+struct TraderMapMarkerLinkedWithComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerTraderMapMarkerLinkedWith, "esv::trade::TraderMapMarkerLinkedWithComponent")
+
+    // inferred: Save model is ls::model::core::v0::EntityId (savegame
+    // Ops<TraderMapMarkerLinkedWithComponent,esv::trade::Loader>::Save bg3_macos_x64+0x4E8A1B0);
+    // registry size 8; live: 48 distinct entity handles (low dword index, high dword salt/type
+    // 0x00800001..0x02000013).
+    EntityHandle Entity;
+};
+
 DEFINE_TAG_COMPONENT(esv::trade, CanTradeSetComponent, ServerTradeCanTradeSet)
 DEFINE_TAG_COMPONENT(esv::trade, LegacyCanTradeProcessedComponent, ServerTradeLegacyCanTradeProcessed)
 DEFINE_TAG_COMPONENT(esv::trade, PresentTraderComponent, ServerTradePresentTrader)
@@ -10074,6 +14674,29 @@ BEGIN_NS(esv::trap)
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::trap, AnimationRequestOneFrameComponent, ServerTrapAnimationRequest)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::trap, DisarmableStateChangedOneFrameComponent, ServerTrapDisarmableStateChanged)
+
+END_NS()
+
+BEGIN_NS(esv::triggers::stats)
+
+// One-frame event added by esv::triggers::stats::LoadingSystem::LoadAreaLevelOverrides
+// (EoCServer.dll+0x302BE0) when stats area triggers are loaded (seen alive on level change /
+// teleport): for every collected entity it adds the component (FUN_1802ffb50) and copies one
+// 0x30-byte ls::HashSet<ls::Guid> into it (FUN_1802ed000; the per-entity sets are an
+// IndexedStorage<HashSet<Guid>> per the assert string). The Guids are AreaLevelOverride ids
+// (eoc::AreaLevelOverrideManager is keyed by Guid). Read by
+// esv::stats::AreaLevelSystem::UpdateAreaLevels.
+struct AreaLevelOverridesLoadedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerStatsAreaLevelOverridesLoaded, "esv::triggers::stats::AreaLevelOverridesLoadedOneFrameComponent")
+
+    // inferred: EoCServer.dll+0x302BE0 lines 420-446: per entity adds the component and copies a
+    // HashSet from an array of stride 0x30 (assert 'ls::IndexedStorage<class ls::HashSet<class
+    // ls::Guid,...>>'). Live matches the 48-byte HashSet shape: buckets ptr + count 5, NextIds ptr
+    // cap1/size1, Keys ptr cap1/size1 (Keys pointer = NextIds pointer - 0x10). Name of the meaning
+    // from eoc::AreaLevelOverrideManager::GetOverrideByID(Guid) (macOS symbols).
+    HashSet<Guid> AreaLevelOverrides;
+};
 
 END_NS()
 
@@ -10607,6 +15230,282 @@ END_NS()
 
 BEGIN_NS(esv::zone)
 
+struct ZoneCreateRequestSpellId
+{
+    // inferred: equals Script Extender SpellId (ExposedTypes.h); game default 0xFFFFFFFF (null
+    // FixedString) at component +0x40
+    FixedString OriginatorPrototype;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
+    // inferred: SE SpellSourceType (1 byte); game default 0x17 = Sentinel at component +0x48
+    uint8_t SourceType;
+    // inferred: SE SpellMetaId.Source
+    Guid Source;
+    // inferred: SE SpellMetaId.ProgressionSource
+    Guid ProgressionSource;
+    // inferred: SE SpellId.Prototype; game default null at component +0x70; live equal to
+    // OriginatorPrototype
+    FixedString Prototype;
+};
+
+struct ZoneCreateRequestBaseTarget
+{
+    // inferred: SE eoc::spell_cast::BaseTarget has virtual methods
+    [[bg3::hidden]] void* VMT;
+    // inferred: SE BaseTarget.Target
+    EntityHandle Target;
+    // inferred: SE BaseTarget.TargetProxy (std::optional<EntityHandle> value)
+    EntityHandle TargetProxy;
+    // inferred: std::optional engaged flag
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: SE BaseTarget.Position (std::optional<glm::vec3> value)
+    glm::vec3 Position;
+    // inferred: std::optional engaged flag
+    bool HasPosition;
+};
+
+struct ZoneCreateRequestInitialTarget
+{
+    // inferred: game creator bg3.exe+0x3377AF0 writes &PTR_FUN_1454db080 at component +0x80;
+    // equals SE eoc::spell_cast::InitialTarget (0x70 bytes, Toolkit local 'InitialTarget local_378
+    // [112]')
+    [[bg3::hidden]] void* VMT;
+    // inferred: game default null handle at +0x88
+    EntityHandle Target;
+    // inferred: SE BaseTarget.TargetProxy value
+    EntityHandle TargetProxy;
+    // inferred: game default byte 0 at component +0x98
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: SE BaseTarget.Position value
+    glm::vec3 Position;
+    // inferred: game default byte 0 at component +0xAC
+    bool HasPosition;
+    [[bg3::hidden]] std::array<uint8_t, 3> _Pad2D;
+    // inferred: SE InitialTarget.TargetingType (SpellType, 1 byte); game default 0 at component
+    // +0xB0; live 1
+    uint8_t TargetingType;
+    // inferred: SE InitialTarget.Target2 (std::optional<BaseTarget> value)
+    ZoneCreateRequestBaseTarget Target2;
+    // inferred: game default byte 0 at component +0xE8
+    bool HasTarget2;
+};
+
+struct ZoneCreateRequestAiTilePos
+{
+    // unknown: eoc::AiTilePos, 8 bytes, alignment 4 (EoCServer.dll+0x6A9380 allocates count*8
+    // align 4; assert names ls::IndexedStorage<struct eoc::AiTilePos>)
+    int32_t field_0;
+    // unknown: second half of eoc::AiTilePos
+    int32_t field_4;
+};
+
+struct ZoneCreateRequestOptionalTiles
+{
+    // inferred: std::optional<Array<eoc::AiTilePos>> copied by EoCServer.dll+0x6A9380
+    Array<ZoneCreateRequestAiTilePos> Value;
+    // inferred: engaged flag tested at +0x10 by FUN_18114c290
+    bool HasValue;
+};
+
+struct ZoneCreateRequestOptionalEntities
+{
+    // inferred: std::optional<Array<EntityHandle>> copied by EoCServer.dll+0x6A92C0 (assert
+    // IndexedStorage<ls::ID<ecs::EntityHandleTraits>>, ECS container allocator)
+    Array<EntityHandle> Value;
+    // inferred: engaged flag
+    bool HasValue;
+};
+
+struct ZoneCreateRequestOptionalHits
+{
+    // inferred: std::optional<Array<eoc::HitDesc>> (EoCServer.dll+0x6A9450 allocates count*0x1B0
+    // in the Toolkit build; Script Extender HitDesc is 448 bytes in the game, so the element is
+    // not declared): array buffer
+    [[bg3::hidden]] void* Buffer;
+    // inferred: Array capacity
+    uint32_t Capacity;
+    // inferred: Array size
+    uint32_t Size;
+    // inferred: engaged flag
+    bool HasValue;
+};
+
+// Server one-frame request to create a spell zone (cone/line area of a spell; seen alive when a
+// Mud Mephit cast a spell, born together with esv::zone::SpellComponent and
+// FinishedEventOneFrameComponent). It is one esv::zone::CreationParams (0x188 bytes):
+// esv::zone::CreationSystem::ProcessCreateRequests (EoCServer.dll+0x114C5E0) walks CreationParams
+// with stride 0x188, creates the zone entity, fills esv::zone::SpellComponent from it and copies
+// the whole CreationParams with the assignment FUN_18114c290 (EoCServer.dll+0x114C290), which
+// gives every member's offset and width. The builder FUN_18164dc50 (EoCServer.dll+0x164DC50) names
+// the member types (SpellId, InitialTarget, eoc::SpellZoneInfo, optional arrays of AiTilePos /
+// EntityHandle / HitDesc). Game defaults from creator bg3.exe+0x3377AF0.
+struct CreateRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerZoneCreateRequest, "esv::zone::CreateRequestOneFrameComponent")
+
+    // unknown: FUN_18114c290 copies a dword; builder FUN_18164dc50 stores param_2; game default
+    // -1. Live 0x2E / 0x126.
+    int32_t field_0;
+    // unknown: game default null handle; ProcessCreateRequests copies it to
+    // esv::zone::SpellComponent +0 only when valid (the caster/source). Live entity handles.
+    EntityHandle field_8;
+    // unknown: builder: ls::Guid default-constructed then copied from param_4 (16 bytes). Live
+    // random 128-bit values (a cast Guid?).
+    Guid field_10;
+    // unknown: builder copies *param_9; game default null handle. Live entity handles.
+    EntityHandle field_20;
+    // unknown: copied as 8+4 bytes; builder from param_7. Live (48.75, 17, 209.5) - a world
+    // position (equal to +0x118).
+    glm::vec3 field_28;
+    // unknown: copied as 8+4 bytes; builder from param_8. Live (51.25, 17.21, 204.8) - a second
+    // position (target/end point?).
+    glm::vec3 field_34;
+    // inferred: FUN_18114c290: eoc::spell::SpellId::operator= at +0x40 (0x38 bytes, equals SE
+    // SpellId)
+    ZoneCreateRequestSpellId SpellId;
+    // unknown: byte copy; builder from *param_11; game default 0. Live 2 / 4.
+    uint8_t field_78;
+    // inferred: FUN_18114c290: eoc::spell_cast::InitialTarget::operator= at +0x80 (equals SE
+    // InitialTarget); copied to esv::zone::SpellComponent +8
+    ZoneCreateRequestInitialTarget Target;
+    // unknown: dword copy; builder param_24; copied to SpellComponent +0x7C; game default 0. Live
+    // 0.
+    int32_t field_F0;
+    // unknown: start of eoc::SpellZoneInfo (builder: SpellZoneInfo::SpellZoneInfo at this offset,
+    // 0x34 bytes up to +0x128); game default byte 0. Live 0.
+    uint8_t field_F4;
+    // unknown: SpellZoneInfo member; live 0.2 / 0.249
+    float field_F8;
+    // unknown: SpellZoneInfo member; live 1.614 / 1.663
+    float field_FC;
+    // unknown: SpellZoneInfo member; live 5.2 / 5.249
+    float field_100;
+    // unknown: SpellZoneInfo member; live 5
+    float field_104;
+    // unknown: SpellZoneInfo member; live 5 (range?)
+    float field_108;
+    // unknown: SpellZoneInfo member; live 60 (cone angle in degrees?)
+    float field_10C;
+    // unknown: SpellZoneInfo member; live 0
+    float field_110;
+    // unknown: SpellZoneInfo member; live 1.4 / 2
+    float field_114;
+    // unknown: SpellZoneInfo member; live equal to +0x28 (a world position)
+    glm::vec3 field_118;
+    // unknown: game creator clears its low two bits (flags byte, end of SpellZoneInfo); live 8
+    uint8_t field_124;
+    [[bg3::hidden]] std::array<uint8_t, 3> _Pad125;
+    // unknown: byte; builder from *param_13; game default 0xFF. Live 0x15 / 0x4B (a surface type
+    // from eoc::GetSurfaceTypeFromStats?).
+    uint8_t field_128;
+    // unknown: builder param_15; game default 10. Live 5.
+    int32_t field_12C;
+    // unknown: builder param_16; game default 1.0. Live 0.01.
+    float field_130;
+    // unknown: builder param_17; game default 0. Live 0 / 18.
+    float field_134;
+    // inferred: optional<Array<eoc::AiTilePos>>, flag at +0x148. Live: engaged, capacity
+    // 0x199-0x1A0, size 0x3C-0x3F.
+    ZoneCreateRequestOptionalTiles Tiles;
+    // inferred: optional<Array<EntityHandle>>, flag at +0x160. Live empty.
+    ZoneCreateRequestOptionalEntities Entities;
+    // inferred: optional<Array<eoc::HitDesc>>, flag at +0x178. Live empty.
+    ZoneCreateRequestOptionalHits Hits;
+    // unknown: FixedString::operator=; builder from param_23; copied to SpellComponent +0x78; game
+    // default null. Live 0.
+    FixedString field_180;
+    // unknown: builder param_21; game default 0
+    uint8_t field_184;
+    // unknown: builder param_22; game default 0; live 0/1
+    uint8_t field_185;
+    // unknown: builder param_25; game default 0
+    uint8_t field_186;
+};
+
+// Server one-frame event that a spell zone finished.
+// esv::zone::DestructionSystem::ProcessFinishedSurfaceActions (EoCServer.dll+0x114CA70) creates a
+// new entity per finished zone, adds this component (FUN_18114a310) with +0 = the zone entity and
+// +8 = esv::zone::SpellComponent +0 of that zone, then destroys the zone entity. Seen alive when a
+// Mud Mephit cast a spell, together with zone::CreateRequest/SpellComponent.
+struct FinishedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerZoneFinishedEvent, "esv::zone::FinishedEventOneFrameComponent")
+
+    // inferred: EoCServer.dll+0x114CA70 line 171: *event = the iterated zone entity (the one
+    // destroyed right after, line 189). Live entity handles.
+    EntityHandle Zone;
+    // unknown: line 185: event[1] = *SpellComponent (SpellComponent +0, the zone's caster/source
+    // handle from CreationParams +8). Live equal to SpellComponent +0 samples.
+    EntityHandle field_8;
+};
+
+struct ZoneSpellBaseTarget
+{
+    // inferred: SE eoc::spell_cast::BaseTarget has virtual methods
+    [[bg3::hidden]] void* VMT;
+    // inferred: SE BaseTarget.Target
+    EntityHandle Target;
+    // inferred: SE BaseTarget.TargetProxy (std::optional<EntityHandle> value)
+    EntityHandle TargetProxy;
+    // inferred: std::optional engaged flag
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: SE BaseTarget.Position (std::optional<glm::vec3> value)
+    glm::vec3 Position;
+    // inferred: std::optional engaged flag
+    bool HasPosition;
+};
+
+struct ZoneSpellInitialTarget
+{
+    // inferred: equals SE eoc::spell_cast::InitialTarget (0x70 bytes); live: one static address of
+    // the executable (virtual table)
+    [[bg3::hidden]] void* VMT;
+    // inferred: SE BaseTarget.Target; live entity handles
+    EntityHandle Target;
+    // inferred: SE BaseTarget.TargetProxy value (live garbage while not engaged)
+    EntityHandle TargetProxy;
+    // inferred: live 0
+    bool HasTargetProxy;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad19;
+    // inferred: SE BaseTarget.Position value (live: leftover ASCII bytes while not engaged)
+    glm::vec3 Position;
+    // inferred: live 0
+    bool HasPosition;
+    [[bg3::hidden]] std::array<uint8_t, 3> _Pad2D;
+    // inferred: SE InitialTarget.TargetingType (SpellType, 1 byte); live 1
+    uint8_t TargetingType;
+    // inferred: SE InitialTarget.Target2 (std::optional<BaseTarget> value)
+    ZoneSpellBaseTarget Target2;
+    // inferred: live 0
+    bool HasTarget2;
+};
+
+// Spell data of a server zone entity (spell cone/line area; seen alive when a Mud Mephit cast a
+// spell). Added by esv::zone::CreationSystem::ProcessCreateRequests (EoCServer.dll+0x114C5E0) from
+// esv::zone::CreationParams (= esv::zone::CreateRequestOneFrameComponent): +0 = params +8 (only
+// when that handle is valid), +8 = InitialTarget::operator=(params +0x80), +0x78 = FixedString
+// params +0x180, +0x7C = int params +0xF0. Read by esv::zone::DestructionSystem and the surface
+// manager.
+struct SpellComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerZoneSpell, "esv::zone::SpellComponent")
+
+    // unknown: EoCServer.dll+0x114C5E0: *SpellComponent = CreationParams +8 (written only when
+    // valid; the caster/source). Live entity handles equal to FinishedEvent +8. macOS default
+    // writes the null handle at +0 (hint).
+    EntityHandle field_0;
+    // inferred: EoCServer.dll+0x114C5E0:
+    // eoc::spell_cast::InitialTarget::operator=(SpellComponent+8, CreationParams+0x80). Live
+    // layout matches (vtable, target handle, TargetingType 1 at +0x38).
+    ZoneSpellInitialTarget Target;
+    // unknown: FixedString::operator=(SpellComponent+0x78, CreationParams+0x180). Live 0.
+    FixedString field_78;
+    // unknown: SpellComponent+0x7C = (int)CreationParams+0xF0. Live 0.
+    int32_t field_7C;
+};
+
 DEFINE_TAG_COMPONENT(esv::zone, StateComponent, ServerZoneState)
 
 END_NS()
@@ -11116,6 +16015,24 @@ END_NS()
 
 BEGIN_NS(ls)
 
+// Animation component listing the VFX text keys currently active on an animated entity (client and
+// server; seen alive on idle characters, in dialogs and fights). Managed by
+// ls::ActiveVFXTextKeysSystem::Update (GameEngine.dll+0x4EAE90, game per-frame update
+// bg3.exe+0x3C42D60) and read by ecl/esv::AnimationUpdateSystem and ls::AnimationBlueprintSystem.
+// The Toolkit's move assignment ls::ActiveVFXTextKeysComponent::operator=
+// (GameEngine.dll+0x4EAD90) moves one DynamicArray whose clear routine FUN_180108f70 destroys
+// FixedStrings with stride 4.
+struct ActiveVFXTextKeysComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ActiveVFXTextKeys, "ls::ActiveVFXTextKeysComponent")
+
+    // inferred: GameEngine.dll+0x4EAD90 operator= moves pointer (+0), capacity (+8) and size
+    // (+0xC); element destructor GameEngine.dll+0x108F70 asserts 'ls::IndexedStorage<class
+    // ls::FixedString,...>' and walks stride 4. Live: heap pointer, capacity = size = 1..3. macOS
+    // default writes 16 zero bytes.
+    Array<FixedString> TextKeys;
+};
+
 // NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
 // situation that creates it
 struct ArcBallCameraBehavior : public BaseComponent
@@ -11167,6 +16084,27 @@ struct ClothLoadedComponent : public BaseComponent
     // only) removes released cloths from it by comparing 8-byte elements with the pending cloth
     // pointers (stride 8). Live: heap pointer, capacity and size 1..2.
     [[bg3::hidden]] Array<void*> Cloths;
+};
+
+// Client one-frame event on a cluster child (world object grouped into a streaming cluster) whose
+// cluster changed. Written by ls::ClusterSystem::ProcessMovedChilds (GameEngine.dll+0x137D70):
+// when a moved child leaves its cluster, the system moves it from the old cluster's content to the
+// new one, then sets this component to {old cluster, new cluster} and stores the new cluster into
+// the child's ClusterChildComponent. Read by
+// phx::PhysXDisableSimulationSystem::ProcessChangedClusters. Seen alive in many dialogs/events
+// (objects moved during scenes).
+struct ClusterChildChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClusterChildChanged, "ls::ClusterChildChangedOneFrameComponent")
+
+    // inferred: GameEngine.dll+0x137D70 lines 341-344: event = FUN_18012a9d0(view, child);
+    // event[0] = *ClusterChild (the previous cluster entity) just before ClusterChild is
+    // overwritten with the new one. Game creator bg3.exe+0x3E5FA40 allocates 0x10 bytes and writes
+    // the null handle. Live entity handles.
+    EntityHandle OldCluster;
+    // inferred: same lines: event[1] = lVar12 = the cluster the child is moved to (also written
+    // into ClusterChildComponent). Game default null handle. Live entity handles.
+    EntityHandle NewCluster;
 };
 
 struct ClusterContentComponent : public BaseComponent
@@ -11273,6 +16211,24 @@ struct ClusterPhysicsAlwaysLoadedComponent : public BaseComponent
     uint32_t PendingDataSize;
 };
 
+// Client physics streaming: present on a cluster while its physics content is being loaded; holds
+// the loading job (physics twin of ls::ClusterVisualLoadingComponent). Written by
+// ls::ClusterLoadHelper<ls::ClusterPhysicsLoaderSystem::LoadOps> (SetupLoadJob /
+// ProcessClusterLoadResult) and ClusterPhysicsLoaderSystem::Update (Toolkit
+// GameEngine.dll+0x128710). Seen alive on clusters near scenes.
+struct ClusterPhysicsLoadingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClusterPhysicsLoading, "ls::ClusterPhysicsLoadingComponent")
+
+    // inferred: Game creator bg3.exe+0x3E817A0 allocates 8 bytes, zeroes them and registers
+    // destructor bg3.exe+0x3B71F00, which takes the pointer, nulls it and atomically decrements a
+    // reference count at +0x100 of the pointee, destroying/freeing it at zero: an intrusive
+    // ls::SharedPtr. macOS names: ls::ClusterLoadHelper<ClusterPhysicsLoaderSystem::LoadOps>::Setu
+    // pLoadJob(ls::SharedPtr<ls::ClusterPhysicsLoadingJob>&, ...) - so
+    // SharedPtr<ls::ClusterPhysicsLoadingJob> (opaque). Live: 48 heap pointers.
+    [[bg3::hidden]] void* Job;
+};
+
 // Client scene streaming: per-cluster physics visibility/priority score;
 // ClusterPhysicsLoaderSystem loads/unloads the cluster's physics content from it. On every cluster
 // entity in idle levels.
@@ -11358,6 +16314,25 @@ struct ClusterVisualLoadingComponent : public BaseComponent
     // ls::DynamicArray<ls::SharedPtr<ls::ClusterVisualLoadingJob>> in the visual loader, so this
     // is SharedPtr<ls::ClusterVisualLoadingJob> (opaque). Live: 48 heap pointers.
     [[bg3::hidden]] void* Job;
+};
+
+// Client visual streaming: present on a loaded cluster while part of its content (added/changed
+// entities) is being reloaded; holds the partial loading jobs. Written by
+// ls::ClusterLoadHelper<ls::ClusterVisualLoaderSystem::LoadOps> (ProcessContentChanges,
+// ProcessClusterLoadResult), ClusterVisualLoaderSystem::ApplyLoadResultToEntity /
+// ProcessEntitiesToUnload / Update. Seen alive when the party split and on a raft event (content
+// moved within loaded clusters).
+struct ClusterVisualPartialLoadingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClusterVisualPartialLoading, "ls::ClusterVisualPartialLoadingComponent")
+
+    // inferred: Game creator bg3.exe+0x3E75C00 allocates 0x10 bytes, zeroes pointer/capacity/size
+    // and registers destructor bg3.exe+0x3B71A70 = FUN_143b81750(this, 0) + free(*this).
+    // FUN_143b81750 resizes a DynamicArray with stride 8 whose elements are intrusive
+    // ls::SharedPtr (atomic decrement of a count at +0x100 of the pointee, destroy at zero) - the
+    // same job object shape as ClusterVisualLoadingComponent's
+    // SharedPtr<ls::ClusterVisualLoadingJob>. Live: heap pointer, capacity = size = 1.
+    [[bg3::hidden]] Array<void*> Jobs;
 };
 
 struct ConstructionTileBoneTransformSetComponent : public BaseComponent
@@ -11735,8 +16710,6 @@ struct GameplaySoundResetGlobalRTPCRequest
 };
 
 // Requests to reset global RTPC values.
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
 struct GameplaySoundRTPCGlobalResetRequestBusComponent : public BaseComponent
 {
     DEFINE_COMPONENT(GameplaySoundRTPCGlobalResetRequestBus, "ls::GameplaySoundRTPCGlobalResetRequestBusComponent")
@@ -11840,6 +16813,27 @@ struct GameplaySoundTransferRequestBusComponent : public BaseComponent
     Array<GameplaySoundTransferBusRequest> Requests;
 };
 
+// Client one-frame request to attach an entity as a child of an HLOD (hierarchical level-of-detail
+// proxy). Drained by ls::HLODSystem::UpdateAddRequests (GameEngine.dll+0x1659E0): it converts the
+// Guid at +0 to a FixedString and looks it up in the system's HLOD map (macOS
+// ls::HLODSystem::GetHLOD(ls::Guid const&)), then checks the Guid at +0x10 against two Guid sets
+// of the level (FUN_1801532f0 at level +0x28/+0x38) and logs it with Guid::ToString when missing.
+// Seen alive on level change / level-swap teleport.
+struct HLODChildRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(HLODChildRequest, "ls::HLODChildRequestOneFrameComponent")
+
+    // inferred: Game creator bg3.exe+0x3D61AD0 copies 16 bytes from param_3 to +0;
+    // GameEngine.dll+0x1659E0 line 179: ls::Guid::ToFS(request+0) and hash lookup in the
+    // HLODSystem map (this+0x10..+0x40), giving the HLOD entity. Live random 128-bit values.
+    Guid HLOD;
+    // unknown: Creator copies four dwords from param_4 to +0x10..+0x1C; GameEngine.dll+0x1659E0
+    // lines 200-203 look this Guid up in two sets of the level object and print it with
+    // ls::Guid::ToString in the HLODSystem.cpp warning. Live random 128-bit values (the child's
+    // own id?).
+    Guid field_10;
+};
+
 // Hierarchical-Z (occlusion) data of a render view entity; macOS names
 // ls::DynamicArray<ls::UniquePtr<ls::HiZComponent::RenderViewData>>.
 struct HiZComponent : public BaseComponent
@@ -11854,6 +16848,73 @@ struct HiZComponent : public BaseComponent
     // unknown: Not touched by the destructor (plain data); live heap-like pointers, small values
     // or 0.
     uint64_t field_10;
+};
+
+// Pending load request of an instancing batch (instanced scenery meshes) in the stream loader:
+// ls::StreamSystemLoadHelper::UpdateLoadRequests<InstancingBatchRegisteredComponent,
+// InstancingBatchLoadComponent, InstancingBatchComponent, ...> (macOS names) keeps it;
+// ls::InstancingSystem (FinishFolderLoad, ProcessBatchModifyRequests, StartGroupVisualLoads,
+// Update) writes it, ProcessBatchModifications reads it. Same aio::Priority encoding as
+// ls::TerrainLoadComponent / ls::PhysicsLoadComponent (SE Physics.h: aio::Priority Priority) but
+// without the callback. Seen alive on idle levels.
+struct InstancingBatchLoadComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(InstancingBatchLoad, "ls::InstancingBatchLoadComponent")
+
+    // inferred: Game creator bg3.exe+0x3B02690 allocates 8 bytes and writes the qword 1 (level 1,
+    // value 0.0). First half of aio::Priority, as in ls.TerrainLoadComponent.json
+    // (StreamSystemLoadHelper). Live 1 / 2.
+    uint32_t PriorityLevel;
+    // inferred: Second half of aio::Priority (float). Live 500.0 .. 990 (distance-like values).
+    float Priority;
+};
+
+// Registration of an instancing batch in the stream loader
+// (ls::StreamSystemLoadHelper::UpdateLoadRequests / Unregister<...,
+// ls::InstancingBatchRegisteredComponent> in macOS names), written by ls::InstancingSystem. Same
+// shape as Script Extender's ls::PhysicsLoaderRegisteredComponent (int field_0 = -1, Physics.h)
+// and the terrain twin TerrainLoaderRegisteredComponent.
+struct InstancingBatchRegisteredComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(InstancingBatchRegistered, "ls::InstancingBatchRegisteredComponent")
+
+    // inferred: Game creator bg3.exe+0x3B03070 allocates 4 bytes and writes -1 (not registered);
+    // live 0..0x203, distinct small integers per batch - a slot index in the stream helper's
+    // registry (macOS StreamSystemLoadHelper::Unregister<...,
+    // InstancingBatchRegisteredComponent>).
+    int32_t Index;
+};
+
+// Client loader state of an instancing folder (the folder of '*group_*.lsf' instanced-scenery
+// files of a level). ls::InstancingSystem::StartNewFolderLoads (Toolkit GameEngine.dll+0x977BB0)
+// starts an asynchronous folder read with the path held at +0
+// (AsyncFileReadManager::AsyncLoadFolder(request, component, "*group_*.lsf")), keeps the read
+// requests and allocates 0x100-byte ls::InstancingBatchLoader objects;
+// FinishFolderLoad/ProcessBatchModifications use them. Seen alive after level changes and
+// recruit/dialog trees in new areas.
+struct InstancingFolderLoaderComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(InstancingFolderLoader, "ls::InstancingFolderLoaderComponent")
+
+    // inferred: Game creator bg3.exe+0x1851ED0 (size 0x38) constructs an ls::STDString at +0 from
+    // an empty global and zeroes +0x18..+0x37. Toolkit passes the component itself as the folder
+    // path to AsyncLoadFolder. Live: heap buffer at +0, size 0x7C..0x95 at +0x10, capacity
+    // 0x7F/0x8F/0x9F at +0x14 (long path strings).
+    STDString Path;
+    // inferred: Toolkit +0x20 (game +0x18; the Toolkit STDString is 8 bytes larger):
+    // ls::SharedPtr<ls::AsyncReadRequest> assigned from AsyncFileReadManager::CreateAsyncRequest
+    // and passed to AsyncLoadFolder. Live 0 (finished).
+    [[bg3::hidden]] void* FolderRequest;
+    // inferred: Toolkit +0x28: a second ls::SharedPtr<ls::AsyncReadRequest> created for the batch
+    // loader (CreateAsyncRequest with the object at +0x38). Live 0.
+    [[bg3::hidden]] void* FileRequest;
+    // inferred: Toolkit +0x30: replaced by a new object; the old one is torn down
+    // (FUN_1806f6c60(old+0x80)) and freed with size 0x100 align 0x40; also used as the request's
+    // category argument. Live 0.
+    [[bg3::hidden]] void* Loader;
+    // inferred: Toolkit +0x38: an ls::InstancingBatchLoader allocated with FUN_180a49a20(0x100,
+    // 0x40) (local typed InstancingBatchLoader*). Live 0.
+    [[bg3::hidden]] void* BatchLoader;
 };
 
 struct LightFlickerComponent : public BaseComponent
@@ -12158,6 +17219,21 @@ struct ParentEntityComponent : public BaseComponent
     EntityHandle Parent;
 };
 
+struct PhysicsSkinnedConnectedToComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(PhysicsSkinnedConnectedTo, "ls::PhysicsSkinnedConnectedToComponent")
+
+    // inferred: Not replicated. Toolkit GameEngine.dll: the move constructor (+0x158CE0) is shared
+    // (same code) with ls::PhysicsSkinnedConnectionComponent (whose FieldMeta gives one HashSet at
+    // offset 0, layouts/fieldmeta) and moves three buffers: +0 (pointer, u32), +0x10 and +0x20
+    // (pointer, capacity, size) - the 48-byte HashSet. The destructor (+0x60AA10) clears +0x20
+    // with GameEngine.dll+0x614FF0, which asserts as
+    // ls::IndexedStorage<ls::ID<ecs::EntityHandleTraits>, mem::s_TagHashTable> - keys are
+    // EntityHandles. Name inferred from the class name (the skinned-physics entities this one is
+    // connected to).
+    HashSet<EntityHandle> Entities;
+};
+
 struct SaveWithComponent : public BaseComponent
 {
     DEFINE_COMPONENT(SaveWith, "ls::SaveWithComponent")
@@ -12306,33 +17382,6 @@ struct SetLightCullFlagsRequestsSingletonComponent : public BaseComponent
     Array<SetLightCullFlagsRequest> Requests;
 };
 
-// Transform of a per-bone sound object child entity of a character (head, feet, hands... sound
-// emitters, see ls::SkeletonSoundObjectsComponent), created by
-// ecl::SkeletonSoundObjectSystem::CreateChildEntity and updated by UpdateSkeletonSoundObjects;
-// read by ls::SoundTransformSystem, ecl::SoundSystem, ecl::sound::AutoFoleySystem and
-// ls::SoundOcclusionSystem.
-struct SkeletonSoundObjectTransformComponent : public BaseComponent
-{
-    DEFINE_COMPONENT(SkeletonSoundObjectTransform, "ls::SkeletonSoundObjectTransformComponent")
-
-    // inferred: EoCClient.dll+0xDE5870 (component add called from
-    // ecl::SkeletonSoundObjectSystem::CreateChildEntity, EoCClient.dll+0xDEC3D0; AllocRaw 0x2C)
-    // copies the first 16 bytes of the ls::Transform argument (its rotation quaternion) to +0.
-    // Live: unit quaternions.
-    glm::quat Rotation;
-    // inferred: Same add: +0x10..+0x1B = Transform+0x10 (translation). Live: world coordinates
-    // (43.55, 17.64, 426.4).
-    glm::vec3 Position;
-    // inferred: Same add: +0x1C..+0x27 initialised with the same translation as Position. Live:
-    // values slightly behind Position (43.16 vs 43.55) - the position of the previous update (name
-    // inferred).
-    glm::vec3 PreviousPosition;
-    // inferred: Same add: byte +0x28 = *param_5, the ls::ESoundObjectIndex argument of
-    // CreateChildEntity (also passed to Skeleton::GetActivationRangeForSoundObject). Live: low
-    // byte 1..4.
-    uint8_t SoundObjectIndex;
-};
-
 // Client singleton collecting which sound entities were activated and deactivated this frame
 // (Wwise sound object registered/unregistered), filled by ecl::SoundSystem (ActivateSound /
 // DeactivateSound / FlushActiveChanges) and consumed by ls::SoundTransformSystem,
@@ -12438,6 +17487,21 @@ struct SoundMultiPositionComponent : public BaseComponent
     // is built from an ls::DynamicArray<Vector3f> (16 bytes: pointer, capacity, size). Live: +0
     // heap pointer, +8 and +0xC equal small counts 0..0x11 (capacity, size). Member name not given
     // by the game.
+    Array<glm::vec3> Positions;
+};
+
+// Client one-frame request to set up a multi-positioned sound emitter (one sound played from
+// several world positions, e.g. rivers or crowds) with a list of positions; read by
+// ls::SoundTransformSystem (ProcessSoundsActivated, ProcessVirtualPositionedSounds, Update ...).
+// Seen alive at level load / level-swap teleports and in character creation.
+struct SoundMultiPositionSetupRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(SoundMultiPositionSetupRequest, "ls::SoundMultiPositionSetupRequestOneFrameComponent")
+
+    // inferred: Game creator bg3.exe+0x3EACD80 allocates 0x10 bytes and builds the component with
+    // FUN_143eacb20 from a span of 0xC-byte elements: capacity = (end-begin)/0xC, buffer =
+    // count*0xC rounded to 16, then each 12-byte element is pushed - an ls::Array<glm::vec3>.
+    // Live: heap pointer, capacity = size = 1..0x65 (one sample empty).
     Array<glm::vec3> Positions;
 };
 
@@ -12645,6 +17709,24 @@ struct SwapLevelRequestOneFrameComponent : public BaseComponent
     EntityHandle Level;
 };
 
+// Client terrain streaming: the object a terrain entity is created from, consumed by
+// ls::TerrainVisualLoaderSystem::ProcessCreateRequests (Toolkit GameEngine.dll+0x1F08C0) and the
+// stream loader (StreamSystemLoadHelper::UpdateLoadRequests<TerrainLoaderRegisteredComponent,
+// TerrainLoadComponent, TerrainObject>). Seen alive at level load, character creation and level-
+// swap teleports.
+struct TerrainCreateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(TerrainCreate, "ls::TerrainCreateComponent")
+
+    // inferred: Game creator bg3.exe+0x3BA4BB0 allocates 8 bytes, writes 0 and registers no
+    // destructor (non-owning pointer). Toolkit GameEngine.dll+0x1F08C0: the view's first component
+    // has stride 8; its pointer is dereferenced at +0x20 to a description whose bytes
+    // +0x8C/+0x8E/+0x92 decide Visual flags 1/2/4 of the created ls::Terrain, and the pointer
+    // itself is stored into the Terrain at +0xD8. Live: 8 heap pointers. Pointee type not named (a
+    // terrain template/game object).
+    [[bg3::hidden]] void* Object;
+};
+
 // Pending terrain load request of the terrain visual loader (ls::TerrainVisualLoaderSystem,
 // StreamSystemLoadHelper::UpdateLoadRequests<TerrainLoaderRegisteredComponent,
 // TerrainLoadComponent, TerrainObject>): an aio::Priority (level + value) and a shared callback
@@ -12801,6 +17883,42 @@ struct InstanceChangedEventsSingletonComponent : public BaseComponent
     HashMap<EntityHandle, Array<uint32_t>> Events;
 };
 
+struct ConstellationAddInterEntityConnection
+{
+    // unknown: 8 bytes before the first string, not touched by the element destructor. The macOS
+    // element (0x30) has only two 0x18-byte strings, so this is either a member the macOS build
+    // lacks or the first 8 bytes of a 32-byte Windows string object (stateful allocator) - not
+    // established.
+    uint64_t field_0;
+    // inferred: Element destructor bg3.exe+0x28041F0 frees a long-mode string at +8 (buffer +8,
+    // size +0x18, capacity +0x1C, reset to inline capacity 0xF) - the 24-byte ls::STDString shape.
+    // Name after eoc::InterEntityConnection (template form; SE PropertyMaps: OutputEntityUUID,
+    // OutputSocketExt, InputEntityUUID, InputSocketExt).
+    STDString Output;
+    // unknown: 8 bytes before the second string (see field_0).
+    uint64_t field_20;
+    // inferred: Element destructor frees a string at +0x28 (size +0x38, capacity +0x3C). Name
+    // after eoc::InterEntityConnection's input side.
+    STDString Input;
+};
+
+// Server one-frame request carrying the inter-entity socket connections of constellations
+// (Anubis/constellation scripting graphs linking sockets of different entities;
+// ConstellationTemplate 'Connections'). Drained by ls::constellation::SetupSystem (macOS system
+// name; game query registered at bg3.exe+0x4C8510 with handler bg3.exe+0x386E040). Seen alive on
+// level change / teleport (level load sets up constellations).
+struct AddInterEntityConnectionsRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ConstellationAddInterEntityConnectionsRequest, "ls::constellation::AddInterEntityConnectionsRequestOneFrameComponent")
+
+    // inferred: Game creator bg3.exe+0x2802560 moves an ls::Array (pointer, capacity, size) into
+    // the 0x10-byte component; destructor bg3.exe+0x2807100 = FUN_1428015c0(this, 0) + free:
+    // element stride 0x40 with destructor bg3.exe+0x28041F0 (two strings). macOS names:
+    // ls::DynamicArray<ls::constellation::InterEntityConnection> (0x30 there: libc++ strings are
+    // 0x18 bytes and ids 0). Live: heap pointer, capacity 0x80/0x200, size 0x65/0x1B0.
+    Array<ConstellationAddInterEntityConnection> Connections;
+};
+
 // Singleton of translate requests from scrolling objects, drained by ls::TransformSystem
 // (bg3.exe+0x3AE1240 registers it next to GameplaySetTransformRequests,
 // InventoryMemberSetTransformRequest, InventoryMemberSetTranslateRequest,
@@ -12851,6 +17969,20 @@ END_NS()
 
 BEGIN_NS(ls::anubis)
 
+// Error text of an Anubis (behaviour script) tree. Born on NPC entities whose Anubis script failed
+// (seen in WLD/CTY dialogue and tavern situations, up to 4 holders). Queries of ls::anubis::System
+// and EventStorage::ForwardEventToListeners exclude or skip entities that hold it.
+struct ErrorComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnubisError, "ls::anubis::ErrorComponent")
+
+    // inferred: bg3.exe+0x383B310 (the add helper, storage size 0x18) zeroes the 24 bytes and
+    // calls ls::STDString::STDString(this, string_view) on the component itself; live samples: +0
+    // heap pointer, +8 zero, +0x10 size 0xD4..0x17F (u32), +0x14 capacity (u32) - an STDString of
+    // 212..383 characters
+    STDString Error;
+};
+
 struct GameIntermediateSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(AnubisGameIntermediateSingleton, "ls::anubis::GameIntermediateSingletonComponent")
@@ -12859,6 +17991,21 @@ struct GameIntermediateSingletonComponent : public BaseComponent
     // build (address 1058EFB3C) stores it (strb wzr, [x23]; default zero). What the byte means is
     // not established.
     uint8_t field_0;
+};
+
+// One-frame request to load the Anubis (behaviour script) state from a savegame; added by the
+// server's session-load system on a level change / save load (seen on the level swap teleporter to
+// the lower city). Its pointer equals the first member of ls::anubis::savegame::LoadingComponent,
+// which ls::anubis::System creates from it.
+struct LoadRequestOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(AnubisLoadRequest, "ls::anubis::LoadRequestOneFrameComponent")
+
+    // inferred: bg3.exe+0x2B1D4B0 (~ per-frame update of esv::SessionLoadSystem), state 4 after
+    // esv::SessionLoadSystem::LoadGlobalsPart2(..., SavegameVisitor*): allocates the component (8
+    // bytes) and stores the SavegameVisitor* held at +0x88 of its state object into it; live: a
+    // heap pointer, identical to LoadingComponent+0 in the same step
+    [[bg3::hidden]] void* Visitor;
 };
 
 DEFINE_TAG_COMPONENT(ls::anubis, ActiveComponent, AnubisActive)
@@ -12892,12 +18039,160 @@ END_NS()
 
 BEGIN_NS(ls::anubis::savegame)
 
+struct AnubisSavegameLoadingRawArray
+{
+    // inferred: pointer half of an ls::Array (moved and zeroed together with the two counters)
+    [[bg3::hidden]] void* Buf;
+    // inferred: Array layout ptr/capacity/size; live values 0x20, 0x29, 0x3A2
+    uint32_t Capacity;
+    // inferred: Array layout ptr/capacity/size
+    uint32_t Size;
+};
+
+struct AnubisSavegameReader
+{
+    // unknown: bg3.exe+0x3828430 (Reader move) copies it first; live: heap pointer
+    [[bg3::hidden]] void* field_0;
+    // unknown: bg3.exe+0x38284F0 moves 7 Array-shaped members at +0x8..+0x78 of the Reader (ptr,
+    // u32, u32); live +0x10 of the component: heap, 0x3A2/0x3A2
+    AnubisSavegameLoadingRawArray field_8;
+    // unknown: same move function; live 0x20/0x20
+    AnubisSavegameLoadingRawArray field_18;
+    // unknown: same move function; live empty
+    AnubisSavegameLoadingRawArray field_28;
+    // unknown: same move function; live heap, 0x3C2/0x3C2
+    AnubisSavegameLoadingRawArray field_38;
+    // unknown: same move function: pointer zeroed together with a u16 at +0x52 and a u32 at +0x54
+    // (not an ordinary Array)
+    [[bg3::hidden]] void* field_48;
+    // unknown: live 9
+    uint16_t field_50;
+    // unknown: zeroed by the move; live 1
+    uint16_t field_52;
+    // unknown: zeroed by the move; live 0x20
+    uint32_t field_54;
+    // unknown: same move function; live empty
+    AnubisSavegameLoadingRawArray field_58;
+    // unknown: same move function; live heap, 0x20/0x20
+    AnubisSavegameLoadingRawArray field_68;
+    // unknown: bg3.exe+0x3828430 moves it; macOS Reader::~Reader frees +0x78 after clearing its
+    // size; live heap 0x29/0x29
+    AnubisSavegameLoadingRawArray field_78;
+    // the game's own member name: macOS ls::anubis::savegame::Reader::~Reader calls
+    // DynamicArray<ls::anubis::savegame::model::TypeArray>::Reallocate(this+0x88, 0); Windows move
+    // at bg3.exe+0x3828430 confirms an Array at +0x88; element size not established; live heap
+    // 0x29/0x29
+    AnubisSavegameLoadingRawArray TypeArrays;
+};
+
+// Server-side state of ls::anubis::System while it restores Anubis (behaviour script) trees from a
+// savegame: the SavegameVisitor taken from ls::anubis::LoadRequestOneFrameComponent, an
+// ls::anubis::savegame::Reader over the saved data, a set of entities and two flags. Seen in the
+// same step as LoadRequestOneFrameComponent (level change through S_CTY_LevelSwapTeleporter_WYR).
+struct LoadingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnubisSavegameLoading, "ls::anubis::savegame::LoadingComponent")
+
+    // inferred: bg3.exe+0x3839D90 (add helper, size 0xE8) copies param+0 first; live value equals
+    // ls::anubis::LoadRequestOneFrameComponent's SavegameVisitor* (stored by bg3.exe+0x2B1D4B0,
+    // esv::SessionLoadSystem)
+    [[bg3::hidden]] void* Visitor;
+    // the game's own member name: macOS ~LoadingComponent calls
+    // ls::anubis::savegame::Reader::~Reader(this+8); Windows bg3.exe+0x3839D90 moves +8..+0xA0
+    // with bg3.exe+0x3828430 (0x98 bytes)
+    AnubisSavegameReader Reader;
+    // inferred: macOS ~LoadingComponent: HashTable<ls::ID<ecs::EntityHandleTraits>,
+    // ls::anubis::AnubisHashTableOps>::~HashTable(this+0xA0); Windows bg3.exe+0x3839D90 moves
+    // three ptr/u32/u32 groups at +0xA0/+0xB0/+0xC0; live: bucket count 0x35, next-ids 0x20/0x20,
+    // keys 0x20/0x20 - the ls::HashSet shape
+    HashSet<EntityHandle> Entities;
+    // unknown: macOS ~LoadingComponent frees the pointer at +0xD0; Windows moves ptr/u32/u32 at
+    // +0xD0; live heap, capacity 0x20, size 0; element type not established
+    AnubisSavegameLoadingRawArray field_d0;
+    // unknown: bg3.exe+0x3839D90 copies one byte at +0xE0; live 0
+    bool field_e0;
+    // unknown: bg3.exe+0x3839D90 copies one byte at +0xE1; live 1
+    bool field_e1;
+};
+
 DEFINE_TAG_COMPONENT(ls::anubis::savegame, LoadingStateComponent, AnubisSavegameLoadingState)
 DEFINE_TAG_COMPONENT(ls::anubis::savegame, WaitingForConfigChangeComponent, AnubisSavegameWaitingForConfigChange)
 
 END_NS()
 
 BEGIN_NS(ls::level)
+
+// Client and server, on level instances (up to ~186 holders), created when level instances load
+// (level change, dialogues that load sub-levels, character creation level). Owned by
+// ls::level::CacheLoadSystem (GameEngine.dll: ProcessCacheCreation / ProcessCacheRemoval) and
+// ls::level::LoadCacheUTHelper::LoadCache / UnloadCache(LevelManager const&, FixedString const&,
+// CacheLoadComponent&): holds the loaded level cache (a SavegameVisitor) and the heap
+// LevelCacheDesc it was built from. Not saved.
+struct CacheLoadComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(LevelCacheLoad, "ls::level::CacheLoadComponent")
+
+    // inferred: creator bg3.exe+0x3C161F0 (alloc 0x18) sets *(uint32*)+0 = 0xFFFFFFFF (null
+    // FixedString) and zeroes +8/+0x10, leaving +4 untouched; macOS default constructor stores w26
+    // at +0. Live values are FixedString-index shaped (0x4A000B0 .. 0x457000A0). Name inferred:
+    // UnloadCache takes a level FixedString next to the component
+    FixedString LevelName;
+    // inferred: GameEngine.dll+0x91C150 LoadCacheUTHelper::LoadCache: *(SavegameVisitor**)(comp+8)
+    // = Level::LoadCache(...); UnloadCache GameEngine.dll+0x91C2F0: if (*(comp+8) != 0)
+    // Level::UnloadCache(level, *(SavegameVisitor**)(comp+8)); then zeroed. Live always 0
+    [[bg3::hidden]] void* Cache;
+    // inferred: LoadCache: UniquePtr<LevelCacheDesc> at comp+0x10 = new LevelCacheDesc (0xA0
+    // bytes) and passed to Level::LoadCache; UnloadCache frees it with size 0xA0. Live heap in 3
+    // server samples, else 0
+    [[bg3::hidden]] void* CacheDesc;
+};
+
+// Client and server, on level instances (up to ~185 holders) while/after they load; created by
+// ls::level::LevelInstanceLoadSystem (GameEngine.dll: StartLoadingLevelData, InstantiateLevel,
+// FinishLoading, ProcessLoadCompletion), read by eoc::PlatformSystem and esv::RootLevelSystem
+// (macOS). Holds the level-data load job and a QueryPerformanceCounter timestamp of the load start
+// (with a 1000 = milliseconds divisor). Not saved.
+struct LevelInstanceLoadingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(LevelInstanceLoading, "ls::level::LevelInstanceLoadingComponent")
+
+    // unknown: creator bg3.exe+0x3C1E9A0 (alloc 0x38) writes *(uint32*)+0 = 0; live always 0
+    uint32_t field_0;
+    // inferred: GameEngine.dll+0x93AFF0 StartLoadingLevelData: LevelData::Load(levelData,
+    // templateDescs, comp+8) fills a ref-counted pointer at comp+8 (object 0x58 bytes, refcount at
+    // +0x50, released when the load fails). Creator zeroes it; live always 0 (load finished)
+    [[bg3::hidden]] void* LoadJob;
+    // inferred: creator bg3.exe+0x3C1E9A0: QueryPerformanceCounter((LARGE_INTEGER*)(comp+0x10)).
+    // Live: 48 distinct counter values
+    uint64_t StartTime;
+    // unknown: creator writes 0; live always 0 (probably the stop/elapsed counter of the same
+    // timer)
+    uint64_t field_18;
+    // unknown: creator writes byte +0x20 = 0; live byte 0 always 00
+    bool field_20;
+    // unknown: creator writes 0; live always 0
+    uint64_t field_28;
+    // inferred: creator writes *(uint64*)+0x30 = 1000; live always 0x3E8. Looks like a millisecond
+    // timer (QPC start at +0x10, divisor 1000)
+    uint64_t TimeUnitDivisor;
+};
+
+// Server-side marker (seen on at most 1 holder, during level changes, character creation level and
+// level-swap teleports) added by ls::level::LevelInstanceUnloadSystem while it detaches and waits
+// for level instances to unload (GameEngine.dll LevelInstanceUnloadSystem::DetachAllAndWait writes
+// it, per macOS signatures). Not saved.
+struct LevelInstanceUnloadSystemBusy : public BaseComponent
+{
+    DEFINE_COMPONENT(LevelInstanceUnloadSystemBusy, "ls::level::LevelInstanceUnloadSystemBusy")
+
+    // inferred: creator bg3.exe+0x3C22070 (alloc 8) sets *(uint32*)+0 = 0xFFFFFFFF (null
+    // FixedString); the per-frame update of LevelInstanceUnloadSystem bg3.exe+0x3C207E0 then
+    // assigns it from an element of a FixedString list with FixedString IncRef/DecRef (lines
+    // 515-525). Live values look like FixedString indices (0x3C8000A0, 0x457000A0)
+    FixedString LevelName;
+    // unknown: creator bg3.exe+0x3C22070 writes byte +4 = 0; never seen non-zero (live byte0 = 00)
+    bool field_4;
+};
 
 DEFINE_TAG_COMPONENT(ls::level, CacheRequiredComponent, LevelCacheRequired)
 DEFINE_TAG_COMPONENT(ls::level, LevelInstanceBackgroundLoadingComponent, LevelInstanceBackgroundLoading)
@@ -12934,6 +18229,117 @@ END_NS()
 
 BEGIN_NS(navcloud)
 
+// Client and server; one holder in the samples (the player character). Marks an entity around
+// which navcloud regions are loaded: read by navcloud::RegionSystem::ProcessAgents / Update (with
+// ls::TransformComponent) to decide which regions to load and unload. Added with the constant 30.0
+// by bg3.exe+0x1A73880 (and its twin bg3.exe+0x2EC6290). Not saved.
+struct AgentComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NavcloudAgent, "navcloud::AgentComponent")
+
+    // inferred: creator bg3.exe+0x1A743D0 (alloc 4) zeroes it; caller bg3.exe+0x1A73880 then
+    // writes *comp = 0x41F00000 (30.0) for each qualifying entity. Read by navcloud::RegionSystem
+    // (macOS signatures) together with the entity's transform - the region-loading range around
+    // the agent. Live: 30.0 on client and server
+    float Radius;
+};
+
+struct NavcloudPathInternalTilePos
+{
+    // unknown: navcloud::TilePos is 6 ints (Windows constructor bg3.exe+0x5F0980 sets 12 ints of
+    // +0..+0x30 to 0x7FFFFFFF = two invalid TilePos; macOS ProcessSearches tests three 0x7FFFFFFF
+    // ints for an invalid tile). Probably region Vector3i + tile Vector3i; live 0..5
+    int32_t field_0;
+    // unknown: live 1/3/0x7FFFFFFF
+    int32_t field_4;
+    // unknown: live 1/2/0x7FFFFFFF
+    int32_t field_8;
+    // unknown: live small and negative values
+    int32_t field_C;
+    // unknown: live 0..3
+    int32_t field_10;
+    // unknown: live small and negative values
+    int32_t field_14;
+};
+
+struct NavcloudPathInternalNode
+{
+    // unknown: macOS ProcessRequests appends a NodeFull with *(uint64*)(e+0) = 0xFFFFFFFF00000000
+    // -> +0 = 0
+    int32_t field_0;
+    // inferred: initialised to -1 for the start node (no parent) - inferred from the A* shape
+    int32_t Parent;
+    // unknown: macOS: *(uint8*)(e+8) = 0
+    bool field_8;
+    // inferred: macOS: the start TilePos (6 ints) copied to e+0xC..e+0x24. Stride 0x24 confirmed
+    // on Windows: constructor allocates 0x1200 bytes for capacity 0x80
+    NavcloudPathInternalTilePos Tile;
+};
+
+// Server (9 instances): A* search state of a navcloud path request, created by
+// navcloud::PathfindingSystem::ProcessRequests (macOS: placement
+// PathInternalComponent::PathInternalComponent(), then start/goal TilePos from FindValidTilePos)
+// and advanced by ProcessSearches. Members: start and goal navcloud::TilePos (24 bytes each), an
+// open-list ls::BinaryHeap<navcloud::NodeHeap>, a DynamicArray<navcloud::NodeFull> of visited
+// nodes (36 bytes), and a HashMap<navcloud::TilePos, int32> from tile to node index. The heap and
+// the tile->node map are written out member by member (their key/element types are structs of this
+// file).
+struct PathInternalComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NavcloudPathInternal, "navcloud::PathInternalComponent")
+
+    // inferred: macOS ProcessRequests: comp+0x00..0x18 = FindValidTilePos(request start); Windows
+    // ctor bg3.exe+0x5F0980 sets +0..+0x18 to 0x7FFFFFFF
+    NavcloudPathInternalTilePos Start;
+    // inferred: macOS ProcessRequests: comp+0x18..0x30 = FindValidTilePos(request goal); Windows
+    // ctor sets +0x18..+0x30 to 0x7FFFFFFF
+    NavcloudPathInternalTilePos Goal;
+    // inferred: macOS: BinaryHeap<navcloud::NodeHeap>::Add(comp+0x30, cost); Windows ctor
+    // allocates 0x400 bytes (0x80 x 8-byte NodeHeap), destructor bg3.exe+0x6C7450 frees
+    // *(comp+0x30). Live heap
+    [[bg3::hidden]] void* OpenHeap;
+    // inferred: dtor sets *(uint32*)(comp+0x38) = 0 before freeing; live 1. Note: this container
+    // keeps size before capacity (unlike Array<T>)
+    uint32_t OpenHeapSize;
+    // inferred: Windows ctor writes 0x80 after allocating 0x400 bytes; live always 0x80
+    uint32_t OpenHeapCapacity;
+    // unknown: second 8-byte-element buffer of the heap (Windows ctor allocates 0x400 bytes,
+    // capacity 0x80 at +0x4C; dtor frees it). Live heap
+    [[bg3::hidden]] void* field_40;
+    // unknown: count of the +0x40 buffer (dtor zeroes it); live 0
+    uint32_t field_48;
+    // unknown: capacity of the +0x40 buffer: ctor writes 0x80; live 0x80
+    uint32_t field_4C;
+    // inferred: macOS: DynamicArray<navcloud::NodeFull>::Reallocate(comp+0x50), capacity at +0x58,
+    // size at +0x5C, stride 0x24. Windows ctor: alloc 0x1200, *(uint64*)(comp+0x58) = 0x80
+    // (capacity 128, size 0). Live capacity 0x80, size 1
+    Array<NavcloudPathInternalNode> Nodes;
+    // inferred: HashMap<TilePos, int32> keys: macOS ~PathInternalComponent destroys
+    // HashTable<navcloud::TilePos, navcloud::HashTableOps> at +0x60 and frees the values buffer at
+    // +0x90; Windows dtor calls the HashSet destructor bg3.exe+0x582AD0 on +0x60 and frees +0x90;
+    // ctor initialises +0x60 with bg3.exe+0x5F3580. Live heap
+    [[bg3::hidden]] void* NodeIndexByTile_HashKeys;
+    // inferred: bucket count; live 0xC1
+    uint32_t NodeIndexByTile_HashKeysSize;
+    // inferred: HashSet chain array; live capacity 1 size 1
+    Array<int32_t> NodeIndexByTile_NextIds;
+    // inferred: macOS ProcessRequests: HashTable<TilePos>::Ensure(comp+0x60, start) and uses
+    // *(int*)(comp+0x88) (key capacity) / +0x8C (key count); live capacity 1 size 1
+    Array<NavcloudPathInternalTilePos> NodeIndexByTile_Keys;
+    // inferred: macOS: values buffer reallocated to capacity*4 bytes and *(int32*)(values +
+    // index*4) = 0 (node index of the tile); Windows dtor frees *(comp+0x90). Live heap
+    [[bg3::hidden]] void* NodeIndexByTile_Values;
+    // inferred: macOS: *(int*)(comp+0x98) = key capacity when the values buffer grows; live 1
+    uint32_t NodeIndexByTile_ValuesSize;
+    [[bg3::hidden]] std::array<uint8_t, 4> _Pad9C;
+    // unknown: not set by the Windows ctor; live 0, 0xFFFFFFFF and others
+    uint32_t field_A0;
+    // unknown: Windows ctor sets byte +0xA4 = 0; live byte 0 always 0
+    bool field_A4;
+    // unknown: Windows ctor sets *(uint32*)+0xA8 = 0; live 0
+    uint32_t field_A8;
+};
+
 struct PathRequestComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NavcloudPathRequest, "navcloud::PathRequestComponent")
@@ -12969,6 +18375,169 @@ struct PathRequestComponent : public BaseComponent
     HashSet<EntityHandle> field_38;
 };
 
+struct NavcloudPathResultNode
+{
+    // unknown: macOS ProcessSearches appends NodePath elements with stride 16: an 8-byte value
+    // (local_238) at +0
+    uint32_t field_0;
+    // unknown: second half of the 8-byte value at +0
+    uint32_t field_4;
+    // unknown: macOS: element[2] = (float)value
+    float field_8;
+    // unknown: macOS: element[3] = 0
+    uint32_t field_C;
+};
+
+// Server (5 instances seen): result of a navcloud path search, written by
+// navcloud::PathfindingSystem::ProcessRequests / ProcessSearches next to
+// navcloud::PathRequestComponent and navcloud::PathInternalComponent. Holds the found path
+// (ls::DynamicArray<navcloud::NodePath>) and result flags.
+struct PathResultComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NavcloudPathResult, "navcloud::PathResultComponent")
+
+    // inferred: creator bg3.exe+0x3922E10 (alloc 0x18) zeroes +0, +8 and +0xC; destructor
+    // bg3.exe+0x686280 calls the array-clear helper and frees *(comp+0). macOS ProcessSearches:
+    // the component is a DynamicArray<navcloud::NodePath> (stride 16 when appending). Live: heap
+    // pointer, capacity 0..0xD, size 0..0xD
+    Array<NavcloudPathResultNode> Path;
+    // inferred: macOS ProcessSearches writes 0x10 when the start tile is invalid, 0x20 when the
+    // goal tile is invalid, clears bit 0 (uVar14 & 0xfffffffe) when the search ends, and tests
+    // (flags & 0x7E); creator zeroes it. Live 1 (searching / done) or 0x10
+    uint32_t Flags;
+};
+
+struct NavcloudRegionDataKey
+{
+    // inferred: Vector3i<int> key: macOS TryGetTileInfo compares *(int*)(keys + i*0xC + 0/4/8)
+    // with the tile position's region coordinates
+    int32_t X;
+    // inferred: second int of Vector3i<int>
+    int32_t Y;
+    // inferred: third int of Vector3i<int>
+    int32_t Z;
+};
+
+// Singleton (client and server, one holder each, present from level load in TUT_Avernus_C,
+// WLD_Main_A, SCL_Main_A) holding the loaded navcloud regions: ls::HashMap<Vector3i<int>,
+// navcloud::Region, navcloud::HashTableOps> (macOS signatures of navcloud::TryGetTileInfo /
+// ToTilePos / GetNeighbors take exactly this map as the component). Written by
+// navcloud::RegionSystem (ProcessMemoryData, ProcessObstacles, ProcessAgents, MetaDataRemoval),
+// read by navcloud::PathfindingSystem. The map is written out member by member because its key is
+// a struct (own structs may not be hash keys). Region (0x58 bytes, Windows dtor stride): +0 int32
+// tile resolution kind (0 -> 2, 1 -> 6 tiles per axis in TryGetTileInfo), +0x08 a 64-byte HashMap
+// whose values are 48-byte HashSets, +0x48 Array<uint8_t> of per-tile data (index = (z*n + y)*n +
+// x, bounded by the array size at +0x54).
+struct RegionDataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NavcloudRegionData, "navcloud::RegionDataComponent")
+
+    // inferred: bucket array (int32 per bucket) of the HashMap; creator bg3.exe+0x392A420
+    // allocates 0x40 and zeroes it with the HashMap pattern (sizes at +0x1C/+0x2C); destructor
+    // thunk bg3.exe+0x6C8250 -> bg3.exe+0x6CFFB0 ends with the HashSet destructor bg3.exe+0x582AD0
+    // on +0. Live: heap pointer.
+    [[bg3::hidden]] void* HashKeys;
+    // inferred: bucket count; macOS TryGetTileInfo takes hash % *(int*)(map+8). Live server: 0x607
+    // (1543 buckets)
+    uint32_t HashKeysSize;
+    // inferred: hash chain: TryGetTileInfo follows *(int*)(*(map+0x10) + i*4). Live: capacity
+    // 0x400, size 0
+    Array<int32_t> NextIds;
+    // inferred: Vector3i<int> keys at *(map+0x20) stride 0xC, count *(int*)(map+0x2C) (macOS
+    // TryGetTileInfo; Windows dtor bg3.exe+0x6CFFB0 loops to *(int*)(this+0x2C)). Live: capacity
+    // 0x400, size 0
+    Array<NavcloudRegionDataKey> Keys;
+    // inferred: navcloud::Region per key, stride 0x58: Windows dtor bg3.exe+0x6CFFB0 destroys
+    // *(this+0x30)+i*0x58 (Array at +0x48 freed, map at +0x08 destroyed by bg3.exe+0x5E19C0 whose
+    // values are 0x30-byte HashSets); macOS GetComponentDestructor<RegionDataComponent> calls
+    // navcloud::Region::~Region with the same stride
+    [[bg3::hidden]] void* Values;
+    // inferred: size of the uninitialised value storage; live 0x400
+    uint32_t ValuesCapacity;
+};
+
+// One-frame event (client and server) raised by navcloud::RegionSystem when a navcloud region
+// finished loading; holds the region coordinates (Vector3i<int>, the key type of
+// navcloud::RegionDataComponent's map). Read by the obstacle processing (ProcessObstacle).
+struct RegionLoadedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(NavcloudRegionLoaded, "navcloud::RegionLoadedOneFrameComponent")
+
+    // inferred: creator bg3.exe+0x3928D10 (alloc 0xC) zeroes 8+4 bytes; macOS
+    // navcloud::RegionSystem::Update allocates 0xC and zeroes it the same way. 12 bytes =
+    // Vector3i<int> region key (navcloud::RegionDataComponent keys, stride 0xC). Live small
+    // positive ints 0..0xD, same values as navcloud::RegionLoadingComponent +0
+    int32_t RegionX;
+    // inferred: second int of the region key; live 0..4 and -1
+    int32_t RegionY;
+    // inferred: third int of the region key; live negative (-0x40 .. -0x4C) and small positives
+    int32_t RegionZ;
+};
+
+// Client and server, one per navcloud region entity being streamed in (12/48 holders). Written by
+// navcloud::RegionSystem (Update / ProcessAgents / ProcessMemoryData / MetaDataRemoval), read by
+// navcloud::generate::GenerationSystem. Holds the region coordinates, the worker job that
+// processes the loaded data, the asynchronous file read (navcloud.data) and a flag.
+struct RegionLoadingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NavcloudRegionLoading, "navcloud::RegionLoadingComponent")
+
+    // inferred: creator bg3.exe+0x392B120 (alloc 0x28) zeroes *(uint64*)+0 and *(uint32*)+8 (a
+    // 12-byte Vector3i); macOS RegionSystem::Update copies *(uint64*)comp and *(uint32*)(comp+8)
+    // into the processing WorkerThreadJob as the region key. Live: small ints 0..0xD (same as
+    // RegionLoadedOneFrame)
+    int32_t RegionX;
+    // inferred: second int of the Vector3i region key
+    int32_t RegionY;
+    // inferred: third int of the Vector3i region key; live negative values (-0x40 .. -0x4C)
+    int32_t RegionZ;
+    // inferred: macOS RegionSystem::Update: *(WorkerThreadJob**)(comp+0x10) = new job (0x70 bytes,
+    // vtable OnWTCompletion) built from the region key and the read buffer; on removal the job is
+    // waited for and freed. Windows creator zeroes +0x10. Live mostly 0 (heap in 4 samples)
+    // [offset from macOS, size/zeroing confirmed on Windows]
+    [[bg3::hidden]] void* ProcessJob;
+    // inferred: macOS RegionSystem::Update reads a state at *(*(comp+0x18)+0x40) (0..7, atomically
+    // set to 7 = cancelled, spins while 5) and a buffer at +0x1C0 of the same object: an
+    // asynchronous IO request for navcloud.data. Windows creator zeroes +0x18. Live always a heap
+    // pointer
+    [[bg3::hidden]] void* ReadRequest;
+    // unknown: Windows creator bg3.exe+0x392B120 and macOS writer both set byte +0x20 = 0; live
+    // byte 0 always 00
+    bool field_20;
+};
+
+struct NavcloudRegionsUnloadedKey
+{
+    // inferred: Vector3i<int> region key (navcloud::RegionDataComponent uses the same key)
+    int32_t X;
+    // inferred: second int of Vector3i<int>
+    int32_t Y;
+    // inferred: third int of Vector3i<int>
+    int32_t Z;
+};
+
+// One-frame event (client and server) raised by navcloud::RegionSystem with the set of region
+// coordinates that were unloaded this frame: ls::HashTable<Vector3i<int>, navcloud::HashTableOps>
+// (a HashSet of 12-byte keys). Written out member by member because its key is a struct of this
+// file (own structs may not be hash keys) - the same treatment as navcloud::RegionDataComponent.
+struct RegionsUnloadedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(NavcloudRegionsUnloaded, "navcloud::RegionsUnloadedOneFrameComponent")
+
+    // inferred: bucket array of the HashSet: creator bg3.exe+0x392B290 (alloc 0x30) zeroes 6
+    // qwords; component destructor is thunk_FUN_140582ad0 = the HashSet destructor (also used for
+    // RegionDataComponent). macOS RegionSystem::Update types the freshly allocated 0x30 bytes as
+    // HashTable<Vector3i<int>, navcloud::HashTableOps>. Live heap pointer
+    [[bg3::hidden]] void* HashKeys;
+    // inferred: bucket count; live 5 or 13
+    uint32_t HashKeysSize;
+    // inferred: HashSet chain array; live capacity 1/16, size 1/9
+    Array<int32_t> NextIds;
+    // inferred: HashSet keys, Vector3i<int> (12-byte stride, per the HashTable<Vector3i<int>> type
+    // in macOS RegionSystem::Update); live capacity 1/16, size 1/9 (same as NextIds)
+    Array<NavcloudRegionsUnloadedKey> Keys;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(navcloud, AgentChangedOneFrameComponent, NavcloudAgentChanged)
 DEFINE_ONEFRAME_TAG_COMPONENT(navcloud, LevelLoadedOneFrameComponent, NavcloudLevelLoaded)
 DEFINE_ONEFRAME_TAG_COMPONENT(navcloud, MemoryLoadedOneFrameComponent, NavcloudMemoryLoaded)
@@ -12978,6 +18547,27 @@ END_NS()
 
 BEGIN_NS(navcloud::generate)
 
+// Client-side navcloud generation zone placed in levels (an oriented box around the entity's
+// Transform). Lives in every level from load on (up to 87 holders; TUT_Avernus_C, WLD_Main_A,
+// SCL_Main_A), born with level loading, not with a gameplay action. Read only by
+// navcloud::generate::GenerationSystem::Update (query TransformComponent + ZoneComponent), which
+// takes the uint32 at +0 (handled only when < 3) and passes -v / +v of the vec3 at +4 to
+// ls::GetOBBVertices with the entity's Transform, i.e. the vec3 is the box's half extents.
+struct ZoneComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NavcloudGenerateZone, "navcloud::generate::ZoneComponent")
+
+    // inferred: macOS navcloud::generate::GenerationSystem::Update (bg3_macos_x64+0x6A1E540) reads
+    // the uint32 at +0 of each zone (stride 0x10) and only processes zones with value < 3 (a zone
+    // shape/kind enum). Live (seen.py, 48 client instances): always 0. Windows registration
+    // bg3.exe+0x83700, creator size 16 from coverage.json.
+    uint32_t Type;
+    // inferred: same function: local = *(vec3*)(zone+4) with the sign bits flipped (^0x80000000)
+    // -> ls::GetOBBVertices(transform, -ext, +ext): half extents of an oriented box. Live samples:
+    // three floats 1.75..100 at +4/+8/+0xC on Windows, consistent with box sizes in metres.
+    glm::vec3 Extents;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(navcloud::generate, GenerateEventOneFrameComponent, NavcloudGenerateEvent)
 DEFINE_TAG_COMPONENT(navcloud::generate, IsWaitingForGenerateComponent, NavcloudGenerateIsWaitingForGenerate)
 
@@ -12985,6 +18575,11 @@ END_NS()
 
 // The sizes the game registers for these types.
 static_assert(sizeof(bg3se::ecl::ActiveTurnComponent) == 12);
+static_assert(sizeof(bg3se::ecl::BasicGOVisualFadeView0Component) == 20);
+static_assert(sizeof(bg3se::ecl::CharacterAttachToSceneFadeView0Component) == 20);
+static_assert(sizeof(bg3se::ecl::CharacterAttachToSceneFadeView1Component) == 20);
+static_assert(sizeof(bg3se::ecl::CharacterCreationFadeView0Component) == 20);
+static_assert(sizeof(bg3se::ecl::CharacterCreationFadeView1Component) == 20);
 static_assert(sizeof(bg3se::ecl::CharacterOutOfSightFadeView0Component) == 20);
 static_assert(sizeof(bg3se::ecl::CharacterOutOfSightFadeView1Component) == 20);
 static_assert(sizeof(bg3se::ecl::CombatTimelineCreationComponent) == 16);
@@ -12993,19 +18588,33 @@ static_assert(sizeof(bg3se::ecl::CombatTimelineShotEntry) == 16);
 static_assert(sizeof(bg3se::ecl::CombatTimelineShot) == 120);
 static_assert(sizeof(bg3se::ecl::CombatTimelineEndedOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ecl::CombatTimelineShownOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::ecl::CrowdFadeView0Component) == 20);
+static_assert(sizeof(bg3se::ecl::CrowdFadeView1Component) == 20);
 static_assert(sizeof(bg3se::ecl::EquipmentVisualsUpdatedEventOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ecl::EquipmentVisualsVFXTargetComponent) == 16);
 static_assert(sizeof(bg3se::ecl::GroundMaterialComponent) == 2);
 static_assert(sizeof(bg3se::ecl::InvisibilityAttachmentComponent) == 1);
+static_assert(sizeof(bg3se::ecl::InvisibilityFadeView0Component) == 20);
+static_assert(sizeof(bg3se::ecl::InvisibilityFadeView1Component) == 20);
+static_assert(sizeof(bg3se::ecl::InvisibilityFadingComponent) == 12);
 static_assert(sizeof(bg3se::ecl::InvisibilityVisualComponent) == 12);
 static_assert(sizeof(bg3se::ecl::ObstructionFadeView0Component) == 20);
+static_assert(sizeof(bg3se::ecl::PlayerTargetEntityChangedOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ecl::PlayersInTimelineGlobalComponent) == 64);
+static_assert(sizeof(bg3se::ecl::Projectile) == 576);
+static_assert(sizeof(bg3se::ecl::ClientProjectileSpellId) == 56);
 static_assert(sizeof(bg3se::ecl::RoomTriggerCharacterFadeView0Component) == 20);
 static_assert(sizeof(bg3se::ecl::RoomTriggerCharacterFadeView1Component) == 20);
 static_assert(sizeof(bg3se::ecl::RoomTriggerFadeView0Component) == 20);
 static_assert(sizeof(bg3se::ecl::RoomTriggerFadeView1Component) == 20);
+static_assert(sizeof(bg3se::ecl::ServerControlledEffectAttachedComponent) == 8);
+static_assert(sizeof(bg3se::ecl::ServerControlledEffectComponent) == 88);
+static_assert(sizeof(bg3se::ecl::ServerControlledEffectReferenceComponent) == 48);
+static_assert(sizeof(bg3se::ecl::SnapFadeRequestOneFrameComponent) == 2);
+static_assert(sizeof(bg3se::ecl::SoundAttachmentComponent) == 16);
 static_assert(sizeof(bg3se::ecl::SoundAttachmentTransformRequestsComponent) == 16);
 static_assert(sizeof(bg3se::ecl::SoundAttachmentTransformRequest) == 24);
+static_assert(sizeof(bg3se::ecl::StartTurnRequestReactionOneFrameComponent) == 4);
 static_assert(sizeof(bg3se::ecl::SurfaceLightComponent) == 64);
 static_assert(sizeof(bg3se::ecl::TimelineActorJoinedEventOneFrameComponent) == 32);
 static_assert(sizeof(bg3se::ecl::TimelineActorLeftEventOneFrameComponent) == 176);
@@ -13027,10 +18636,33 @@ static_assert(sizeof(bg3se::ecl::TimelineSteppingFadeComponent) == 8);
 static_assert(sizeof(bg3se::ecl::TimelineTransformFlushSingletonComponent) == 160);
 static_assert(sizeof(bg3se::ecl::UIFrameIdSingletonComponent) == 12);
 static_assert(sizeof(bg3se::ecl::ReactionComponent) == 48);
+static_assert(sizeof(bg3se::ecl::AttachmentComponent) == 8);
+static_assert(sizeof(bg3se::ecl::ImpactEventOneFrameComponent) == 168);
+static_assert(sizeof(bg3se::ecl::ImpactEventBaseTarget) == 48);
+static_assert(sizeof(bg3se::ecl::ImpactEventInitialTarget) == 112);
+static_assert(sizeof(bg3se::ecl::ImpactEventIntermediateTarget) == 168);
+static_assert(sizeof(bg3se::ecl::SpellComponent) == 192);
+static_assert(sizeof(bg3se::ecl::ProjectileSpellBaseTarget) == 48);
+static_assert(sizeof(bg3se::ecl::ProjectileSpellInitialTarget) == 112);
+static_assert(sizeof(bg3se::ecl::ProjectileSpellIntermediateTarget) == 168);
 static_assert(sizeof(bg3se::ecl::SpellSoundStateRequestsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::ecl::SpellSoundStateRequestsSwitchRequest) == 24);
+static_assert(sizeof(bg3se::ecl::MessageBoxResponseEventOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::ecl::activation::CulledComponent) == 4);
+static_assert(sizeof(bg3se::ecl::attitude::ChangesOneFrameComponent) == 64);
 static_assert(sizeof(bg3se::ecl::character::CharacterUpdateConfigComponent) == 12);
+static_assert(sizeof(bg3se::ecl::character::TradingComponent) == 4);
+static_assert(sizeof(bg3se::ecl::character::TradingModeSwitchOneFrameComponent) == 4);
+static_assert(sizeof(bg3se::ecl::character_creation::AppearanceCacheComponent) == 64);
+static_assert(sizeof(bg3se::ecl::character_creation::CCAppearanceCacheMaterialSetting) == 48);
+static_assert(sizeof(bg3se::ecl::character_creation::CCAppearanceCacheSelectedAppearance) == 128);
+static_assert(sizeof(bg3se::ecl::character_creation::LoadedClassVisualChangedComponent) == 16);
+static_assert(sizeof(bg3se::ecl::character_creation::LoadedOriginVisualChangedComponent) == 16);
+static_assert(sizeof(bg3se::ecl::character_creation::LoadedRaceVisualChangedComponent) == 16);
+static_assert(sizeof(bg3se::ecl::character_creation::SessionCharacterComponent) == 8);
+static_assert(sizeof(bg3se::ecl::character_creation::TargetVisualComponent) == 240);
+static_assert(sizeof(bg3se::ecl::character_creation::CCTargetVisualMaterialSetting) == 48);
+static_assert(sizeof(bg3se::ecl::character_creation::CCTargetVisualStringEntry) == 32);
 static_assert(sizeof(bg3se::ecl::container::ClosedExplorationSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::container::ContainerExplorationEntry) == 16);
 static_assert(sizeof(bg3se::ecl::container::OngoingExplorationComponent) == 16);
@@ -13040,6 +18672,12 @@ static_assert(sizeof(bg3se::ecl::crowds::CrowdSoundSetRTPCRequest) == 16);
 static_assert(sizeof(bg3se::ecl::crowds::SoundStateComponent) == 32);
 static_assert(sizeof(bg3se::ecl::crowds::CrowdSoundGroupEntityData) == 20);
 static_assert(sizeof(bg3se::ecl::crowds::CrowdSoundGroup) == 96);
+static_assert(sizeof(bg3se::ecl::crowds::SoundStationComponent) == 16);
+static_assert(sizeof(bg3se::ecl::crowds::SoundStationRequestsSingletonComponent) == 112);
+static_assert(sizeof(bg3se::ecl::crowds::CrowdSoundNewStationRequest) == 24);
+static_assert(sizeof(bg3se::ecl::crowds::CrowdSoundStationSoundRequest) == 16);
+static_assert(sizeof(bg3se::ecl::crowds::CrowdSoundStationSizeRequest) == 16);
+static_assert(sizeof(bg3se::ecl::crowds::SoundStationStateSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::crowds::SoundVolumeComponent) == 56);
 static_assert(sizeof(bg3se::ecl::crowds::TransformRequestsComponent) == 64);
 static_assert(sizeof(bg3se::ecl::customdice::SelectedSingletonComponent) == 64);
@@ -13049,10 +18687,14 @@ static_assert(sizeof(bg3se::ecl::dialog::DialogCharacterEvent) == 16);
 static_assert(sizeof(bg3se::ecl::dialog::DialogInstanceComponent) == 4);
 static_assert(sizeof(bg3se::ecl::dialog::EndedEventsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::ecl::dialog::StartedEventsSingletonComponent) == 16);
+static_assert(sizeof(bg3se::ecl::ftb::BlockedFTBRequestOneFrameComponent) == 4);
+static_assert(sizeof(bg3se::ecl::highlight::DataComponent) == 16);
 static_assert(sizeof(bg3se::ecl::hovering::PlayerHoveredSurfaceSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::hovering::HoveredSurfaceDetails) == 24);
 static_assert(sizeof(bg3se::ecl::invisibility::VisibilitySetupRequestsComponent) == 64);
 static_assert(sizeof(bg3se::ecl::invisibility::InvisibilityVisibilityInfo) == 2);
+static_assert(sizeof(bg3se::ecl::item::DestroyingHandledComponent) == 16);
+static_assert(sizeof(bg3se::ecl::item::animation::FallbackTimerComponent) == 4);
 static_assert(sizeof(bg3se::ecl::item::animation::RequestComponent) == 4);
 static_assert(sizeof(bg3se::ecl::item::animation::RequestSingletonComponent) == 112);
 static_assert(sizeof(bg3se::ecl::item::animation::ItemAnimationInitialStateInfo) == 4);
@@ -13070,11 +18712,17 @@ static_assert(sizeof(bg3se::ecl::movement::DashTransformRequestsSingletonCompone
 static_assert(sizeof(bg3se::ecl::obstruction::RaycastResultsSingletonComponent) == 136);
 static_assert(sizeof(bg3se::ecl::obstruction::ObstructionCharacterFadeInfo) == 24);
 static_assert(sizeof(bg3se::ecl::obstruction::StopFadeTimerView0Component) == 4);
+static_assert(sizeof(bg3se::ecl::party::PartyChangedEventOneFrameComponent) == 24);
 static_assert(sizeof(bg3se::ecl::ping::HighlightTargetSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::ping::PingHighlightEffect) == 16);
+static_assert(sizeof(bg3se::ecl::ping::MultiEffectCreateRequestOneFrameComponent) == 168);
+static_assert(sizeof(bg3se::ecl::ping::PingMultiEffectEffectObject) == 48);
+static_assert(sizeof(bg3se::ecl::ping::PingMultiEffectPlayTime) == 16);
+static_assert(sizeof(bg3se::ecl::ping::PingMultiEffectInitInfo) == 168);
 static_assert(sizeof(bg3se::ecl::platform::SoundComponent) == 8);
 static_assert(sizeof(bg3se::ecl::platform::SoundPlayRequestBusComponent) == 16);
 static_assert(sizeof(bg3se::ecl::platform::GameplaySoundEventRequest) == 48);
+static_assert(sizeof(bg3se::ecl::platform::SoundSetupRequestOneFrameComponent) == 56);
 static_assert(sizeof(bg3se::ecl::player::AssignmentHistorySingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::player_management::EventsSingletonComponent) == 48);
 static_assert(sizeof(bg3se::ecl::player_management::PlayerCreatedEvent) == 2);
@@ -13088,16 +18736,24 @@ static_assert(sizeof(bg3se::ecl::ragdoll::SoundRequestBusSingletonComponent) == 
 static_assert(sizeof(bg3se::ecl::ragdoll::RagdollCharacterSoundRequest) == 16);
 static_assert(sizeof(bg3se::ecl::ragdoll::RagdollCharacterRTPCRequest) == 24);
 static_assert(sizeof(bg3se::ecl::ragdoll::UpdateLastGroundRequestSingletonComponent) == 16);
+static_assert(sizeof(bg3se::ecl::ready_check::HideMessageBoxRequestOneFrameComponent) == 24);
+static_assert(sizeof(bg3se::ecl::relation::FactionChangedEventOneFrameComponent) == 24);
+static_assert(sizeof(bg3se::ecl::relation::RelationChangedEventOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::ecl::roll::ActiveRollEventsSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::roll::ActiveRollResultEvent) == 8);
 static_assert(sizeof(bg3se::ecl::roll::ServerRequestedActiveRollStateEvent) == 16);
 static_assert(sizeof(bg3se::ecl::roll::ActiveRollSelectedModifiersChangedEvent) == 8);
 static_assert(sizeof(bg3se::ecl::roll::ActiveRollFailedModifiersChangedEvent) == 8);
+static_assert(sizeof(bg3se::ecl::roll::PassiveRollSuccessOneFrameEventComponent) == 16);
+static_assert(sizeof(bg3se::ecl::screen_fade::ClearScreenFadeFinishedOneFrameComponent) == 48);
+static_assert(sizeof(bg3se::ecl::screen_fade::ClearScreenFadeRequestCancelledOneFrameComponent) == 48);
 static_assert(sizeof(bg3se::ecl::screen_fade::MovieFadeMovieToGUIDSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::screen_fade::MovieFadeRemovalCountDownSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::screen_fade::ScreenFadeSyncSingletonComponent) == 144);
 static_assert(sizeof(bg3se::ecl::screen_fade::ScreenFadeTimerComponent) == 64);
 static_assert(sizeof(bg3se::ecl::screen_fade::ScreenFadeTimerSettings) == 24);
+static_assert(sizeof(bg3se::ecl::screen_fade::ScreenFadeToFinishedOneFrameComponent) == 48);
+static_assert(sizeof(bg3se::ecl::screen_fade::ScreenFadeToRequestCancelledOneFrameComponent) == 48);
 static_assert(sizeof(bg3se::ecl::screen_fade::ScreenFadeVisualDataComponent) == 64);
 static_assert(sizeof(bg3se::ecl::screen_fade::ScreenFadeVisualData) == 12);
 static_assert(sizeof(bg3se::ecl::sound::AmbienceMixRTPCEventRequestSingletonComponent) == 16);
@@ -13139,13 +18795,17 @@ static_assert(sizeof(bg3se::ecl::sound::MusicStateSingletonComponent) == 80);
 static_assert(sizeof(bg3se::ecl::sound::MusicStateRequest) == 48);
 static_assert(sizeof(bg3se::ecl::sound::MusicStatePlayerData) == 112);
 static_assert(sizeof(bg3se::ecl::sound::MusicStateQueuedRequest) == 40);
+static_assert(sizeof(bg3se::ecl::sound::PointAndClickSoundRequestComponent) == 72);
+static_assert(sizeof(bg3se::ecl::sound::PointAndClickSoundSwitchUpdate) == 8);
 static_assert(sizeof(bg3se::ecl::sound::PointAndClickSoundStateComponent) == 88);
 static_assert(sizeof(bg3se::ecl::sound::PreloadStateSingletonComponent) == 16);
 static_assert(sizeof(bg3se::ecl::sound::SneakStateSingletonComponent) == 1);
+static_assert(sizeof(bg3se::ecl::sound::SoundFinishedPlayingEventOneFrameComponent) == 4);
 static_assert(sizeof(bg3se::ecl::sound::SpellImpactRequestBusComponent) == 72);
 static_assert(sizeof(bg3se::ecl::sound::SpellImpactBusSoundRequest) == 16);
 static_assert(sizeof(bg3se::ecl::sound::SpellImpactBusSwitchRequest) == 16);
 static_assert(sizeof(bg3se::ecl::sound::SpellImpactBusTransformRequest) == 48);
+static_assert(sizeof(bg3se::ecl::sound::StartInstrumentSpellSoundRequestOneFrameComponent) == 4);
 static_assert(sizeof(bg3se::ecl::sound::TagSoundRequestsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::ecl::sound::TagSoundSwitchRequest) == 24);
 static_assert(sizeof(bg3se::ecl::sound::TagSwitchRequestsSingletonComponent) == 16);
@@ -13168,6 +18828,14 @@ static_assert(sizeof(bg3se::ecl::sound::MixStateRTPCRequest) == 16);
 static_assert(sizeof(bg3se::ecl::spell::AddedSpellModificationOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ecl::spell::AddedSpellModificationEntry) == 136);
 static_assert(sizeof(bg3se::ecl::spell::AddedSpellModificationSources) == 64);
+static_assert(sizeof(bg3se::ecl::spell::RemovedSpellModificationOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::ecl::spell::RemovedSpellModificationEntry) == 136);
+static_assert(sizeof(bg3se::ecl::spell::RemovedSpellModificationSources) == 64);
+static_assert(sizeof(bg3se::ecl::spell_preview::HighlightsComponent) == 48);
+static_assert(sizeof(bg3se::ecl::spell_preview::SurfaceTilesComponent) == 16);
+static_assert(sizeof(bg3se::ecl::spell_preview::SpellPreviewSurfaceTilesTilePos) == 8);
+static_assert(sizeof(bg3se::ecl::spell_preview::TargetingComponent) == 56);
+static_assert(sizeof(bg3se::ecl::spell_preview::SpellPreviewTargetingTarget) == 32);
 static_assert(sizeof(bg3se::ecl::splitscreen::AnimationSingletonComponent) == 8);
 static_assert(sizeof(bg3se::ecl::splitscreen::FullscreenTurnActiveComponent) == 4);
 static_assert(sizeof(bg3se::ecl::splitscreen::GoalSingletonComponent) == 2);
@@ -13181,14 +18849,18 @@ static_assert(sizeof(bg3se::ecl::splitscreen::SelectedAnimationSingletonComponen
 static_assert(sizeof(bg3se::ecl::splitscreen::SplitTimerSingletonComponent) == 8);
 static_assert(sizeof(bg3se::ecl::splitscreen::ViewSingletonComponent) == 2);
 static_assert(sizeof(bg3se::ecl::steering::SSSteerComponent) == 16);
+static_assert(sizeof(bg3se::ecl::summon::AnimationRequestComponent) == 4);
 static_assert(sizeof(bg3se::ecl::tadpole_tree::StatePowerContainerComponent) == 16);
 static_assert(sizeof(bg3se::ecl::tadpole_tree::TadpoleTreeStatePowerContainerPower) == 8);
+static_assert(sizeof(bg3se::ecl::tag::SpellCheckedTagComponent) == 16);
+static_assert(sizeof(bg3se::ecl::thrown::CurrentRotationComponent) == 28);
 static_assert(sizeof(bg3se::ecl::thrown::SoundRequestBusComponent) == 80);
 static_assert(sizeof(bg3se::ecl::thrown::ThrownSoundRequestBusCharacterSoundRequest) == 16);
 static_assert(sizeof(bg3se::ecl::thrown::ThrownSoundRequestBusItemSoundRequest) == 16);
 static_assert(sizeof(bg3se::ecl::thrown::ThrownSoundRequestBusCharacterRTPCRequest) == 24);
 static_assert(sizeof(bg3se::ecl::thrown::ThrownSoundRequestBusCharacterSetSwitchRequest) == 24);
 static_assert(sizeof(bg3se::ecl::thrown::ThrownSoundRequestBusItemSetSwitchRequest) == 16);
+static_assert(sizeof(bg3se::ecl::thrown::ThrownSoundComponent) == 16);
 static_assert(sizeof(bg3se::ecl::timeline::ActorParticipationSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::timeline::ArenaProcessedRollsForSpell) == 4);
 static_assert(sizeof(bg3se::ecl::timeline::ArenaTriggerHasPlayersComponent) == 4);
@@ -13204,9 +18876,11 @@ static_assert(sizeof(bg3se::ecl::timeline::TimelineStartedFadingOneFrameComponen
 static_assert(sizeof(bg3se::ecl::timeline::GlobalActiveEventComponent) == 648);
 static_assert(sizeof(bg3se::ecl::trigger::SightHelperComponent) == 1);
 static_assert(sizeof(bg3se::ecl::unsheath::VisualStateComponent) == 8);
+static_assert(sizeof(bg3se::eoc::ClosestTrackedSoundEntityComponent) == 4);
 static_assert(sizeof(bg3se::eoc::GameOverComponent) == 8);
 static_assert(sizeof(bg3se::eoc::GravityActiveComponent) == 8);
 static_assert(sizeof(bg3se::eoc::PathingMovementSpeedChangedOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::eoc::RagdollSoundComponent) == 8);
 static_assert(sizeof(bg3se::eoc::ServerRootLevelLoadedComponent) == 4);
 static_assert(sizeof(bg3se::eoc::TrackedSoundEntityComponent) == 4);
 static_assert(sizeof(bg3se::eoc::WeaponSetChangedEventOneFrameComponent) == 2);
@@ -13256,7 +18930,9 @@ static_assert(sizeof(bg3se::eoc::analytics::EventSaveGameErrorString) == 24);
 static_assert(sizeof(bg3se::eoc::analytics::EventSpellUseComponent) == 144);
 static_assert(sizeof(bg3se::eoc::analytics::EventSpellUseData) == 56);
 static_assert(sizeof(bg3se::eoc::animation::BlueprintRefreshedEventOneFrameComponent) == 1);
+static_assert(sizeof(bg3se::eoc::animation::RefreshAnimationRequestOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::eoc::camera::MoveComponent) == 16);
+static_assert(sizeof(bg3se::eoc::camera::SpellWaitComponent) == 4);
 static_assert(sizeof(bg3se::eoc::combat::InitiatorDebugComponent) == 288);
 static_assert(sizeof(bg3se::eoc::crowds::AppearanceComponent) == 64);
 static_assert(sizeof(bg3se::eoc::crowds::BehaviourComponent) == 1);
@@ -13265,12 +18941,16 @@ static_assert(sizeof(bg3se::eoc::crowds::CustomAnimationComponent) == 4);
 static_assert(sizeof(bg3se::eoc::crowds::DeadReckoningComponent) == 20);
 static_assert(sizeof(bg3se::eoc::crowds::ProxyComponent) == 8);
 static_assert(sizeof(bg3se::eoc::crowds::ProxyDynamicAnimationSetComponent) == 16);
+static_assert(sizeof(bg3se::eoc::crowds::ProxyTransformComponent) == 16);
 static_assert(sizeof(bg3se::eoc::customdice::UsersDiceSingletonComponent) == 64);
 static_assert(sizeof(bg3se::eoc::dialog::DialoguePrivacySingletonComponent) == 64);
 static_assert(sizeof(bg3se::eoc::dialog::IsListeningSingletonComponent) == 64);
 static_assert(sizeof(bg3se::eoc::dialog::NoPrivateDialogsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::eoc::drop::OriginalDropTargetComponent) == 8);
 static_assert(sizeof(bg3se::eoc::item::ISDoorClosedComponent) == 8);
 static_assert(sizeof(bg3se::eoc::item::ISDoorOpenedComponent) == 8);
+static_assert(sizeof(bg3se::eoc::jump::AnimationRequestOneFrameComponent) == 12);
+static_assert(sizeof(bg3se::eoc::jump::StateComponent) == 40);
 static_assert(sizeof(bg3se::eoc::legacy::entity::InUseByActionStateComponent) == 1);
 static_assert(sizeof(bg3se::eoc::lookat::TargetComponent) == 16);
 static_assert(sizeof(bg3se::eoc::movement::DashingComponent) == 28);
@@ -13289,6 +18969,7 @@ static_assert(sizeof(bg3se::eoc::notification::DropInApprovedNotificationCompone
 static_assert(sizeof(bg3se::eoc::notification::DropInCanceledRequestNotificationComponent) == 4);
 static_assert(sizeof(bg3se::eoc::notification::EndCreditsRequestedComponent) == 4);
 static_assert(sizeof(bg3se::eoc::notification::EnterPhotoModeFailedNotificationComponent) == 1);
+static_assert(sizeof(bg3se::eoc::notification::EntityReceivedComponent) == 32);
 static_assert(sizeof(bg3se::eoc::notification::GatherAtCampCheckComponent) == 2);
 static_assert(sizeof(bg3se::eoc::notification::InventoryMembersCreatedNotificationComponent) == 16);
 static_assert(sizeof(bg3se::eoc::notification::LearnedSpellComponent) == 24);
@@ -13301,6 +18982,7 @@ static_assert(sizeof(bg3se::eoc::notification::NotifyInventoryNotificationCompon
 static_assert(sizeof(bg3se::eoc::notification::PerformFailedComponent) == 1);
 static_assert(sizeof(bg3se::eoc::notification::PickUpResultNotificationComponent) == 24);
 static_assert(sizeof(bg3se::eoc::notification::PingRequestComponent) == 40);
+static_assert(sizeof(bg3se::eoc::notification::PlayServerSoundComponent) == 32);
 static_assert(sizeof(bg3se::eoc::notification::ProfileShownTutorialsUpdateNotificationComponent) == 56);
 static_assert(sizeof(bg3se::eoc::notification::ProfileUpdateNotificationComponent) == 8);
 static_assert(sizeof(bg3se::eoc::notification::RecipesUnlockedNotificationComponent) == 48);
@@ -13324,6 +19006,8 @@ static_assert(sizeof(bg3se::eoc::platform::PassengerComponent) == 48);
 static_assert(sizeof(bg3se::eoc::platform::PlatformComponent) == 72);
 static_assert(sizeof(bg3se::eoc::platform::TransformData) == 44);
 static_assert(sizeof(bg3se::eoc::platform::RepresentativeComponent) == 8);
+static_assert(sizeof(bg3se::eoc::ready_check::ResultEventOneFrameComponent) == 48);
+static_assert(sizeof(bg3se::eoc::ready_check::StateComponent) == 176);
 static_assert(sizeof(bg3se::eoc::ready_check::UserComponent) == 56);
 static_assert(sizeof(bg3se::eoc::reward::ChoiceComponent) == 56);
 static_assert(sizeof(bg3se::eoc::reward::ShowRequestComponent) == 48);
@@ -13344,8 +19028,11 @@ static_assert(sizeof(bg3se::eoc::sound::PerformanceZoneComponent) == 128);
 static_assert(sizeof(bg3se::eoc::sound::DistantSoundInfoComponent) == 16);
 static_assert(sizeof(bg3se::eoc::spell::LastUsedLimbComponent) == 1);
 static_assert(sizeof(bg3se::eoc::spell::SpellInvalidationLockedComponent) == 1);
+static_assert(sizeof(bg3se::eoc::steering::SyncComponent) == 4);
 static_assert(sizeof(bg3se::eoc::story::CounterComponent) == 12);
 static_assert(sizeof(bg3se::eoc::story::TimerComponent) == 16);
+static_assert(sizeof(bg3se::eoc::thrown::IsThrownComponent) == 16);
+static_assert(sizeof(bg3se::eoc::thrown::RotationParametersComponent) == 56);
 static_assert(sizeof(bg3se::eoc::thrown::SpellPrepareAnimationRequest) == 4);
 static_assert(sizeof(bg3se::eoc::timeline::ActorVisualDataComponent) == 8);
 static_assert(sizeof(bg3se::eoc::timeline::steering::TimelineSteeringComponent) == 120);
@@ -13357,34 +19044,77 @@ static_assert(sizeof(bg3se::eoc::trap::DisarmingAnimationStateComponent) == 1);
 static_assert(sizeof(bg3se::eoc::unsheath::SpellAnimationOverrideComponent) == 4);
 static_assert(sizeof(bg3se::esv::ActiveMusicVolumeComponent) == 8);
 static_assert(sizeof(bg3se::esv::BaseStatsReloadedOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::esv::ConstellationChildComponent) == 8);
 static_assert(sizeof(bg3se::esv::ConstellationComponent) == 64);
 static_assert(sizeof(bg3se::esv::ConstellationHelperComponent) == 24);
 static_assert(sizeof(bg3se::esv::Effect) == 120);
 static_assert(sizeof(bg3se::esv::ExplorationAwardStateComponent) == 16);
+static_assert(sizeof(bg3se::esv::GameStateUnloadLevelComponent) == 16);
+static_assert(sizeof(bg3se::esv::GravityActiveTimeoutComponent) == 4);
 static_assert(sizeof(bg3se::esv::OsirisSetDisplayTitleHiddenRequestsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::OsirisSetDisplayTitleHiddenRequest) == 16);
+static_assert(sizeof(bg3se::esv::SafePositionUpdatedEventOneFrameComponent) == 24);
+static_assert(sizeof(bg3se::esv::ScaleChangeComponent) == 12);
 static_assert(sizeof(bg3se::esv::ServerTimelineActorDataComponent) == 40);
 static_assert(sizeof(bg3se::esv::ServerTimelineCreationConfirmationComponent) == 88);
 static_assert(sizeof(bg3se::esv::TimelineCreationActor) == 16);
 static_assert(sizeof(bg3se::esv::ServerTimelineDataComponent) == 24);
+static_assert(sizeof(bg3se::esv::ChangeUnequipLockRequestOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::CurrentResourceRequestsSingletonComponent) == 16);
+static_assert(sizeof(bg3se::esv::TadpoleTreeResourceRequest) == 24);
 static_assert(sizeof(bg3se::esv::ai::combat::LoadedAiModifiersComponent) == 24);
+static_assert(sizeof(bg3se::esv::ai::swarm::ActionAttemptsComponent) == 8);
+static_assert(sizeof(bg3se::esv::ai::swarm::AttackOrderComponent) == 16);
+static_assert(sizeof(bg3se::esv::ai::swarm::CalculatingComponent) == 8);
+static_assert(sizeof(bg3se::esv::ai::swarm::GroupsComponent) == 64);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmGroupsGroup) == 56);
+static_assert(sizeof(bg3se::esv::ai::swarm::MemberChangedEventOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::esv::ai::swarm::MembersChangedComponent) == 64);
 static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmMembersChange) == 8);
+static_assert(sizeof(bg3se::esv::ai::swarm::NextActionComponent) == 32);
+static_assert(sizeof(bg3se::esv::ai::swarm::SpellsComponent) == 240);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmSpellsSpellId) == 56);
+static_assert(sizeof(bg3se::esv::ai::swarm::TargetsComponent) == 32);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmTargetsTarget) == 16);
+static_assert(sizeof(bg3se::esv::ai::swarm::TurnActionsCalculationComponent) == 320);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmTurnActionsCalculationSpellId) == 56);
+static_assert(sizeof(bg3se::esv::ai::swarm::TurnActionsComponent) == 400);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmTurnActionsSpellId) == 56);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmTurnActionsMoveSpell) == 80);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmTurnActionsBaseTarget) == 48);
+static_assert(sizeof(bg3se::esv::ai::swarm::AiSwarmTurnActionsInitialTarget) == 112);
 static_assert(sizeof(bg3se::esv::boost::AttachmentRequestOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::esv::boost::DelayedDestroyRequestOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::esv::camera::ArrivedPlayersComponent) == 24);
 static_assert(sizeof(bg3se::esv::camp::EndTheDayResultEventOneFrameComponent) == 1);
+static_assert(sizeof(bg3se::esv::camp::EndTheDayStateEventOneFrameComponent) == 4);
 static_assert(sizeof(bg3se::esv::camp::TriggerComponent) == 8);
 static_assert(sizeof(bg3se::esv::character::CanOpenDoorsOverrideComponent) == 1);
 static_assert(sizeof(bg3se::esv::character::DeathActionsQueueSingletonComponent) == 16);
+static_assert(sizeof(bg3se::esv::character::ExecuteTeleportRequestComponent) == 32);
 static_assert(sizeof(bg3se::esv::combat_log::CombatLogStateComponent) == 1);
+static_assert(sizeof(bg3se::esv::combat_log::EquipStatusRequestOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::combat_log::CombatLogEquipStatusRequestEntry) == 32);
+static_assert(sizeof(bg3se::esv::crowds::AnimationPauseRequestsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::crowds::AnimationPlayRequestsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::crowds::DetourCacheComponent) == 64);
+static_assert(sizeof(bg3se::esv::crowds::DetourComponent) == 32);
+static_assert(sizeof(bg3se::esv::crowds::DetourIdlingComponent) == 8);
 static_assert(sizeof(bg3se::esv::crowds::DetourStopMoveToRequestsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::crowds::MoveToRequestsSingletonComponent) == 64);
+static_assert(sizeof(bg3se::esv::crowds::CrowdsMoveToRequest) == 20);
+static_assert(sizeof(bg3se::esv::crowds::PatrolMoveToRequestsSingletonComponent) == 64);
+static_assert(sizeof(bg3se::esv::crowds::CrowdsPatrolMoveToRequest) == 20);
 static_assert(sizeof(bg3se::esv::crowds::PatrolRequestsSingletonComponent) == 64);
 static_assert(sizeof(bg3se::esv::crowds::CrowdsPatrolRequest) == 8);
 static_assert(sizeof(bg3se::esv::crowds::PatrolStopMoveToRequestsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::crowds::SpawnComponent) == 48);
 static_assert(sizeof(bg3se::esv::crowds::SpawnEventsSingletonComponent) == 64);
 static_assert(sizeof(bg3se::esv::crowds::CrowdsSpawnEvent) == 16);
 static_assert(sizeof(bg3se::esv::crowds::StopMoveToRequestsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::crowds::TriggerSpawnStateComponent) == 12);
+static_assert(sizeof(bg3se::esv::death::DeathAnimationBlockComponent) == 4);
+static_assert(sizeof(bg3se::esv::death::DeathAnimationFallbackTimerComponent) == 4);
 static_assert(sizeof(bg3se::esv::death::DyingWaitingForDeactivationComponent) == 1);
 static_assert(sizeof(bg3se::esv::death::ResurrectionRequestOneFrameComponent) == 24);
 static_assert(sizeof(bg3se::esv::death::ResurrectionRequestData) == 12);
@@ -13393,8 +19123,26 @@ static_assert(sizeof(bg3se::esv::dialog::ADRateLimitingHistoryEntry) == 12);
 static_assert(sizeof(bg3se::esv::dialog::AutoListenRequestsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::dialog::AutoListenRequest) == 16);
 static_assert(sizeof(bg3se::esv::dialog::DialogStartedEventsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::dialog::ADRateLimitingDataComponent) == 32);
+static_assert(sizeof(bg3se::esv::drop::ActionResourceSpendRequestOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::drop::DropEntitiesListComponent) == 16);
+static_assert(sizeof(bg3se::esv::drop::DropEntitiesToProcessComponent) == 4);
+static_assert(sizeof(bg3se::esv::drop::DropEntityExecutionComponent) == 32);
+static_assert(sizeof(bg3se::esv::drop::DropEntityFinishedEventOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::drop::DropEntityFinishedEntry) == 16);
 static_assert(sizeof(bg3se::esv::dualWielding::UnequipRequestComponent) == 64);
 static_assert(sizeof(bg3se::esv::effect::StopEffectRequestsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::escort::GroupsSingletonComponent) == 64);
+static_assert(sizeof(bg3se::esv::escort::EscortGroupsGroup) == 48);
+static_assert(sizeof(bg3se::esv::escort::IsFollowingComponent) == 4);
+static_assert(sizeof(bg3se::esv::escort::MemberChangedOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::esv::exp::AvailableLevelChangedOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::exp::AvailableLevelChangedEntry) == 16);
+static_assert(sizeof(bg3se::esv::exp::XPGainedEventOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::exp::XPGainedEventEntry) == 16);
+static_assert(sizeof(bg3se::esv::falling::DataComponent) == 192);
+static_assert(sizeof(bg3se::esv::falling::FallingDataActionOriginator) == 32);
+static_assert(sizeof(bg3se::esv::falling::FallingDataSpellId) == 56);
 static_assert(sizeof(bg3se::esv::floor::InTriggerComponent) == 8);
 static_assert(sizeof(bg3se::esv::history::TargetContainerSingletonComponent) == 128);
 static_assert(sizeof(bg3se::esv::history::TargetPendingRequestersSingletonComponent) == 64);
@@ -13417,10 +19165,14 @@ static_assert(sizeof(bg3se::esv::inventory::InvInventoriesCreatedData) == 16);
 static_assert(sizeof(bg3se::esv::inventory::MemberUnloadRequestComponent) == 16);
 static_assert(sizeof(bg3se::esv::inventory::NewMemberAddedToPlayerInventoryEventOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::esv::inventory::OriginalOwnerUpdateRequestsSingletonComponent) == 64);
+static_assert(sizeof(bg3se::esv::inventory::ReceivedAsImportantOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::esv::inventory::ShapeshiftAddedEquipmentComponent) == 16);
 static_assert(sizeof(bg3se::esv::inventory::ShapeshiftUnequippedEquipmentComponent) == 16);
+static_assert(sizeof(bg3se::esv::inventory::StackSplitEventOneFrameComponent) == 24);
 static_assert(sizeof(bg3se::esv::inventory_transfer::TransferListsSingletonComponent) == 64);
 static_assert(sizeof(bg3se::esv::inventory_transfer::TransferListsSingletonTransferListEntry) == 24);
+static_assert(sizeof(bg3se::esv::item::DestroyingWaitingForEffectComponent) == 4);
+static_assert(sizeof(bg3se::esv::item::EntityMovingFinishedEventOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::esv::item::EquippedEventOneFrameComponent) == 24);
 static_assert(sizeof(bg3se::esv::item::InUseComponent) == 48);
 static_assert(sizeof(bg3se::esv::item::MarkedForDestructionSingletonComponent) == 48);
@@ -13429,43 +19181,83 @@ static_assert(sizeof(bg3se::esv::item::ObjectInteractionSingletonUseItemEvent) =
 static_assert(sizeof(bg3se::esv::item::UnequippedEventOneFrameComponent) == 24);
 static_assert(sizeof(bg3se::esv::item::UseEventsOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::esv::item::ItemUseEvent) == 32);
+static_assert(sizeof(bg3se::esv::item::animation::FallbackTimerComponent) == 4);
+static_assert(sizeof(bg3se::esv::item::animation::PendingRequestComponent) == 2);
 static_assert(sizeof(bg3se::esv::item::animation::RequestSingletonComponent) == 64);
+static_assert(sizeof(bg3se::esv::item::animation::StateChangedEventOneFrameComponent) == 2);
 static_assert(sizeof(bg3se::esv::item::animation::StateComponent) == 6);
 static_assert(sizeof(bg3se::esv::light::UpdateDarknessRequestsComponent) == 64);
 static_assert(sizeof(bg3se::esv::light::DarknessUpdateTilePos) == 8);
 static_assert(sizeof(bg3se::esv::light::DarknessUpdateRequest) == 88);
+static_assert(sizeof(bg3se::esv::lock::UnlockedEventOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::esv::lookat::ChangedOneFrameComponent) == 32);
+static_assert(sizeof(bg3se::esv::lookat::LifetimeComponent) == 24);
 static_assert(sizeof(bg3se::esv::move::EnterAttackRangeEventOneFrameComponent) == 32);
+static_assert(sizeof(bg3se::esv::move::LeaveAttackRangeEventOneFrameComponent) == 32);
 static_assert(sizeof(bg3se::esv::multiplayer::UserSettingsComponent) == 1);
+static_assert(sizeof(bg3se::esv::osiris::ChangeAnubisConfigRequestOneFrameComponent) == 24);
+static_assert(sizeof(bg3se::esv::party::AttachedToGroupEventOneFrameComponent) == 24);
+static_assert(sizeof(bg3se::esv::party::EntityChangedPartyEventOneFrameComponent) == 24);
+static_assert(sizeof(bg3se::esv::party::RecipesUnlockedEventOneFrameComponent) == 64);
+static_assert(sizeof(bg3se::esv::party::UpdatePartyFollowersRequestOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::esv::passive::ActiveRollPassivesComponent) == 24);
+static_assert(sizeof(bg3se::esv::passive::ActiveRollPassivesRequest) == 848);
 static_assert(sizeof(bg3se::esv::patrol::SplinesComponent) == 128);
 static_assert(sizeof(bg3se::esv::photo_mode::SessionFailedEventSingletonComponent) == 1);
+static_assert(sizeof(bg3se::esv::pickup::BeingPickedUpComponent) == 64);
 static_assert(sizeof(bg3se::esv::pickup::LegacyPickUpRequestsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::pickup::LegacyPickUpRequestVariant) == 72);
 static_assert(sizeof(bg3se::esv::pickup::PickUpExecutionFailedSingletonComponent) == 16);
+static_assert(sizeof(bg3se::esv::pickup::PickUpExecutionInFlightComponent) == 8);
 static_assert(sizeof(bg3se::esv::pickup::PickUpFailedToSpendResourceSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::pickup::PickUpFinishedComponent) == 1);
+static_assert(sizeof(bg3se::esv::pickup::PickUpPermissionComponent) == 48);
+static_assert(sizeof(bg3se::esv::pickup::PickUpRequestComponent) == 64);
 static_assert(sizeof(bg3se::esv::pickup::PickUpResultsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::pickup::PickUpResultEntry) == 32);
+static_assert(sizeof(bg3se::esv::pickup::PickUpSplitListComponent) == 16);
 static_assert(sizeof(bg3se::esv::pickup::ScriptPermissionResponsesSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::pickup::PickupScriptPermissionResponse) == 16);
 static_assert(sizeof(bg3se::esv::pickup::SuccessfullyPickedUpSingletonComponent) == 64);
 static_assert(sizeof(bg3se::esv::pickup::PickedUpTransferFinished) == 16);
 static_assert(sizeof(bg3se::esv::pickup::ValidatedPickUpRequestsSingletonComponent) == 80);
 static_assert(sizeof(bg3se::esv::pickup::ValidatedPickUpRequestsEntry) == 72);
+static_assert(sizeof(bg3se::esv::placement::PlacementResultEventOneFrameComponent) == 2);
+static_assert(sizeof(bg3se::esv::placement::StateComponent) == 120);
+static_assert(sizeof(bg3se::esv::placement::PlacementStateEntityPlacement) == 88);
+static_assert(sizeof(bg3se::esv::placement::SteeringAbortRequestOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::platform::MovementComponent) == 8);
+static_assert(sizeof(bg3se::esv::platform::MovementPausedReasonsComponent) == 8);
+static_assert(sizeof(bg3se::esv::platform::MovementRequestComponent) == 56);
 static_assert(sizeof(bg3se::esv::platform::StartedPlatformMovements) == 16);
 static_assert(sizeof(bg3se::esv::profile::UpdateRequestOneFrameComponent) == 12);
 static_assert(sizeof(bg3se::esv::profile::UpdateShownTutorialsRequestOneFrameComponent) == 64);
 static_assert(sizeof(bg3se::esv::profile::UpdateShownTutorialsRequestData) == 56);
+static_assert(sizeof(bg3se::esv::projectile::ImpactInterruptEventOneFrameComponent) == 96);
+static_assert(sizeof(bg3se::esv::projectile::ImpactInterruptHit) == 488);
+static_assert(sizeof(bg3se::esv::projectile::ImpactInterruptSpellId) == 56);
 static_assert(sizeof(bg3se::esv::relation::BaseFactionChangedEventOneFrameComponent) == 40);
 static_assert(sizeof(bg3se::esv::relation::FactionsChangedEventOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::relation::RelationChangedEventOneFrameComponent) == 40);
+static_assert(sizeof(bg3se::esv::relation::SummonedFactionSetEventOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::esv::relation::TemporaryHostileRelationCreatedEventOneFrameComponent) == 48);
+static_assert(sizeof(bg3se::esv::relation::TemporaryHostileRelationRemovedEventOneFrameComponent) == 32);
 static_assert(sizeof(bg3se::esv::repose::ReposeResultEventOneFrameComponent) == 1);
 static_assert(sizeof(bg3se::esv::repose::UsedEntitiesToCleanSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::restore::RestorePartyEventOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::esv::reward::FillRewardInventoriesRequestComponent) == 128);
 static_assert(sizeof(bg3se::esv::reward::FillRewardInventoriesTransfer) == 16);
 static_assert(sizeof(bg3se::esv::reward::GiveRewardRequestComponent) == 16);
 static_assert(sizeof(bg3se::esv::reward::GiveRewardRequestEntry) == 104);
 static_assert(sizeof(bg3se::esv::reward::TransferRewardsRequestComponent) == 64);
 static_assert(sizeof(bg3se::esv::reward::TransferRewardsRequestEntry) == 16);
+static_assert(sizeof(bg3se::esv::screen_fade::ClearScreenFadeFinishedOneFrameComponent) == 64);
+static_assert(sizeof(bg3se::esv::screen_fade::ClearScreenFadeFinishedNameData) == 32);
+static_assert(sizeof(bg3se::esv::screen_fade::ScreenFadeIdToFadeNameComponent) == 64);
+static_assert(sizeof(bg3se::esv::screen_fade::ScreenFadeIdToFadeNameData) == 32);
 static_assert(sizeof(bg3se::esv::screen_fade::ScreenFadeTimerComponent) == 64);
+static_assert(sizeof(bg3se::esv::screen_fade::ScreenFadeToFinishedOneFrameComponent) == 64);
+static_assert(sizeof(bg3se::esv::screen_fade::ScreenFadeToFinishedNameData) == 32);
 static_assert(sizeof(bg3se::esv::script::CompletedRequestsSingletonComponent) == 48);
 static_assert(sizeof(bg3se::esv::script::EnterCombatRequestSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::script::EnterCombatRequestsEntry) == 24);
@@ -13477,19 +19269,35 @@ static_assert(sizeof(bg3se::esv::script::EscortSetLeaderPriorityRequestSingleton
 static_assert(sizeof(bg3se::esv::script::EscortSetLeaderPriorityRequestsEntry) == 24);
 static_assert(sizeof(bg3se::esv::script::EscortSetLeaderRequestSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::script::EscortSetLeaderRequestsEntry) == 24);
+static_assert(sizeof(bg3se::esv::script::ExecutingRequestComponent) == 48);
+static_assert(sizeof(bg3se::esv::script::LevelLoadStartedComponent) == 4);
+static_assert(sizeof(bg3se::esv::script::QueuedRequestsSingletonComponent) == 16);
+static_assert(sizeof(bg3se::esv::script::ScriptQueuedRequest) == 64);
 static_assert(sizeof(bg3se::esv::script::SetCombatGroupRequestSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::script::SetCombatGroupRequestsEntry) == 24);
 static_assert(sizeof(bg3se::esv::script::SetRelationRequestSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::script::SetRelationRequestsEntry) == 48);
+static_assert(sizeof(bg3se::esv::script::light::EffectComponent) == 8);
+static_assert(sizeof(bg3se::esv::script::light::EffectParametersComponent) == 8);
+static_assert(sizeof(bg3se::esv::script::light::PlayEffectRequestsSingletonComponent) == 16);
+static_assert(sizeof(bg3se::esv::script::light::ScriptLightPlayEffectOnEntityRequest) == 32);
 static_assert(sizeof(bg3se::esv::script::light::StopEffectRequestsSingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::shapeshift::AnubisStateComponent) == 40);
+static_assert(sizeof(bg3se::esv::shapeshift::ServerShapeshiftAnubisStateOverride) == 64);
 static_assert(sizeof(bg3se::esv::sight::SightEventsOneFrameComponent) == 64);
 static_assert(sizeof(bg3se::esv::sight::SightEventsSightEvent) == 32);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundInfoProxyComponent) == 176);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundInfoProxyInfo) == 104);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundStateProxyComponent) == 24);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundStateUserMapComponent) == 64);
+static_assert(sizeof(bg3se::esv::sound::PlayServerSoundRequestOneFrameComponent) == 24);
 static_assert(sizeof(bg3se::esv::spell::ModificationsChangedEventOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::esv::spell::NewSpellsAddedFromCharacterCreationComponent) == 16);
+static_assert(sizeof(bg3se::esv::spell::NewSpellsAddedFromCCSpellMetaId) == 48);
 static_assert(sizeof(bg3se::esv::status::ActivationEventOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::status::AddConcentrationStatusTargetRequestOneFrameComponent) == 96);
+static_assert(sizeof(bg3se::esv::status::AddConcentrationTargetSpellId) == 56);
+static_assert(sizeof(bg3se::esv::status::DangerousAuraComponent) == 8);
 static_assert(sizeof(bg3se::esv::status::DeactivationEventOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::esv::status::DifficultyChangeSingletonComponent) == 64);
 static_assert(sizeof(bg3se::esv::status::DifficultyChangeRequestEntry) == 136);
@@ -13497,14 +19305,26 @@ static_assert(sizeof(bg3se::esv::status::RequestTargetTrackingOneFrameComponent)
 static_assert(sizeof(bg3se::esv::status::SoundStateCantVocalStateComponent) == 4);
 static_assert(sizeof(bg3se::esv::status::recovery::RecoveryRequestsComponent) == 16);
 static_assert(sizeof(bg3se::esv::status::recovery::RecoveryRequestsRecoveryRequest) == 12);
+static_assert(sizeof(bg3se::esv::steering::ChangedOneFrameComponent) == 48);
+static_assert(sizeof(bg3se::esv::steering::SteeringChangedTarget) == 16);
+static_assert(sizeof(bg3se::esv::steering::LifetimeComponent) == 24);
+static_assert(sizeof(bg3se::esv::steering::StateComponent) == 24);
+static_assert(sizeof(bg3se::esv::steering::SteeringStateTarget) == 16);
+static_assert(sizeof(bg3se::esv::summon::AnimationRequestComponent) == 4);
+static_assert(sizeof(bg3se::esv::summon::CombatLogEntryRequestOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::esv::summon::DespawnDelaySingletonComponent) == 48);
+static_assert(sizeof(bg3se::esv::tags::StatusTagChangedEventOneFrameComponent) == 32);
+static_assert(sizeof(bg3se::esv::tags::StatusTagChangedEventData) == 32);
 static_assert(sizeof(bg3se::esv::teleport::TargetOverrideRefCountsSingletonComponent) == 64);
+static_assert(sizeof(bg3se::esv::thrown::EntityThrownRequestOneFrameComponent) == 40);
 static_assert(sizeof(bg3se::esv::thrown::ThrownParametersComponent) == 16);
 static_assert(sizeof(bg3se::esv::thrown::ThrownParametersCondition) == 24);
 static_assert(sizeof(bg3se::esv::timeline::BackgroundActorRequestOneFrameComponent) == 40);
 static_assert(sizeof(bg3se::esv::timeline::TimelineFadeClearRequestOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::esv::trade::LegacyCanTradeRequestsSingletonComponent) == 64);
 static_assert(sizeof(bg3se::esv::trade::TraderMapChangesSingletonComponent) == 192);
+static_assert(sizeof(bg3se::esv::trade::TraderMapMarkerLinkedWithComponent) == 8);
+static_assert(sizeof(bg3se::esv::triggers::stats::AreaLevelOverridesLoadedOneFrameComponent) == 48);
 static_assert(sizeof(bg3se::esv::tutorial::ActionResourceEventRequestsSingletonComponent) == 32);
 static_assert(sizeof(bg3se::esv::tutorial::ActionResourceEventRequestsEntry) == 24);
 static_assert(sizeof(bg3se::esv::tutorial::AttackHitEventRequestsSingletonComponent) == 48);
@@ -13541,6 +19361,18 @@ static_assert(sizeof(bg3se::esv::unsheath::ResurrectComponent) == 4);
 static_assert(sizeof(bg3se::esv::unsheath::SpellAnimationConcludedComponent) == 64);
 static_assert(sizeof(bg3se::esv::unsheath::StateChangedEventOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::esv::unsheath::SummonedComponent) == 4);
+static_assert(sizeof(bg3se::esv::zone::CreateRequestOneFrameComponent) == 392);
+static_assert(sizeof(bg3se::esv::zone::ZoneCreateRequestSpellId) == 56);
+static_assert(sizeof(bg3se::esv::zone::ZoneCreateRequestBaseTarget) == 48);
+static_assert(sizeof(bg3se::esv::zone::ZoneCreateRequestInitialTarget) == 112);
+static_assert(sizeof(bg3se::esv::zone::ZoneCreateRequestAiTilePos) == 8);
+static_assert(sizeof(bg3se::esv::zone::ZoneCreateRequestOptionalTiles) == 24);
+static_assert(sizeof(bg3se::esv::zone::ZoneCreateRequestOptionalEntities) == 24);
+static_assert(sizeof(bg3se::esv::zone::ZoneCreateRequestOptionalHits) == 24);
+static_assert(sizeof(bg3se::esv::zone::FinishedEventOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::zone::SpellComponent) == 128);
+static_assert(sizeof(bg3se::esv::zone::ZoneSpellBaseTarget) == 48);
+static_assert(sizeof(bg3se::esv::zone::ZoneSpellInitialTarget) == 112);
 static_assert(sizeof(bg3se::gui::lariannet::PendingPlatformComponent) == 1);
 static_assert(sizeof(bg3se::gui::registration::VMCharacterDataSingletonComponent) == 64);
 static_assert(sizeof(bg3se::gui::registration::VMCombatDataSingletonComponent) == 64);
@@ -13566,14 +19398,18 @@ static_assert(sizeof(bg3se::gui::vmcharacter::CharacterModeChangedSingletonCompo
 static_assert(sizeof(bg3se::gui::vmcharacter::VMCharacterActivatedSingletonComponent) == 48);
 static_assert(sizeof(bg3se::gui::vmcharacter::VMCharacterDeactivatedOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::gui::vmcharacter::VMCharacterDeferredActivationSingletonComponent) == 16);
+static_assert(sizeof(bg3se::ls::ActiveVFXTextKeysComponent) == 16);
 static_assert(sizeof(bg3se::ls::ArcBallCameraBehavior) == 36);
 static_assert(sizeof(bg3se::ls::ClothLoadedComponent) == 16);
+static_assert(sizeof(bg3se::ls::ClusterChildChangedOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ls::ClusterContentComponent) == 48);
 static_assert(sizeof(bg3se::ls::ClusterIndexComponent) == 16);
 static_assert(sizeof(bg3se::ls::ClusterPhysicsAlwaysLoadedComponent) == 232);
+static_assert(sizeof(bg3se::ls::ClusterPhysicsLoadingComponent) == 8);
 static_assert(sizeof(bg3se::ls::ClusterPhysicsVisibilityComponent) == 4);
 static_assert(sizeof(bg3se::ls::ClusterVisualLoadedComponent) == 184);
 static_assert(sizeof(bg3se::ls::ClusterVisualLoadingComponent) == 8);
+static_assert(sizeof(bg3se::ls::ClusterVisualPartialLoadingComponent) == 16);
 static_assert(sizeof(bg3se::ls::ConstructionTileBoneTransformSetComponent) == 16);
 static_assert(sizeof(bg3se::ls::CopyParentVisibilityComponent) == 8);
 static_assert(sizeof(bg3se::ls::CullTriggerPlanesComponent) == 112);
@@ -13598,7 +19434,11 @@ static_assert(sizeof(bg3se::ls::GameplaySoundSwitchRequestBusComponent) == 16);
 static_assert(sizeof(bg3se::ls::GameplaySoundSwitchBusRequest) == 24);
 static_assert(sizeof(bg3se::ls::GameplaySoundTransferRequestBusComponent) == 16);
 static_assert(sizeof(bg3se::ls::GameplaySoundTransferBusRequest) == 16);
+static_assert(sizeof(bg3se::ls::HLODChildRequestOneFrameComponent) == 32);
 static_assert(sizeof(bg3se::ls::HiZComponent) == 24);
+static_assert(sizeof(bg3se::ls::InstancingBatchLoadComponent) == 8);
+static_assert(sizeof(bg3se::ls::InstancingBatchRegisteredComponent) == 4);
+static_assert(sizeof(bg3se::ls::InstancingFolderLoaderComponent) == 56);
 static_assert(sizeof(bg3se::ls::LightFlickerComponent) == 12);
 static_assert(sizeof(bg3se::ls::LightMovementComponent) == 12);
 static_assert(sizeof(bg3se::ls::LightProbeComponent) == 240);
@@ -13614,6 +19454,7 @@ static_assert(sizeof(bg3se::ls::OutlinePlayerData) == 16);
 static_assert(sizeof(bg3se::ls::OutlineEntitiesForRenderingSingletonComponent) == 48);
 static_assert(sizeof(bg3se::ls::OwnedByEffectComponent) == 8);
 static_assert(sizeof(bg3se::ls::ParentEntityComponent) == 8);
+static_assert(sizeof(bg3se::ls::PhysicsSkinnedConnectedToComponent) == 48);
 static_assert(sizeof(bg3se::ls::SaveWithComponent) == 8);
 static_assert(sizeof(bg3se::ls::ScaleChangedOneFrameComponent) == 12);
 static_assert(sizeof(bg3se::ls::ScrollingObjectComponent) == 48);
@@ -13623,12 +19464,12 @@ static_assert(sizeof(bg3se::ls::SetCharacterLightCullFlagsRequestsSingletonCompo
 static_assert(sizeof(bg3se::ls::SetCharacterLightCullFlagsRequest) == 16);
 static_assert(sizeof(bg3se::ls::SetLightCullFlagsRequestsSingletonComponent) == 16);
 static_assert(sizeof(bg3se::ls::SetLightCullFlagsRequest) == 16);
-static_assert(sizeof(bg3se::ls::SkeletonSoundObjectTransformComponent) == 44);
 static_assert(sizeof(bg3se::ls::SoundActivationChangesSingletonComponent) == 96);
 static_assert(sizeof(bg3se::ls::SoundCameraVolumeChangedEventOneFrameComponent) == 24);
 static_assert(sizeof(bg3se::ls::SoundListenerComponent) == 44);
 static_assert(sizeof(bg3se::ls::SoundMultiPositionChangedOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ls::SoundMultiPositionComponent) == 16);
+static_assert(sizeof(bg3se::ls::SoundMultiPositionSetupRequestOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ls::SoundOcclusionSettingsComponent) == 608);
 static_assert(sizeof(bg3se::ls::SoundOcclusionSettingsRaycast) == 32);
 static_assert(sizeof(bg3se::ls::SoundOcclusionSettingsSchedulerConfig) == 240);
@@ -13638,6 +19479,7 @@ static_assert(sizeof(bg3se::ls::SoundRoomNeighborStateComponent) == 32);
 static_assert(sizeof(bg3se::ls::SoundRoomStateComponent) == 296);
 static_assert(sizeof(bg3se::ls::SoundRoomEntityStateChangeData) == 16);
 static_assert(sizeof(bg3se::ls::SwapLevelRequestOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::ls::TerrainCreateComponent) == 8);
 static_assert(sizeof(bg3se::ls::TerrainLoadComponent) == 16);
 static_assert(sizeof(bg3se::ls::TranslateChangedOneFrameComponent) == 12);
 static_assert(sizeof(bg3se::ls::VisualLoaderRegisteredComponent) == 4);
@@ -13647,7 +19489,30 @@ static_assert(sizeof(bg3se::ls::VisualStreamSystemDataComponent) == 16);
 static_assert(sizeof(bg3se::ls::VisualStreamSystemDataView) == 320);
 static_assert(sizeof(bg3se::ls::WorldMapCameraBehavior) == 32);
 static_assert(sizeof(bg3se::ls::InstanceChangedEventsSingletonComponent) == 64);
+static_assert(sizeof(bg3se::ls::AddInterEntityConnectionsRequestOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::ls::ConstellationAddInterEntityConnection) == 64);
 static_assert(sizeof(bg3se::ls::ScrollingObjectSetTranslateRequestsComponent) == 64);
 static_assert(sizeof(bg3se::ls::UpdatedInsideOfComponent) == 16);
+static_assert(sizeof(bg3se::ls::anubis::ErrorComponent) == 24);
 static_assert(sizeof(bg3se::ls::anubis::GameIntermediateSingletonComponent) == 1);
+static_assert(sizeof(bg3se::ls::anubis::LoadRequestOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::ls::anubis::savegame::LoadingComponent) == 232);
+static_assert(sizeof(bg3se::ls::anubis::savegame::AnubisSavegameLoadingRawArray) == 16);
+static_assert(sizeof(bg3se::ls::anubis::savegame::AnubisSavegameReader) == 152);
+static_assert(sizeof(bg3se::ls::level::CacheLoadComponent) == 24);
+static_assert(sizeof(bg3se::ls::level::LevelInstanceLoadingComponent) == 56);
+static_assert(sizeof(bg3se::ls::level::LevelInstanceUnloadSystemBusy) == 8);
+static_assert(sizeof(bg3se::navcloud::AgentComponent) == 4);
+static_assert(sizeof(bg3se::navcloud::PathInternalComponent) == 176);
+static_assert(sizeof(bg3se::navcloud::NavcloudPathInternalTilePos) == 24);
+static_assert(sizeof(bg3se::navcloud::NavcloudPathInternalNode) == 36);
 static_assert(sizeof(bg3se::navcloud::PathRequestComponent) == 104);
+static_assert(sizeof(bg3se::navcloud::PathResultComponent) == 24);
+static_assert(sizeof(bg3se::navcloud::NavcloudPathResultNode) == 16);
+static_assert(sizeof(bg3se::navcloud::RegionDataComponent) == 64);
+static_assert(sizeof(bg3se::navcloud::NavcloudRegionDataKey) == 12);
+static_assert(sizeof(bg3se::navcloud::RegionLoadedOneFrameComponent) == 12);
+static_assert(sizeof(bg3se::navcloud::RegionLoadingComponent) == 40);
+static_assert(sizeof(bg3se::navcloud::RegionsUnloadedOneFrameComponent) == 48);
+static_assert(sizeof(bg3se::navcloud::NavcloudRegionsUnloadedKey) == 12);
+static_assert(sizeof(bg3se::navcloud::generate::ZoneComponent) == 16);
