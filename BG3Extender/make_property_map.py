@@ -664,6 +664,7 @@ sources = [
     'GameDefinitions/Components/Camp.h',
     'GameDefinitions/Components/CharacterCreation.h',
     'GameDefinitions/Components/Combat.h',
+    'GameDefinitions/Components/Coverage.h',
     'GameDefinitions/Components/Components.h',
     'GameDefinitions/Components/Spell.h',
     'GameDefinitions/Components/SpellCastShared.h',

@@ -6,6 +6,7 @@
 #include <GameDefinitions/Components/Camp.h>
 #include <GameDefinitions/Components/CharacterCreation.h>
 #include <GameDefinitions/Components/Combat.h>
+#include <GameDefinitions/Components/Coverage.h>
 #include <GameDefinitions/Components/Components.h>
 #include <GameDefinitions/Components/Data.h>
 #include <GameDefinitions/Components/Death.h>
