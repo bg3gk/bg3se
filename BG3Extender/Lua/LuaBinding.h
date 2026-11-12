@@ -103,7 +103,7 @@ namespace bg3se::lua
     class VMCallEntry
     {
     public:
-        inline VMCallEntry(State* state, int stackDelta = 0);
+        VMCallEntry(State* state, int stackDelta = 0);
         ~VMCallEntry();
 
     private:
