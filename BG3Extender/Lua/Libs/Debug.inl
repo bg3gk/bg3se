@@ -366,11 +366,11 @@ UserReturn GetComponentAddress(lua_State* L, EntityHandle entity, STDString name
 UserReturn GetSystemAddress(lua_State* L, STDString name)
 {
     RequireDeveloperMode(L, "GetSystemAddress");
-    auto ecs = State::FromLua(L)->GetEntitySystemHelpers();
-    auto world = ecs->GetEntityWorld();
+    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs.GetEntityWorld();
 
     std::optional<ecs::SystemTypeIndex> index;
-    ecs->ForEachSystemType([&](STDString const& systemName, ecs::SystemTypeIndex type, bool) {
+    ecs.ForEachSystemType([&](STDString const& systemName, ecs::SystemTypeIndex type, bool) {
         if (systemName == name) index = type;
     });
 
@@ -401,9 +401,9 @@ Array<EntityHandle> GetComponentHolders(lua_State* L, STDString name, std::optio
 {
     RequireDeveloperMode(L, "GetComponentHolders");
     Array<EntityHandle> entities;
-    auto ecs = State::FromLua(L)->GetEntitySystemHelpers();
-    auto world = ecs->GetEntityWorld();
-    auto type = ecs->GetComponentIndex(name);
+    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs.GetEntityWorld();
+    auto type = ecs.GetComponentIndex(name);
     if (world == nullptr || !type) return entities;
 
     auto limit = (uint32_t)max.value_or(0x7fffffff);
@@ -432,8 +432,8 @@ Array<EntityHandle> GetComponentHolders(lua_State* L, STDString name, std::optio
 UserReturn GetComponentCounts(lua_State* L)
 {
     RequireDeveloperMode(L, "GetComponentCounts");
-    auto ecs = State::FromLua(L)->GetEntitySystemHelpers();
-    auto world = ecs->GetEntityWorld();
+    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs.GetEntityWorld();
 
     std::unordered_map<uint16_t, uint32_t> counts;
     if (world != nullptr) {
@@ -454,7 +454,7 @@ UserReturn GetComponentCounts(lua_State* L)
 
     lua_newtable(L);
     for (auto const& [type, count] : counts) {
-        auto name = ecs->GetComponentName(ecs::ComponentTypeIndex{ type });
+        auto name = ecs.GetComponentName(ecs::ComponentTypeIndex{ type });
         if (name != nullptr && count > 0) {
             lua_pushlstring(L, name->data(), name->size());
             lua_pushinteger(L, (lua_Integer)count);
