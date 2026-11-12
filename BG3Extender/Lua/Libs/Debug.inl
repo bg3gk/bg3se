@@ -393,6 +393,77 @@ UserReturn GetSystemAddress(lua_State* L, STDString name)
     return 1;
 }
 
+// Ext.Debug.GetComponentHolders(name[, max]) -> the entities that carry the component now.
+// Unlike Ext.Entity.GetAllEntitiesWithComponent it takes the engine's own name and works for
+// types the extender has no layout for, one-frame components included. It walks the storage
+// classes, not the entities, so it is cheap enough to call every tick.
+Array<EntityHandle> GetComponentHolders(lua_State* L, STDString name, std::optional<int32_t> max)
+{
+    RequireDeveloperMode(L, "GetComponentHolders");
+    Array<EntityHandle> entities;
+    auto ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs->GetEntityWorld();
+    auto type = ecs->GetComponentIndex(name);
+    if (world == nullptr || !type) return entities;
+
+    auto limit = (uint32_t)max.value_or(0x7fffffff);
+    for (auto cls : world->Storage->Storages) {
+        if (ecs::IsOneFrame(*type)) {
+            if (!cls->HasOneFrameComponents) continue;
+            auto pool = cls->OneFrameComponents.try_get(*type);
+            if (!pool) continue;
+            for (auto const& entity : pool->keys()) {
+                if (entities.size() >= limit) return entities;
+                entities.push_back(entity);
+            }
+        } else if (cls->ComponentTypeToIndex.try_get(*type)) {
+            for (auto const& entity : cls->InstanceToPageMap.keys()) {
+                if (entities.size() >= limit) return entities;
+                entities.push_back(entity);
+            }
+        }
+    }
+
+    return entities;
+}
+
+// Ext.Debug.GetComponentCounts() -> { [engine name] = number of entities carrying it now },
+// for every component type that has at least one holder, mapped by the extender or not.
+UserReturn GetComponentCounts(lua_State* L)
+{
+    RequireDeveloperMode(L, "GetComponentCounts");
+    auto ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs->GetEntityWorld();
+
+    std::unordered_map<uint16_t, uint32_t> counts;
+    if (world != nullptr) {
+        for (auto cls : world->Storage->Storages) {
+            auto entities = (uint32_t)cls->InstanceToPageMap.keys().size();
+            if (entities > 0) {
+                for (auto type : cls->ComponentTypeToIndex.keys()) {
+                    counts[(uint16_t)type] += entities;
+                }
+            }
+            if (cls->HasOneFrameComponents) {
+                for (auto it : cls->OneFrameComponents) {
+                    counts[(uint16_t)it->Key()] += (uint32_t)it->Value().keys().size();
+                }
+            }
+        }
+    }
+
+    lua_newtable(L);
+    for (auto const& [type, count] : counts) {
+        auto name = ecs->GetComponentName(ecs::ComponentTypeIndex{ type });
+        if (name != nullptr && count > 0) {
+            lua_pushlstring(L, name->data(), name->size());
+            lua_pushinteger(L, (lua_Integer)count);
+            lua_rawset(L, -3);
+        }
+    }
+    return 1;
+}
+
 void LuaDebugBreak(lua_State* L)
 {
     auto debugger = gExtender->GetLuaDebugger();
@@ -473,6 +544,8 @@ void RegisterDebugLib()
     MODULE_FUNCTION(GetSystemTypes)
     MODULE_FUNCTION(GetComponentAddress)
     MODULE_FUNCTION(GetSystemAddress)
+    MODULE_FUNCTION(GetComponentHolders)
+    MODULE_FUNCTION(GetComponentCounts)
     MODULE_FUNCTION(SetEntityRuntimeCheckLevel)
     MODULE_FUNCTION(Crash)
     MODULE_FUNCTION(Reset)
