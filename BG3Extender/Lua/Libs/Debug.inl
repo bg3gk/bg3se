@@ -359,6 +359,40 @@ UserReturn GetComponentAddress(lua_State* L, EntityHandle entity, STDString name
     return 1;
 }
 
+// Ext.Debug.GetSystemAddress(name) -> { Address, Index, Activated, UpdateProc } or nil.
+// Works for systems the extender has no layout for; name is the engine's own
+// (as GetSystemTypes() lists it). The first 16 bytes at Address are the virtual table
+// pointer and the EntityWorld pointer every system starts with.
+UserReturn GetSystemAddress(lua_State* L, STDString name)
+{
+    RequireDeveloperMode(L, "GetSystemAddress");
+    auto ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs->GetEntityWorld();
+
+    std::optional<ecs::SystemTypeIndex> index;
+    ecs->ForEachSystemType([&](STDString const& systemName, ecs::SystemTypeIndex type, bool) {
+        if (systemName == name) index = type;
+    });
+
+    if (world == nullptr || !index || (unsigned)*index >= world->Systems.Systems.size()) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto const& entry = world->Systems.Systems[(unsigned)*index];
+    if (entry.System == nullptr) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_newtable(L);
+    settable(L, "Address", (int64_t)entry.System);
+    settable(L, "Index", (int32_t)*index);
+    settable(L, "Activated", entry.Activated);
+    settable(L, "UpdateProc", (int64_t)entry.UpdateProc);
+    return 1;
+}
+
 void LuaDebugBreak(lua_State* L)
 {
     auto debugger = gExtender->GetLuaDebugger();
@@ -438,6 +472,7 @@ void RegisterDebugLib()
     MODULE_FUNCTION(GetComponentTypes)
     MODULE_FUNCTION(GetSystemTypes)
     MODULE_FUNCTION(GetComponentAddress)
+    MODULE_FUNCTION(GetSystemAddress)
     MODULE_FUNCTION(SetEntityRuntimeCheckLevel)
     MODULE_FUNCTION(Crash)
     MODULE_FUNCTION(Reset)
