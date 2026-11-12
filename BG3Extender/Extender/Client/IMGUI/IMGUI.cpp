@@ -489,6 +489,13 @@ void StyledRenderable::PushWindowStyleChanges(DrawingContext& context, ImFont*& 
         }
     }
 
+    if (FontSize && *FontSize > 0.0f) {
+        // A size of its own for this element and its children, in the units LoadFont() sizes use.
+        // Without a Font the font in effect is kept and only resized.
+        if (!font) font = ImGui::GetFont();
+        fontSize = *FontSize;
+    }
+
     if (font && font->IsLoaded()) ImGui::PushFont(font, fontSize);
 
     if (!IDContext.empty()) {

@@ -283,6 +283,7 @@ public:
     HandleType DragPreview{ InvalidHandle };
     FixedString DragDropType;
     FixedString Font;
+    std::optional<float> FontSize;
     std::optional<glm::vec2> PositionOffset;
     std::optional<glm::vec2> AbsolutePosition;
     std::optional<float> ItemWidth;
