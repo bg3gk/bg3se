@@ -99,8 +99,111 @@ struct SurfaceLightComponent : public BaseComponent
     glm::vec3 SubgridPosition;
 };
 
+DEFINE_TAG_COMPONENT(ecl, BasicGOVisualFadeActiveView0Component, ClientBasicGOVisualFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, BasicGOVisualFadeActiveView1Component, ClientBasicGOVisualFadeActiveView1)
+DEFINE_TAG_COMPONENT(ecl, CharacterAttachToSceneFadeActiveView0Component, ClientCharacterAttachToSceneFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, CharacterAttachToSceneFadeActiveView1Component, ClientCharacterAttachToSceneFadeActiveView1)
+DEFINE_TAG_COMPONENT(ecl, CharacterCreationFadeActiveView0Component, ClientCharacterCreationFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, CharacterCreationFadeActiveView1Component, ClientCharacterCreationFadeActiveView1)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, CharacterLightSystemTLSceneReloadOneFrameComponent, ClientCharacterLightSystemTLSceneReload)
+DEFINE_TAG_COMPONENT(ecl, CharacterOutOfSightFadeActiveView0Component, ClientCharacterOutOfSightFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, CharacterOutOfSightFadeActiveView1Component, ClientCharacterOutOfSightFadeActiveView1)
+DEFINE_TAG_COMPONENT(ecl, ClientRootLevelStartDialogReadyComponent, ClientClientRootLevelStartDialogReady)
+DEFINE_TAG_COMPONENT(ecl, ClientTimelineDestructionConfirmationComponent, ClientClientTimelineDestructionConfirmation)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, CombinedLightInitializedEventOneFrameComponent, ClientCombinedLightInitializedEvent)
+DEFINE_TAG_COMPONENT(ecl, CrowdFadeActiveView0Component, ClientCrowdFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, CrowdFadeActiveView1Component, ClientCrowdFadeActiveView1)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, DeathDetachEffectRequestOneFrameComponent, ClientDeathDetachEffectRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, DeathForgetEffectRequestOneFrameComponent, ClientDeathForgetEffectRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, IconChangedEventOneFrameComponent, ClientIconChangedEvent)
+DEFINE_TAG_COMPONENT(ecl, InvisibilityAttachmentComponent, ClientInvisibilityAttachment)
+DEFINE_TAG_COMPONENT(ecl, InvisibilityFadeActiveView0Component, ClientInvisibilityFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, InvisibilityFadeActiveView1Component, ClientInvisibilityFadeActiveView1)
+DEFINE_TAG_COMPONENT(ecl, ItemPreviewFadeActiveView0Component, ClientItemPreviewFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, ItemPreviewFadeActiveView1Component, ClientItemPreviewFadeActiveView1)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, ModuleLoadedOneFrameComponent, ClientModuleLoaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, ModuleUnloadedOneFrameComponent, ClientModuleUnloaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, ModuleUnloadingOneFrameComponent, ClientModuleUnloading)
+DEFINE_TAG_COMPONENT(ecl, ObstructionFadeActiveView0Component, ClientObstructionFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, ObstructionFadeActiveView1Component, ClientObstructionFadeActiveView1)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, RequestStealthVFXPoseOneFrameComponent, ClientRequestStealthVFXPose)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, RequestedEndTurnOneFrameComponent, ClientRequestedEndTurn)
+DEFINE_TAG_COMPONENT(ecl, RoomTriggerCharacterFadeActiveView0Component, ClientRoomTriggerCharacterFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, RoomTriggerCharacterFadeActiveView1Component, ClientRoomTriggerCharacterFadeActiveView1)
+DEFINE_TAG_COMPONENT(ecl, RoomTriggerFadeActiveView0Component, ClientRoomTriggerFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, RoomTriggerFadeActiveView1Component, ClientRoomTriggerFadeActiveView1)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, ServerControlledEffectDestroyRequestOneFrameComponent, ClientServerControlledEffectDestroyRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, ServerControlledEffectForgetRequestOneFrameComponent, ClientServerControlledEffectForgetRequest)
+DEFINE_TAG_COMPONENT(ecl, TimelineFadeActiveView0Component, ClientTimelineFadeActiveView0)
+DEFINE_TAG_COMPONENT(ecl, TimelineFadeActiveView1Component, ClientTimelineFadeActiveView1)
+DEFINE_TAG_COMPONENT(ecl, TimelinePlaceholderDummyComponent, ClientTimelinePlaceholderDummy)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TimelineShowVisualEventOneFrameComponent, ClientTimelineShowVisualEvent)
+DEFINE_TAG_COMPONENT(ecl, TimelineSplitScreenPriorityComponent, ClientTimelineSplitScreenPriority)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TimelineSwitchLocationEventOneFrameComponent, ClientTimelineSwitchLocationEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TimelineSwitchStageEventOneFrameComponent, ClientTimelineSwitchStageEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TurnActionsDoneOneFrameComponent, ClientTurnActionsDone)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TurnOrderChangedOneFrameComponent, ClientTurnOrderChanged)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl, UnloadSessionEventComponent, ClientUnloadSessionEvent)
 DEFINE_TAG_COMPONENT(ecl::level, PresenceComponent, ClientLevelPresence)
+DEFINE_TAG_COMPONENT(ecl::ui, PadCursorVisibleComponent, ClientUiPadCursorVisible)
+
+END_NS()
+
+BEGIN_NS(ecl::character)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::character, TemplateChangedEventOneFrameComponent, ClientCharacterTemplateChangedEvent)
+
+END_NS()
+
+BEGIN_NS(ecl::character_creation)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::character_creation, LoadedBodyTypeVisualChangedComponent, ClientCharacterCreationLoadedBodyTypeVisualChanged)
+
+END_NS()
+
+BEGIN_NS(ecl::crowds)
+
+DEFINE_TAG_COMPONENT(ecl::crowds, SoundClusterFilterComponent, ClientCrowdsSoundClusterFilter)
+DEFINE_TAG_COMPONENT(ecl::crowds, SoundMemberComponent, ClientCrowdsSoundMember)
+
+END_NS()
+
+BEGIN_NS(ecl::death)
+
+DEFINE_TAG_COMPONENT(ecl::death, DelayedAnimationTriggerComponent, ClientDeathDelayedAnimationTrigger)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::death, ReloadDynamicPhysicsVisualRequestOneFrameComponent, ClientDeathReloadDynamicPhysicsVisualRequest)
+DEFINE_TAG_COMPONENT(ecl::death, SetVisualImmediateRequestOneFrameComponent, ClientDeathSetVisualImmediateRequest)
+
+END_NS()
+
+BEGIN_NS(ecl::effect)
+
+DEFINE_TAG_COMPONENT(ecl::effect, InitializedComponent, ClientEffectInitialized)
+
+END_NS()
+
+BEGIN_NS(ecl::ftb)
+
+DEFINE_TAG_COMPONENT(ecl::ftb, ToggleRequestComponent, ClientFtbToggleRequest)
+
+END_NS()
+
+BEGIN_NS(ecl::inventory)
+
+DEFINE_TAG_COMPONENT(ecl::inventory, DeferredCharacterDropAnimationComponent, ClientInventoryDeferredCharacterDropAnimation)
+
+END_NS()
+
+BEGIN_NS(ecl::invisibility)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::invisibility, VisualChangedOneFrameComponent, ClientInvisibilityVisualChanged)
+
+END_NS()
+
+BEGIN_NS(ecl::item)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::item, DestroyingUnloadVisualRequestComponent, ClientItemDestroyingUnloadVisualRequest)
+DEFINE_TAG_COMPONENT(ecl::item, RetryLinkDynPhysicsRequestComponent, ClientItemRetryLinkDynPhysicsRequest)
 
 END_NS()
 
@@ -128,9 +231,153 @@ struct StateComponent : public BaseComponent
 
 END_NS()
 
+BEGIN_NS(ecl::jump)
+
+DEFINE_TAG_COMPONENT(ecl::jump, LandEventOneFrameComponent, ClientJumpLandEvent)
+DEFINE_TAG_COMPONENT(ecl::jump, TakeoffEventOneFrameComponent, ClientJumpTakeoffEvent)
+
+END_NS()
+
+BEGIN_NS(ecl::lariannet)
+
+DEFINE_TAG_COMPONENT(ecl::lariannet, TrackingLobbyDeletedSingletonComponent, ClientLariannetTrackingLobbyDeletedSingleton)
+
+END_NS()
+
+BEGIN_NS(ecl::lightbar_haptics)
+
+DEFINE_TAG_COMPONENT(ecl::lightbar_haptics, LightbarSoundStateComponent, ClientLightbarHapticsLightbarSoundState)
+
+END_NS()
+
+BEGIN_NS(ecl::markers)
+
+DEFINE_TAG_COMPONENT(ecl::markers, AvailablePortalComponent, ClientMarkersAvailablePortal)
+DEFINE_TAG_COMPONENT(ecl::markers, PortalCandidateComponent, ClientMarkersPortalCandidate)
+
+END_NS()
+
+BEGIN_NS(ecl::mod)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::mod, ExternalModValidationFinishedOneFrameComponent, ClientModExternalModValidationFinished)
+
+END_NS()
+
+BEGIN_NS(ecl::notification)
+
+DEFINE_TAG_COMPONENT(ecl::notification, AcceptedComponent, ClientNotificationAccepted)
+DEFINE_TAG_COMPONENT(ecl::notification, SeenComponent, ClientNotificationSeen)
+
+END_NS()
+
+BEGIN_NS(ecl::party)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::party, GroupsChangedEventOneFrameComponent, ClientPartyGroupsChangedEvent)
+DEFINE_TAG_COMPONENT(ecl::party, LoadedEventOneFrameComponent, ClientPartyLoadedEvent)
+
+END_NS()
+
+BEGIN_NS(ecl::ping)
+
+DEFINE_TAG_COMPONENT(ecl::ping, IsInSelectorWhileInactiveComponent, ClientPingIsInSelectorWhileInactive)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::ping, MultiEffectDestroyRequestOneFrameComponent, ClientPingMultiEffectDestroyRequest)
+
+END_NS()
+
+BEGIN_NS(ecl::platform)
+
+DEFINE_TAG_COMPONENT(ecl::platform, DeadReckoningComponent, ClientPlatformDeadReckoning)
+
+END_NS()
+
+BEGIN_NS(ecl::portrait_painting)
+
+DEFINE_TAG_COMPONENT(ecl::portrait_painting, PortraitPaintingComponent, ClientPortraitPainting)
+
+END_NS()
+
+BEGIN_NS(ecl::profile)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::profile, DishonourOneFrameComponent, ClientProfileDishonour)
+
+END_NS()
+
+BEGIN_NS(ecl::room_portal)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::room_portal, RoomStateChangedOneFrameComponent, ClientRoomPortalRoomStateChanged)
+
+END_NS()
+
+BEGIN_NS(ecl::savegame)
+
+DEFINE_TAG_COMPONENT(ecl::savegame, IsSavingComponent, ClientSavegameIsSaving)
+
+END_NS()
+
+BEGIN_NS(ecl::script)
+
+DEFINE_TAG_COMPONENT(ecl::script, PlayAnimationComponent, ClientScriptPlayAnimation)
+
+END_NS()
+
+BEGIN_NS(ecl::sound)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::sound, ListenerSpatializationConfigChangedOneFrameComponent, ClientSoundListenerSpatializationConfigChanged)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::sound, ModuleSoundLoadedRequestOneFrameComponent, ClientSoundModuleSoundLoadedRequest)
+DEFINE_TAG_COMPONENT(ecl::sound, SneakStateSingletonComponent, ClientSoundSneakStateSingleton)
+
+END_NS()
+
+BEGIN_NS(ecl::spell)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::spell, ModificationsChangedEventOneFrameComponent, ClientSpellModificationsChangedEvent)
+
+END_NS()
+
+BEGIN_NS(ecl::splitscreen)
+
+DEFINE_TAG_COMPONENT(ecl::splitscreen, HeightSplitReasonsSingletonComponent, ClientSplitscreenHeightSplitReasonsSingleton)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::splitscreen, PlayerCharacterChangedOneFrameComponent, ClientSplitscreenPlayerCharacterChanged)
+
+END_NS()
+
+BEGIN_NS(ecl::tadpole_tree)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::tadpole_tree, PowersChangedOneFrameComponent, ClientTadpoleTreePowersChanged)
+
+END_NS()
+
+BEGIN_NS(ecl::thrown)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::thrown, PrepareAnimationRequestOneFrameComponent, ClientThrownPrepareAnimationRequest)
+
+END_NS()
+
+BEGIN_NS(ecl::timeline)
+
+DEFINE_TAG_COMPONENT(ecl::timeline, ActiveMainMenuTriggerComponent, ClientTimelineActiveMainMenuTrigger)
+DEFINE_TAG_COMPONENT(ecl::timeline, LoadedMainMenuTriggerComponent, ClientTimelineLoadedMainMenuTrigger)
+DEFINE_TAG_COMPONENT(ecl::timeline, MainMenuActorComponent, ClientTimelineMainMenuActor)
+DEFINE_TAG_COMPONENT(ecl::timeline, OnLevelLoadedTimelinesPlayingComponent, ClientTimelineOnLevelLoadedTimelinesPlaying)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::timeline, RemoveFadeRequestEntityOneFrameComponent, ClientTimelineRemoveFadeRequestEntity)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::timeline, TimelinePlayerJoinedOneFrameComponent, ClientTimelinePlayerJoined)
+
+END_NS()
+
 BEGIN_NS(ecl::trigger)
 
 DEFINE_TAG_COMPONENT(ecl::trigger, SightHelperComponent, ClientTriggerSightHelper)
+
+END_NS()
+
+BEGIN_NS(ecl::tutorial)
+
+DEFINE_TAG_COMPONENT(ecl::tutorial, CameraAtLeashLimitComponent, ClientTutorialCameraAtLeashLimit)
+DEFINE_TAG_COMPONENT(ecl::tutorial, CameraMovingComponent, ClientTutorialCameraMoving)
+DEFINE_TAG_COMPONENT(ecl::tutorial, CameraRotatingComponent, ClientTutorialCameraRotating)
+DEFINE_TAG_COMPONENT(ecl::tutorial, CameraTrackingComponent, ClientTutorialCameraTracking)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::tutorial, FinishResetResetTutorialsProcessOneFrameComponent, ClientTutorialFinishResetResetTutorialsProcess)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::tutorial, UILayerChangedOneFrameComponent, ClientTutorialUILayerChanged)
 
 END_NS()
 
@@ -155,11 +402,612 @@ struct VisualStateComponent : public BaseComponent
     stats::UnsheathState State2;
 };
 
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::unsheath, AnimationRequestOneFrameComponent, ClientUnsheathAnimationRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::unsheath, RefreshAnimationSubSetRequestOneFrameComponent, ClientUnsheathRefreshAnimationSubSetRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ecl::unsheath, RefreshWeaponVisualsRequestOneFrameComponent, ClientUnsheathRefreshWeaponVisualsRequest)
+
+END_NS()
+
+BEGIN_NS(ecs)
+
+DEFINE_TAG_COMPONENT(ecs, IsReplicationOwnedComponent, EcsIsReplicationOwned)
+
+END_NS()
+
+BEGIN_NS(eoc)
+
+DEFINE_TAG_COMPONENT(eoc, BodyTypeUpdatedNotification, BodyTypeUpdatedNotification)
+DEFINE_TAG_COMPONENT(eoc, RPGStatsComponent, RPGStats)
+DEFINE_TAG_COMPONENT(eoc, ServerRootLevelStartDialogComponent, ServerRootLevelStartDialog)
+DEFINE_TAG_COMPONENT(eoc, TimelineReplicationComponent, TimelineReplication)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::stats, ReloadStatsEventOneFrameComponent, StatsReloadStatsEvent)
+
+END_NS()
+
+BEGIN_NS(eoc::ai::swarm)
+
+DEFINE_TAG_COMPONENT(eoc::ai::swarm, ActiveComponent, AiSwarmActive)
+DEFINE_TAG_COMPONENT(eoc::ai::swarm, ExecutingActionComponent, AiSwarmExecutingAction)
+
+END_NS()
+
+BEGIN_NS(eoc::aigrid)
+
+DEFINE_TAG_COMPONENT(eoc::aigrid, AffectedByLayerHeightChangeOneFrameComponent, AigridAffectedByLayerHeightChange)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::aigrid, AiGridLoadedOneFrameComponent, AigridAiGridLoaded)
+DEFINE_TAG_COMPONENT(eoc::aigrid, CancelFloodRequestComponent, AigridCancelFloodRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::aigrid, FloodAbortedEventOneFrameComponent, AigridFloodAbortedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::aigrid, FloodFinishedEventOneFrameComponent, AigridFloodFinishedEvent)
+DEFINE_TAG_COMPONENT(eoc::aigrid, RefreshAllLayersOneFrameRequestComponent, AigridRefreshAllLayersOneFrameRequest)
+DEFINE_TAG_COMPONENT(eoc::aigrid, SubgridProximityForceRefreshRequestComponent, AigridSubgridProximityForceRefreshRequest)
+
+END_NS()
+
+BEGIN_NS(eoc::animation)
+
+DEFINE_TAG_COMPONENT(eoc::animation, BlueprintRefreshedEventOneFrameComponent, AnimationBlueprintRefreshedEvent)
+
+END_NS()
+
+BEGIN_NS(eoc::bounds)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::bounds, SizeChangedEventOneFrameComponent, BoundsSizeChangedEvent)
+
+END_NS()
+
+BEGIN_NS(eoc::camp)
+
+DEFINE_TAG_COMPONENT(eoc::camp, AvatarContainerComponent, CampAvatarContainer)
+
+END_NS()
+
+BEGIN_NS(eoc::character)
+
+DEFINE_TAG_COMPONENT(eoc::character, TradingComponent, CharacterTrading)
+
+END_NS()
+
+BEGIN_NS(eoc::crowds)
+
+DEFINE_TAG_COMPONENT(eoc::crowds, BehaviourComponent, CrowdsBehaviour)
+DEFINE_TAG_COMPONENT(eoc::crowds, IsFadingComponent, CrowdsIsFading)
+
+END_NS()
+
+BEGIN_NS(eoc::drop)
+
+DEFINE_TAG_COMPONENT(eoc::drop, AnimationComponent, DropAnimation)
+DEFINE_TAG_COMPONENT(eoc::drop, DropEntityStateComponent, DropEntityState)
+
+END_NS()
+
+BEGIN_NS(eoc::encumbrance)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::encumbrance, ChangeStatsRequestOneFrameComponent, EncumbranceChangeStatsRequest)
+
+END_NS()
+
+BEGIN_NS(eoc::game)
+
+DEFINE_TAG_COMPONENT(eoc::game, PauseComponent, GamePause)
+
+END_NS()
+
+BEGIN_NS(eoc::gamestate)
+
+DEFINE_TAG_COMPONENT(eoc::gamestate, AbortedComponent, GamestateAborted)
+DEFINE_TAG_COMPONENT(eoc::gamestate, IdlingComponent, GamestateIdling)
+DEFINE_TAG_COMPONENT(eoc::gamestate, InitConnectionComponent, GamestateInitConnection)
+DEFINE_TAG_COMPONENT(eoc::gamestate, LoadMainMenuComponent, GamestateLoadMainMenu)
+DEFINE_TAG_COMPONENT(eoc::gamestate, MainMenuComponent, GamestateMainMenu)
+DEFINE_TAG_COMPONENT(eoc::gamestate, MainMenuPostInstantiateComponent, GamestateMainMenuPostInstantiate)
+DEFINE_TAG_COMPONENT(eoc::gamestate, PausedComponent, GamestatePaused)
+DEFINE_TAG_COMPONENT(eoc::gamestate, PrepareRunningComponent, GamestatePrepareRunning)
+DEFINE_TAG_COMPONENT(eoc::gamestate, RunningComponent, GamestateRunning)
+DEFINE_TAG_COMPONENT(eoc::gamestate, SavingComponent, GamestateSaving)
+DEFINE_TAG_COMPONENT(eoc::gamestate, SyncingComponent, GamestateSyncing)
+DEFINE_TAG_COMPONENT(eoc::gamestate, UnloadLevelComponent, GamestateUnloadLevel)
+DEFINE_TAG_COMPONENT(eoc::gamestate, UnloadModuleComponent, GamestateUnloadModule)
+
+END_NS()
+
+BEGIN_NS(eoc::item)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::item, ISDoorClosedAnimationFinishedOneFrameComponent, ItemISDoorClosedAnimationFinished)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::item, ISDoorClosedAnimationRequestOneFrameComponent, ItemISDoorClosedAnimationRequest)
+DEFINE_TAG_COMPONENT(eoc::item, ISDoorClosingComponent, ItemISDoorClosing)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::item, ISDoorOpenedAnimationFinishedOneFrameComponent, ItemISDoorOpenedAnimationFinished)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::item, ISDoorOpenedAnimationRequestOneFrameComponent, ItemISDoorOpenedAnimationRequest)
+DEFINE_TAG_COMPONENT(eoc::item, ISDoorOpeningComponent, ItemISDoorOpening)
+DEFINE_TAG_COMPONENT(eoc::item, ISFallingComponent, ItemISFalling)
+DEFINE_TAG_COMPONENT(eoc::item, ISRotateComponent, ItemISRotate)
+DEFINE_TAG_COMPONENT(eoc::item, ISTeleportFallComponent, ItemISTeleportFall)
+
+END_NS()
+
+BEGIN_NS(eoc::item_template)
+
+DEFINE_TAG_COMPONENT(eoc::item_template, ScriptControlledDoorComponent, ItemTemplateScriptControlledDoor)
+
+END_NS()
+
+BEGIN_NS(eoc::jump)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::jump, ActivationEventOneFrameComponent, JumpActivationEvent)
+
+END_NS()
+
+BEGIN_NS(eoc::ladder)
+
+DEFINE_TAG_COMPONENT(eoc::ladder, ClimbingComponent, LadderClimbing)
+
+END_NS()
+
+BEGIN_NS(eoc::legacy::action)
+
+DEFINE_TAG_COMPONENT(eoc::legacy::action, ASCombineItemComponent, LegacyActionASCombineItem)
+DEFINE_TAG_COMPONENT(eoc::legacy::action, ASIncapacitatedComponent, LegacyActionASIncapacitated)
+DEFINE_TAG_COMPONENT(eoc::legacy::action, ASKnockedDownComponent, LegacyActionASKnockedDown)
+DEFINE_TAG_COMPONENT(eoc::legacy::action, ASUseItemComponent, LegacyActionASUseItem)
+
+END_NS()
+
+BEGIN_NS(eoc::legacy::behaviour)
+
+DEFINE_TAG_COMPONENT(eoc::legacy::behaviour, BSSpawnComponent, LegacyBehaviourBSSpawn)
+DEFINE_TAG_COMPONENT(eoc::legacy::behaviour, BSTalkToComponent, LegacyBehaviourBSTalkTo)
+
+END_NS()
+
+BEGIN_NS(eoc::legacy::entity)
+
+DEFINE_TAG_COMPONENT(eoc::legacy::entity, InUseByActionStateComponent, LegacyEntityInUseByActionState)
+
+END_NS()
+
+BEGIN_NS(eoc::notification)
+
+DEFINE_TAG_COMPONENT(eoc::notification, EnterPhotoModeFailedNotificationComponent, NotificationEnterPhotoModeFailedNotification)
+DEFINE_TAG_COMPONENT(eoc::notification, PerformFailedComponent, NotificationPerformFailed)
+DEFINE_TAG_COMPONENT(eoc::notification, ReposeResultComponent, NotificationReposeResult)
+
+END_NS()
+
+BEGIN_NS(eoc::platform)
+
+DEFINE_TAG_COMPONENT(eoc::platform, DestructionParticipantComponent, PlatformDestructionParticipant)
+DEFINE_TAG_COMPONENT(eoc::platform, MovablePlatformComponent, PlatformMovablePlatform)
+DEFINE_TAG_COMPONENT(eoc::platform, MovementPausedComponent, PlatformMovementPaused)
+
+END_NS()
+
+BEGIN_NS(eoc::ready_check)
+
+DEFINE_TAG_COMPONENT(eoc::ready_check, BlockedComponent, ReadyCheckBlocked)
+
+END_NS()
+
+BEGIN_NS(eoc::room_portal)
+
+struct PortalComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(RoomPortal, "eoc::room_portal::PortalComponent")
+
+    // inferred: Type is certain: the game has the replication type
+    // ls::FieldMeta<ls::StaticArray<ls::ID<ecs::EntityHandleTraits>,2>
+    // eoc::room_portal::PortalComponent::*,0> (symbols.py types, bg3.exe+0xE9E10; used at
+    // bg3.exe+0x2F1FC50 to mark field 0 dirty) - the member at offset 0 is a static array of 2
+    // entity handles and it is the only replicated field. Creators default both to the null handle
+    // 0xFFC0000000000000 (bg3.exe+0x92E120, bg3.exe+0x25769C0). Probe: slot 0 always a live
+    // entity, slot 1 a live entity or null, on both sides. The NAME 'Rooms' is a guess from the
+    // feature (esv::room_portal::RoomPortalSystem::RebuildRoomConnections;
+    // eoc::room_portal::RoomStateComponent holds a DynamicArray<eoc::room_portal::Connection>); no
+    // code was read that proves the two handles are the rooms on either side of the portal.
+    std::array<EntityHandle, 2> Rooms;
+    // inferred: 1 byte: bg3.exe+0x92E120 (stream reader) copies exactly 1 byte into +0x10 and
+    // defaults it to 0; the savegame loader bg3.exe+0x25769C0
+    // (ls::model::game::room_portal::v0::PortalComponent -> component) writes '+0x10 = (savedByte
+    // != 0)', so it is a bool and the only saved member. Name from the Toolkit method
+    // esv::room_portal::RoomPortalSystem::LEGACY_SetPortalIsOpen(EntityHandle,bool) and the
+    // Osiris-side function bg3.exe+0x3631180 that checks the entity has PortalComponent and queues
+    // {entity,bool} into that system; the function that copies the queued bool into +0x10 was not
+    // read. Probe: server 00/01; client always 0 (the field is not replicated - only field 0 has a
+    // FieldMeta).
+    bool IsOpen;
+};
+
+END_NS()
+
+BEGIN_NS(eoc::script)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::script, AnimationStateRequestOneFrameComponent, ScriptAnimationStateRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::script, PlayAnimationRequestOneFrameComponent, ScriptPlayAnimationRequest)
+
+END_NS()
+
+BEGIN_NS(eoc::sneak)
+
+DEFINE_TAG_COMPONENT(eoc::sneak, IsSneakingComponent, SneakIsSneaking)
+
+END_NS()
+
+BEGIN_NS(eoc::spell)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::spell, AttackSpellOverrideChangedEventOneFrameComponent, SpellAttackSpellOverrideChangedEvent)
+DEFINE_TAG_COMPONENT(eoc::spell, LastUsedLimbComponent, SpellLastUsedLimb)
+DEFINE_TAG_COMPONENT(eoc::spell, SpellInvalidationLockedComponent, SpellInvalidationLocked)
+
+END_NS()
+
+BEGIN_NS(eoc::splatter)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::splatter, UpdateAttachmetsRequestOneFrameComponent, SplatterUpdateAttachmetsRequest)
+
+END_NS()
+
+BEGIN_NS(eoc::summon)
+
+DEFINE_TAG_COMPONENT(eoc::summon, AnimationComponent, SummonAnimation)
+DEFINE_TAG_COMPONENT(eoc::summon, IsSpawnComponent, SummonIsSpawn)
+
+END_NS()
+
+BEGIN_NS(eoc::timeline)
+
+DEFINE_TAG_COMPONENT(eoc::timeline, HideEquipmentComponent, TimelineHideEquipment)
+
+END_NS()
+
+BEGIN_NS(eoc::trap)
+
+DEFINE_TAG_COMPONENT(eoc::trap, DisarmingAnimationStateComponent, TrapDisarmingAnimationState)
+
+END_NS()
+
+BEGIN_NS(eoc::user)
+
+DEFINE_TAG_COMPONENT(eoc::user, DismissedComponent, UserDismissed)
+
+END_NS()
+
+BEGIN_NS(eoc::weight)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(eoc::weight, ChangedEventOneFrameComponent, WeightChangedEvent)
+
+END_NS()
+
+BEGIN_NS(esv)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseSightReloadedOneFrameComponent, ServerBaseSightReloaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseSizeReloadedOneFrameComponent, ServerBaseSizeReloaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseStatsReloadRequestOneFrameComponent, ServerBaseStatsReloadRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, CharacterSetVisualResourceRequestsOneFrameComponent, ServerCharacterSetVisualResourceRequests)
+DEFINE_TAG_COMPONENT(esv, GameStateReloadStoryComponent, ServerGameStateReloadStory)
+DEFINE_TAG_COMPONENT(esv, GameStateSaveComponent, ServerGameStateSave)
+DEFINE_TAG_COMPONENT(esv, GravityInstigatorComponent, ServerGravityInstigator)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, ModuleLoadedOneFrameComponent, ServerModuleLoaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, ModuleUnloadedOneFrameComponent, ServerModuleUnloaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, ModuleUnloadingOneFrameComponent, ServerModuleUnloading)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, ObjectSizeChangedEventOneFrameComponent, ServerObjectSizeChangedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, PickingStateUpdatedOneFrameComponent, ServerPickingStateUpdated)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, SaveCompletedOneFrameComponent, ServerSaveCompleted)
+DEFINE_TAG_COMPONENT(esv, SaveWorldPrepareBusyComponent, ServerSaveWorldPrepareBusy)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, SaveWorldPrepareEventComponent, ServerSaveWorldPrepareEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv, SessionUnloadOneFrameComponent, ServerSessionUnload)
+DEFINE_TAG_COMPONENT(esv::level, InstancesLoadedComponent, ServerLevelInstancesLoaded)
+
+END_NS()
+
+BEGIN_NS(esv::ai::combat)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::ai::combat, InterestingItemsAddedOneFrameComponent, ServerAiCombatInterestingItemsAdded)
+
+END_NS()
+
+BEGIN_NS(esv::ai::swarm)
+
+DEFINE_TAG_COMPONENT(esv::ai::swarm, IsCalculatingComponent, ServerAiSwarmIsCalculating)
+DEFINE_TAG_COMPONENT(esv::ai::swarm, IsPausedComponent, ServerAiSwarmIsPaused)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::ai::swarm, OnExecuteActionEventOneFrameComponent, ServerAiSwarmOnExecuteActionEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::ai::swarm, OnStartCalculatingOneFrameComponent, ServerAiSwarmOnStartCalculating)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::ai::swarm, RequestActionOneFrameComponent, ServerAiSwarmRequestAction)
+DEFINE_TAG_COMPONENT(esv::ai::swarm, RequestActionPausedComponent, ServerAiSwarmRequestActionPaused)
+
+END_NS()
+
+BEGIN_NS(esv::boost)
+
+DEFINE_TAG_COMPONENT(esv::boost, DebugRequestsUpdatedEventOneFrameComponent, ServerBoostDebugRequestsUpdatedEvent)
+DEFINE_TAG_COMPONENT(esv::boost, StoryRequestsUpdatedEventOneFrameComponent, ServerBoostStoryRequestsUpdatedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::camp)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, CampWaypointStateEventOneFrameComponent, ServerCampWaypointStateEvent)
+DEFINE_TAG_COMPONENT(esv::camp, CharacterInTriggerChangedComponent, ServerCampCharacterInTriggerChanged)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, EndTheDayLoadForceChangeStateEventOneFrameComponent, ServerCampEndTheDayLoadForceChangeStateEvent)
+DEFINE_TAG_COMPONENT(esv::camp, EndTheDayResultEventOneFrameComponent, ServerCampEndTheDayResultEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, GatherAtCampCheckEventOneFrameComponent, ServerCampGatherAtCampCheckEvent)
+DEFINE_TAG_COMPONENT(esv::camp, InitializeQualityComponent, ServerCampInitializeQuality)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, SendToCampStateEventOneFrameComponent, ServerCampSendToCampStateEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, SuppliesUpdatedEventOneFrameComponent, ServerCampSuppliesUpdatedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, TriggerChangedEventOneFrameComponent, ServerCampTriggerChangedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::character)
+
+DEFINE_TAG_COMPONENT(esv::character, CanOpenDoorsOverrideComponent, ServerCharacterCanOpenDoorsOverride)
+DEFINE_TAG_COMPONENT(esv::character, EntityMovingComponent, ServerCharacterEntityMoving)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::character, TemplateChangedEventOneFrameComponent, ServerCharacterTemplateChangedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::character_creation)
+
+DEFINE_TAG_COMPONENT(esv::character_creation, AutoLevelRequestOneFrameComponent, ServerCharacterCreationAutoLevelRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::character_creation, ChangeAppearanceCancelledOneFrameComponent, ServerCharacterCreationChangeAppearanceCancelled)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::character_creation, ChangeAppearanceCompletedOneFrameComponent, ServerCharacterCreationChangeAppearanceCompleted)
+DEFINE_TAG_COMPONENT(esv::character_creation, CreationFinishedOneFrameComponent, ServerCharacterCreationCreationFinished)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::character_creation, FullRespecCancelledOneFrameComponent, ServerCharacterCreationFullRespecCancelled)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::character_creation, FullRespecCompletedOneFrameComponent, ServerCharacterCreationFullRespecCompleted)
+DEFINE_TAG_COMPONENT(esv::character_creation, InitialLevelComponent, ServerCharacterCreationInitialLevel)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::character_creation, RespecCancelledOneFrameComponent, ServerCharacterCreationRespecCancelled)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::character_creation, RespecCompletedOneFrameComponent, ServerCharacterCreationRespecCompleted)
+
+END_NS()
+
+BEGIN_NS(esv::combat_log)
+
+DEFINE_TAG_COMPONENT(esv::combat_log, CombatLogStateComponent, ServerCombatLogState)
+
+END_NS()
+
+BEGIN_NS(esv::constellation)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::constellation, ChildrenListChangedOneFrameComponent, ServerConstellationChildrenListChanged)
+
+END_NS()
+
+BEGIN_NS(esv::cover)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::cover, LightBlockerPhysicsChangedOneFrameComponent, ServerCoverLightBlockerPhysicsChanged)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::cover, VisionBlockerPhysicsChangedOneFrameComponent, ServerCoverVisionBlockerPhysicsChanged)
+
+END_NS()
+
+BEGIN_NS(esv::crowds)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::crowds, BehaviourRequestOneFrameComponent, ServerCrowdsBehaviourRequest)
+DEFINE_TAG_COMPONENT(esv::crowds, DeactivateCharacterComponent, ServerCrowdsDeactivateCharacter)
+DEFINE_TAG_COMPONENT(esv::crowds, DespawnWithoutCharacterComponent, ServerCrowdsDespawnWithoutCharacter)
+DEFINE_TAG_COMPONENT(esv::crowds, DisableCharacterSpawningComponent, ServerCrowdsDisableCharacterSpawning)
+
+END_NS()
+
+BEGIN_NS(esv::death)
+
+DEFINE_TAG_COMPONENT(esv::death, AnimFallbackTimerFinishedEventOneFrameComponent, ServerDeathAnimFallbackTimerFinishedEvent)
+DEFINE_TAG_COMPONENT(esv::death, AnimFinishedEventOneFrameComponent, ServerDeathAnimFinishedEvent)
+DEFINE_TAG_COMPONENT(esv::death, CharacterDeathInitiatedEventOneFrameComponent, ServerDeathCharacterDeathInitiatedEvent)
+DEFINE_TAG_COMPONENT(esv::death, DeathAnimationRequestOneFrameComponent, ServerDeathAnimationRequest)
+DEFINE_TAG_COMPONENT(esv::death, DelayedAnimationTriggerComponent, ServerDeathDelayedAnimationTrigger)
+DEFINE_TAG_COMPONENT(esv::death, DyingWaitingForDeactivationComponent, ServerDeathDyingWaitingForDeactivation)
+DEFINE_TAG_COMPONENT(esv::death, ExecuteDieLogicEventOneFrameComponent, ServerDeathExecuteDieLogicEvent)
+DEFINE_TAG_COMPONENT(esv::death, ExecuteDieLogicRequestOneFrameComponent, ServerDeathExecuteDieLogicRequest)
+
+END_NS()
+
+BEGIN_NS(esv::dialog)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::dialog, CharacterJoinedDialogOneFrameComponent, ServerDialogCharacterJoinedDialog)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::dialog, CharacterLeftDialogOneFrameComponent, ServerDialogCharacterLeftDialog)
+
+END_NS()
+
+BEGIN_NS(esv::drop)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::drop, DropEntityExecutionFailedOneFrameComponent, ServerDropEntityExecutionFailed)
+DEFINE_TAG_COMPONENT(esv::drop, DropFinishedEventComponent, ServerDropFinishedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::escort)
+
+DEFINE_TAG_COMPONENT(esv::escort, GroupRequestCompletedComponent, ServerEscortGroupRequestCompleted)
+DEFINE_TAG_COMPONENT(esv::escort, LeaderPriorityRequestCompletedComponent, ServerEscortLeaderPriorityRequestCompleted)
+DEFINE_TAG_COMPONENT(esv::escort, LeaderRequestCompletedComponent, ServerEscortLeaderRequestCompleted)
+DEFINE_TAG_COMPONENT(esv::escort, RequestFollowComponent, ServerEscortRequestFollow)
+
+END_NS()
+
+BEGIN_NS(esv::expertise)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::expertise, ExpertiseUpdatedEventOneFrameComponent, ServerExpertiseUpdatedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::floor)
+
+DEFINE_TAG_COMPONENT(esv::floor, CharacterInTriggerChangedComponent, ServerFloorCharacterInTriggerChanged)
+
+END_NS()
+
+BEGIN_NS(esv::henchmen)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::henchmen, HenchmanAbortedOneFrameComponent, ServerHenchmenHenchmanAborted)
+
+END_NS()
+
+BEGIN_NS(esv::identity)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::identity, IdentityChangedOneFrameComponent, ServerIdentityChanged)
+
+END_NS()
+
+BEGIN_NS(esv::improvised_weapon)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::improvised_weapon, CancelRequestOneFrameComponent, ServerImprovisedWeaponCancelRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::improvised_weapon, EndReposeRequestOneFrameComponent, ServerImprovisedWeaponEndReposeRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::improvised_weapon, PreparingToBeReleasedEventOneFrameComponent, ServerImprovisedWeaponPreparingToBeReleasedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::improvised_weapon, SetVisibilityOneFrameComponent, ServerImprovisedWeaponSetVisibility)
+
 END_NS()
 
 BEGIN_NS(esv::inventory)
 
+DEFINE_TAG_COMPONENT(esv::inventory, DeferredCharacterDropAnimationComponent, ServerInventoryDeferredCharacterDropAnimation)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, DeferredScatterTreasureRequestOneFrameComponent, ServerInventoryDeferredScatterTreasureRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, EntityMovedMagicPocketsEventOneFrameComponent, ServerInventoryEntityMovedMagicPocketsEvent)
 DEFINE_TAG_COMPONENT(esv::inventory, IsLoadedFromEquipmentSetComponent, ServerInventoryIsLoadedFromEquipmentSet)
+DEFINE_TAG_COMPONENT(esv::inventory, IsReplicatedComponent, ServerInventoryIsReplicated)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, MemberAddedEventOneFrameComponent, ServerInventoryMemberAddedEvent)
+DEFINE_TAG_COMPONENT(esv::inventory, MemberIsReplicatedWithComponent, ServerInventoryMemberIsReplicatedWith)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, MemberMarkAsWareRequestOneFrameComponent, ServerInventoryMemberMarkAsWareRequest)
+DEFINE_TAG_COMPONENT(esv::inventory, ReturnToOwnerComponent, ServerInventoryReturnToOwner)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, ScatterTreasureRequestOneFrameComponent, ServerInventoryScatterTreasureRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, SetGlobalEventOneFrameComponent, ServerInventorySetGlobalEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, SetLocalEventOneFrameComponent, ServerInventorySetLocalEvent)
+DEFINE_TAG_COMPONENT(esv::inventory, StackBlockedDuringTradeComponent, ServerInventoryStackBlockedDuringTrade)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, WeaponSetChangeRequestOneFrameComponent, ServerInventoryWeaponSetChangeRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, WeightChangedEventOneFrameComponent, ServerInventoryWeightChangedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::inventory, WieldingChangedEventOneFrameComponent, ServerInventoryWieldingChangedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::item)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::item, DestroyingEventOneFrameComponent, ServerItemDestroyingEvent)
+DEFINE_TAG_COMPONENT(esv::item, DestroyingWaitingForBlueprintComponent, ServerItemDestroyingWaitingForBlueprint)
+DEFINE_TAG_COMPONENT(esv::item, EntityMovingComponent, ServerItemEntityMoving)
+DEFINE_TAG_COMPONENT(esv::item, MarkEntityForDestructionComponent, ServerItemMarkEntityForDestruction)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::item, TemplateChangedEventOneFrameComponent, ServerItemTemplateChangedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::item, TransformedOnDestroyEventOneFrameComponent, ServerItemTransformedOnDestroyEvent)
+
+END_NS()
+
+BEGIN_NS(esv::light)
+
+DEFINE_TAG_COMPONENT(esv::light, GameplayLightRefreshRequestComponent, ServerLightGameplayLightRefreshRequest)
+
+END_NS()
+
+BEGIN_NS(esv::lock)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::lock, ActiveRollRequestOneFrameComponent, ServerLockActiveRollRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::lock, AnimationRequestOneFrameComponent, ServerLockAnimationRequest)
+DEFINE_TAG_COMPONENT(esv::lock, StateChangeComponent, ServerLockStateChange)
+
+END_NS()
+
+BEGIN_NS(esv::multiplayer)
+
+DEFINE_TAG_COMPONENT(esv::multiplayer, DropInCCInProgressSingletonComponent, ServerMultiplayerDropInCCInProgressSingleton)
+DEFINE_TAG_COMPONENT(esv::multiplayer, UserLoadedLevelComponent, ServerMultiplayerUserLoadedLevel)
+DEFINE_TAG_COMPONENT(esv::multiplayer, UserSettingsComponent, ServerMultiplayerUserSettings)
+
+END_NS()
+
+BEGIN_NS(esv::ownership)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::ownership, OwnershipChangedEventOneFrameComponent, ServerOwnershipChangedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::party)
+
+DEFINE_TAG_COMPONENT(esv::party, BlockDismissComponent, ServerPartyBlockDismiss)
+DEFINE_TAG_COMPONENT(esv::party, BlockDismissRemovedOneFrameComponent, ServerPartyBlockDismissRemoved)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::party, PendingDestructionOneFrameComponent, ServerPartyPendingDestruction)
+DEFINE_TAG_COMPONENT(esv::party, ViewUpdatedEventOneFrameComponent, ServerPartyViewUpdatedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::party_preset)
+
+DEFINE_TAG_COMPONENT(esv::party_preset, LevelUpStateComponent, ServerPartyPresetLevelUpState)
+
+END_NS()
+
+BEGIN_NS(esv::photo_mode)
+
+DEFINE_TAG_COMPONENT(esv::photo_mode, SessionFailedEventSingletonComponent, ServerPhotoModeSessionFailedEventSingleton)
+
+END_NS()
+
+BEGIN_NS(esv::pickup)
+
+DEFINE_TAG_COMPONENT(esv::pickup, OriginalPickUpTargetComponent, ServerPickupOriginalPickUpTarget)
+DEFINE_TAG_COMPONENT(esv::pickup, PickUpFinishedComponent, ServerPickupPickUpFinished)
+DEFINE_TAG_COMPONENT(esv::pickup, PickUpPermissionGrantedComponent, ServerPickupPickUpPermissionGranted)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::pickup, PickUpProcessSplitFinishedOneFrameComponent, ServerPickupPickUpProcessSplitFinished)
+
+END_NS()
+
+BEGIN_NS(esv::placement)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::placement, ReposeEndRequestOneFrameComponent, ServerPlacementReposeEndRequest)
+
+END_NS()
+
+BEGIN_NS(esv::platform)
+
+DEFINE_TAG_COMPONENT(esv::platform, MovementContinueComponent, ServerPlatformMovementContinue)
+DEFINE_TAG_COMPONENT(esv::platform, OnTopOfDestroyedPlatformComponent, ServerPlatformOnTopOfDestroyedPlatform)
+
+END_NS()
+
+BEGIN_NS(esv::relation)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::relation, AnyRelationChangedEventOneFrameComponent, ServerRelationAnyRelationChangedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::relation, RequestCompletedEventOneFrameComponent, ServerRelationRequestCompletedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::replication)
+
+DEFINE_TAG_COMPONENT(esv::replication, IsRegisteredComponent, ServerReplicationIsRegistered)
+
+END_NS()
+
+BEGIN_NS(esv::repose)
+
+DEFINE_TAG_COMPONENT(esv::repose, EndReposeRequestOneFrameComponent, ServerReposeEndReposeRequest)
+DEFINE_TAG_COMPONENT(esv::repose, ReposeResultEventOneFrameComponent, ServerReposeResultEvent)
+
+END_NS()
+
+BEGIN_NS(esv::rest)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, RestCancelledEventOneFrameComponent, ServerRestCancelledEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, RestFinishedEventOneFrameComponent, ServerRestFinishedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, RestTypeRequestOneFrameComponent, ServerRestTypeRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, ScriptPhaseStartedEventOneFrameComponent, ServerRestScriptPhaseStartedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, ScriptRestConfirmedEventOneFrameComponent, ServerRestScriptRestConfirmedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, StartRequestFailedEventOneFrameComponent, ServerRestStartRequestFailedEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::rest, UserCharacterRestedEventOneFrameComponent, ServerRestUserCharacterRestedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::script)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::script, AnimationCancelRequestOneFrameComponent, ServerScriptAnimationCancelRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::script, SavegameLoadStartedOneFrameComponent, ServerScriptSavegameLoadStarted)
+
+END_NS()
+
+BEGIN_NS(esv::script::light)
+
+DEFINE_TAG_COMPONENT(esv::script::light, ActiveComponent, ServerScriptLightActive)
+DEFINE_TAG_COMPONENT(esv::script::light, LitComponent, ServerScriptLightLit)
+
+END_NS()
+
+BEGIN_NS(esv::shapeshift)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::shapeshift, StateRefreshedOneFrameComponent, ServerShapeshiftStateRefreshed)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::shapeshift, StatesChangedEventOneFrameComponent, ServerShapeshiftStatesChangedEvent)
 
 END_NS()
 
@@ -189,6 +1037,129 @@ struct DistantSoundStateProxyComponent : public BaseComponent
     // esv::sound::DistantSoundStateUserMapComponent.
     UserId UserID;
 };
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::sound, PerformerRemovedEventOneFrameComponent, ServerSoundPerformerRemovedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::spell)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::spell, ThrowDetachmentRequestOneFrameComponent, ServerSpellThrowDetachmentRequest)
+
+END_NS()
+
+BEGIN_NS(esv::spell_cast)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::spell_cast, SteerToCompletedEventOneFrameComponent, ServerSpellCastSteerToCompletedEvent)
+
+END_NS()
+
+BEGIN_NS(esv::spell_cast::random)
+
+DEFINE_TAG_COMPONENT(esv::spell_cast::random, IsServerControlledComponent, ServerSpellCastRandomIsServerControlled)
+
+END_NS()
+
+BEGIN_NS(esv::status)
+
+DEFINE_TAG_COMPONENT(esv::status, RemoveOnLongRestComponent, ServerStatusRemoveOnLongRest)
+DEFINE_TAG_COMPONENT(esv::status, UnsheathMusicalInstrumentComponent, ServerStatusUnsheathMusicalInstrument)
+
+END_NS()
+
+BEGIN_NS(esv::summon)
+
+DEFINE_TAG_COMPONENT(esv::summon, RemoveConcentrationRequestOneFrameComponent, ServerSummonRemoveConcentrationRequest)
+DEFINE_TAG_COMPONENT(esv::summon, UseCasterPassivesComponent, ServerSummonUseCasterPassives)
+
+END_NS()
+
+BEGIN_NS(esv::teleport)
+
+DEFINE_TAG_COMPONENT(esv::teleport, IsTargetOverrideComponent, ServerTeleportIsTargetOverride)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::teleport, TargetOverrideChangedOneFrameComponent, ServerTeleportTargetOverrideChanged)
+
+END_NS()
+
+BEGIN_NS(esv::through)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::through, ShootThroughTypeChangedOneFrameComponent, ServerThroughShootThroughTypeChanged)
+
+END_NS()
+
+BEGIN_NS(esv::thrown)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::thrown, DetachmentRequestOneFrameComponent, ServerThrownDetachmentRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::thrown, LandedOneFrameComponent, ServerThrownLanded)
+
+END_NS()
+
+BEGIN_NS(esv::timeline)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::timeline, TimelineActorVisibilityOneFrameComponent, ServerTimelineActorVisibility)
+DEFINE_TAG_COMPONENT(esv::timeline, TimelineBehaviorFlagModificationComponent, ServerTimelineBehaviorFlagModification)
+
+END_NS()
+
+BEGIN_NS(esv::trade)
+
+DEFINE_TAG_COMPONENT(esv::trade, CanTradeSetComponent, ServerTradeCanTradeSet)
+DEFINE_TAG_COMPONENT(esv::trade, LegacyCanTradeProcessedComponent, ServerTradeLegacyCanTradeProcessed)
+DEFINE_TAG_COMPONENT(esv::trade, PresentTraderComponent, ServerTradePresentTrader)
+DEFINE_TAG_COMPONENT(esv::trade, TraderHostileToAllPlayersComponent, ServerTraderHostileToAllPlayers)
+
+END_NS()
+
+BEGIN_NS(esv::trap)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::trap, AnimationRequestOneFrameComponent, ServerTrapAnimationRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::trap, DisarmableStateChangedOneFrameComponent, ServerTrapDisarmableStateChanged)
+
+END_NS()
+
+BEGIN_NS(esv::unsheath)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::unsheath, AnimationRequestOneFrameComponent, ServerUnsheathAnimationRequest)
+DEFINE_TAG_COMPONENT(esv::unsheath, ClimbingComponent, ServerUnsheathClimbing)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::unsheath, RefreshAnimationSubSetRequestOneFrameComponent, ServerUnsheathRefreshAnimationSubSetRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::unsheath, UserRequestFailedOneFrameComponent, ServerUnsheathUserRequestFailed)
+DEFINE_ONEFRAME_TAG_COMPONENT(esv::unsheath, UserRequestOneFrameComponent, ServerUnsheathUserRequest)
+
+END_NS()
+
+BEGIN_NS(esv::zone)
+
+DEFINE_TAG_COMPONENT(esv::zone, StateComponent, ServerZoneState)
+
+END_NS()
+
+BEGIN_NS(gui)
+
+DEFINE_TAG_COMPONENT(gui, UIReadyComponent, GuiUIReady)
+
+END_NS()
+
+BEGIN_NS(gui::lariannet)
+
+DEFINE_TAG_COMPONENT(gui::lariannet, PendingPlatformComponent, GuiLariannetPendingPlatform)
+
+END_NS()
+
+BEGIN_NS(gui::mod)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(gui::mod, AvailableModsUpdatedOneFrameComponent, GuiModAvailableModsUpdated)
+
+END_NS()
+
+BEGIN_NS(gui::ugc)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(gui::ugc, PermissionsChangedEventOneFrameComponent, GuiUgcPermissionsChangedEvent)
+
+END_NS()
+
+BEGIN_NS(gui::vmitem)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(gui::vmitem, HasBeenDonatedOneFrameComponent, GuiVmitemHasBeenDonated)
 
 END_NS()
 
@@ -277,42 +1248,107 @@ struct SaveWithComponent : public BaseComponent
     EntityHandle Entity;
 };
 
-END_NS()
-
-BEGIN_NS(room_portal)
-
-struct PortalComponent : public BaseComponent
-{
-    DEFINE_COMPONENT(RoomPortal, "eoc::room_portal::PortalComponent")
-
-    // inferred: Type is certain: the game has the replication type
-    // ls::FieldMeta<ls::StaticArray<ls::ID<ecs::EntityHandleTraits>,2>
-    // eoc::room_portal::PortalComponent::*,0> (symbols.py types, bg3.exe+0xE9E10; used at
-    // bg3.exe+0x2F1FC50 to mark field 0 dirty) - the member at offset 0 is a static array of 2
-    // entity handles and it is the only replicated field. Creators default both to the null handle
-    // 0xFFC0000000000000 (bg3.exe+0x92E120, bg3.exe+0x25769C0). Probe: slot 0 always a live
-    // entity, slot 1 a live entity or null, on both sides. The NAME 'Rooms' is a guess from the
-    // feature (esv::room_portal::RoomPortalSystem::RebuildRoomConnections;
-    // eoc::room_portal::RoomStateComponent holds a DynamicArray<eoc::room_portal::Connection>); no
-    // code was read that proves the two handles are the rooms on either side of the portal.
-    std::array<EntityHandle, 2> Rooms;
-    // inferred: 1 byte: bg3.exe+0x92E120 (stream reader) copies exactly 1 byte into +0x10 and
-    // defaults it to 0; the savegame loader bg3.exe+0x25769C0
-    // (ls::model::game::room_portal::v0::PortalComponent -> component) writes '+0x10 = (savedByte
-    // != 0)', so it is a bool and the only saved member. Name from the Toolkit method
-    // esv::room_portal::RoomPortalSystem::LEGACY_SetPortalIsOpen(EntityHandle,bool) and the
-    // Osiris-side function bg3.exe+0x3631180 that checks the entity has PortalComponent and queues
-    // {entity,bool} into that system; the function that copies the queued bool into +0x10 was not
-    // read. Probe: server 00/01; client always 0 (the field is not replicated - only field 0 has a
-    // FieldMeta).
-    bool IsOpen;
-};
+DEFINE_ONEFRAME_TAG_COMPONENT(ls, AnimationBlueprintLoadedEventOneFrameComponent, AnimationBlueprintLoadedEvent)
+DEFINE_TAG_COMPONENT(ls, CinematicLevelInstanceComponent, CinematicLevelInstance)
+DEFINE_TAG_COMPONENT(ls, InCinematicLevelInstanceComponent, InCinematicLevelInstance)
+DEFINE_TAG_COMPONENT(ls, InstancingBatchLoadedComponent, InstancingBatchLoaded)
+DEFINE_TAG_COMPONENT(ls, InstancingFolderLoaderBusyComponent, InstancingFolderLoaderBusy)
+DEFINE_TAG_COMPONENT(ls, RoomTriggerTagComponent, RoomTriggerTag)
+DEFINE_TAG_COMPONENT(ls, SceneDestroyWithLastDetachedObjectComponent, SceneDestroyWithLastDetachedObject)
+DEFINE_TAG_COMPONENT(ls, SoundOcclusionFilterComponent, SoundOcclusionFilter)
+DEFINE_TAG_COMPONENT(ls, TerrainLoadedComponent, TerrainLoaded)
+DEFINE_TAG_COMPONENT(ls, VisualStreamInitializedComponent, VisualStreamInitialized)
+DEFINE_TAG_COMPONENT(ls, VisualStreamerVisibleComponent, VisualStreamerVisible)
 
 END_NS()
 
-BEGIN_NS(timeline)
+BEGIN_NS(ls::anubis)
 
-DEFINE_TAG_COMPONENT(eoc::timeline, HideEquipmentComponent, TimelineHideEquipment)
+DEFINE_TAG_COMPONENT(ls::anubis, ActiveComponent, AnubisActive)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, ConstellationActivatedOneFrameComponent, AnubisConstellationActivated)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, CreateEditorPreviewVisualRequestOneFrameComponent, AnubisCreateEditorPreviewVisualRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, DestroyEditorPreviewVisualRequestOneFrameComponent, AnubisDestroyEditorPreviewVisualRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, EditorChangeOneFrameComponent, AnubisEditorChange)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, FrameworkReloadRequestOneFrameComponent, AnubisFrameworkReloadRequest)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, FrameworkReloadedOneFrameComponent, AnubisFrameworkReloaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, FrameworkUnloadRequestOneFrameComponent, AnubisFrameworkUnloadRequest)
+DEFINE_TAG_COMPONENT(ls::anubis, GameIntermediateSingletonComponent, AnubisGameIntermediateSingleton)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, LoadCompleteOneFrameComponent, AnubisLoadComplete)
+DEFINE_TAG_COMPONENT(ls::anubis, NonPersistentComponent, AnubisNonPersistent)
+DEFINE_TAG_COMPONENT(ls::anubis, PausedComponent, AnubisPaused)
+DEFINE_TAG_COMPONENT(ls::anubis, PendingStateComponent, AnubisPendingState)
+DEFINE_TAG_COMPONENT(ls::anubis, ReinitializingComponent, AnubisReinitializing)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, ScriptCmdRestoreAnubisStateOneFrameComponent, AnubisScriptCmdRestoreAnubisState)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, ScriptCmdSaveAnubisStateOneFrameComponent, AnubisScriptCmdSaveAnubisState)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, TaskPausedOneFrameComponent, AnubisTaskPaused)
+DEFINE_TAG_COMPONENT(ls::anubis, ToInterruptStateComponent, AnubisToInterruptState)
+DEFINE_TAG_COMPONENT(ls::anubis, UnselectedStateComponent, AnubisUnselectedState)
+
+END_NS()
+
+BEGIN_NS(ls::anubis::debug)
+
+DEFINE_TAG_COMPONENT(ls::anubis::debug, DebugEventComponent, AnubisDebugEvent)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis::debug, DebuggingActivatedOneFrameComponent, AnubisDebuggingActivated)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis::debug, DebuggingDeactivatedOneFrameComponent, AnubisDebuggingDeactivated)
+
+END_NS()
+
+BEGIN_NS(ls::anubis::savegame)
+
+DEFINE_TAG_COMPONENT(ls::anubis::savegame, LoadingStateComponent, AnubisSavegameLoadingState)
+DEFINE_TAG_COMPONENT(ls::anubis::savegame, WaitingForConfigChangeComponent, AnubisSavegameWaitingForConfigChange)
+
+END_NS()
+
+BEGIN_NS(ls::level)
+
+DEFINE_TAG_COMPONENT(ls::level, CacheRequiredComponent, LevelCacheRequired)
+DEFINE_TAG_COMPONENT(ls::level, LevelInstanceBackgroundLoadingComponent, LevelInstanceBackgroundLoading)
+DEFINE_TAG_COMPONENT(ls::level, LevelInstanceLoadStateComponent, LevelInstanceLoadState)
+
+END_NS()
+
+BEGIN_NS(ls::photo_mode)
+
+DEFINE_TAG_COMPONENT(ls::photo_mode, ActivatedComponent, PhotoModeActivated)
+
+END_NS()
+
+BEGIN_NS(ls::savegame)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::savegame, LoadedEventOneFrameComponent, SavegameLoadedEvent)
+
+END_NS()
+
+BEGIN_NS(ls::ugc)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::ugc, UserAuthResultOneFrameComponent, UgcUserAuthResult)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::ugc, UserInfoResultOneFrameComponent, UgcUserInfoResult)
+DEFINE_ONEFRAME_TAG_COMPONENT(ls::ugc, UserLogoutResultOneFrameComponent, UgcUserLogoutResult)
+
+END_NS()
+
+BEGIN_NS(mon)
+
+DEFINE_TAG_COMPONENT(mon, InvalidInteractableRequestComponent, MonInvalidInteractableRequest)
+DEFINE_TAG_COMPONENT(mon, InvalidTeleporterRequestComponent, MonInvalidTeleporterRequest)
+
+END_NS()
+
+BEGIN_NS(navcloud)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(navcloud, AgentChangedOneFrameComponent, NavcloudAgentChanged)
+DEFINE_ONEFRAME_TAG_COMPONENT(navcloud, LevelLoadedOneFrameComponent, NavcloudLevelLoaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(navcloud, MemoryLoadedOneFrameComponent, NavcloudMemoryLoaded)
+DEFINE_ONEFRAME_TAG_COMPONENT(navcloud, ObstacleChangedOneFrameComponent, NavcloudObstacleChanged)
+
+END_NS()
+
+BEGIN_NS(navcloud::generate)
+
+DEFINE_ONEFRAME_TAG_COMPONENT(navcloud::generate, GenerateEventOneFrameComponent, NavcloudGenerateEvent)
+DEFINE_TAG_COMPONENT(navcloud::generate, IsWaitingForGenerateComponent, NavcloudGenerateIsWaitingForGenerate)
 
 END_NS()
 
@@ -323,6 +1359,7 @@ static_assert(sizeof(bg3se::ecl::InvisibilityVisualComponent) == 12);
 static_assert(sizeof(bg3se::ecl::SurfaceLightComponent) == 64);
 static_assert(sizeof(bg3se::ecl::item::animation::StateComponent) == 6);
 static_assert(sizeof(bg3se::ecl::unsheath::VisualStateComponent) == 8);
+static_assert(sizeof(bg3se::eoc::room_portal::PortalComponent) == 24);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundStateProxyComponent) == 24);
 static_assert(sizeof(bg3se::ls::ClusterContentComponent) == 48);
 static_assert(sizeof(bg3se::ls::CopyParentVisibilityComponent) == 8);
@@ -330,4 +1367,3 @@ static_assert(sizeof(bg3se::ls::LightFlickerComponent) == 12);
 static_assert(sizeof(bg3se::ls::LightMovementComponent) == 12);
 static_assert(sizeof(bg3se::ls::ParentEntityComponent) == 8);
 static_assert(sizeof(bg3se::ls::SaveWithComponent) == 8);
-static_assert(sizeof(bg3se::room_portal::PortalComponent) == 24);
