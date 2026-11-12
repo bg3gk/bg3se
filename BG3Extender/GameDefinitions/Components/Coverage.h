@@ -8,6 +8,170 @@
 
 BEGIN_NS(ecl)
 
+struct CombatTimelineCreationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCombatTimelineCreation, "ecl::CombatTimelineCreationComponent")
+
+    // inferred: bg3.exe+0x1D78060(storage, entity) creates the component on that entity and stores
+    // the same handle here; bg3.exe+0x1D59100 later copies it to
+    // ecl::CombatTimelineDataComponent+0x110. bg3.exe+0x1D55010 passes the freshly created
+    // timeline entity. Live: a live entity handle.
+    EntityHandle Entity;
+    // inferred: Created as 0 (16-bit store at +8), then set by bg3.exe+0x1D55010 from the combat
+    // timeline creation request (byte 8 of its 16-byte tail). In the same function a non-zero
+    // value sets Timeline+0x48A (IsSystemicCombatTimeline by Timeline.h field order) and timeline
+    // type 2; zero selects the authored (+0x48B, type 3) or the +0x48C (type 10) variant.
+    // bg3.exe+0x1D59100 copies it to CombatTimelineDataComponent+0xFC and builds the systemic
+    // camera data only when it is 0. Live: 1.
+    bool IsSystemic;
+    // unknown: Byte 9 of the same request; when IsSystemic is 0 it chooses between Timeline+0x48B
+    // (0, type 3) and Timeline+0x48C (non-zero, type 10 - IsMainMenuTimeline by Timeline.h order,
+    // which looks wrong for a combat timeline, hence no name). Copied to
+    // CombatTimelineDataComponent+0xFD. Live: 0.
+    bool field_9;
+};
+
+struct CombatTimelineShotEntry
+{
+    // unknown: Element of the array at CombatTimelineShot +0x68; bg3.exe+0x1F21DB0 walks it with
+    // stride 0x10 and reads only the byte at +0xD.
+    std::array<uint8_t, 13> field_0;
+    // unknown: bg3.exe+0x1F21DB0: 'if (entry[0xD] != 0)' starts the timer at component +0x13C from
+    // +0x150.
+    bool field_D;
+    [[bg3::hidden]] std::array<uint8_t, 2> _PadE;
+};
+
+struct CombatTimelineShot
+{
+    // unknown: Value of the map at component +0x08: stride 0x78 in the map destructor
+    // bg3.exe+0x6D0A30; nothing in the first 0x68 bytes has a destructor. Not read member by
+    // member.
+    std::array<uint8_t, 104> field_0;
+    // inferred: bg3.exe+0x6D0A30 runs the array destructor FUN_1405946c0 on value +0x68;
+    // bg3.exe+0x1F21DB0 iterates 'ptr = value[0x68]; end = ptr + (int)value[0x74] * 0x10'.
+    Array<CombatTimelineShotEntry> Entries;
+};
+
+struct CombatTimelineDataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientCombatTimelineData, "ecl::CombatTimelineDataComponent")
+
+    // inferred: bg3.exe+0x1D78AF0 (add helper): '*comp = entity' after the constructor
+    // bg3.exe+0x1C80470 (null handle). Probe: live handle 0xA6 (the next entity after the one in
+    // ecl::CombatTimelineCreationComponent).
+    EntityHandle Entity;
+    // inferred: Constructor zeroes a 64-byte map at 0x08 (4-byte writes at 0x24 and 0x34 = the two
+    // sizes). Destructor bg3.exe+0x6A6420 -> 0x6D0A30(comp + 8): values at +0x30 with stride 0x78,
+    // then the key set. bg3.exe+0x1F21DB0 looks a value up with FUN_141d76dd0(comp + 8) using the
+    // Guid at 0x48 and passes '(comp + 8, comp + 0x48)' to FUN_141f95c40.
+    HashMap<Guid, CombatTimelineShot> Shots;
+    // inferred: bg3.exe+0x1F21DB0: 'if (qword 0x48 == 0 && qword 0x50 == 0)' pick a new one
+    // (FUN_141f221e0 / FUN_141f226b0), else use it as the key into Shots; also passed as a Guid to
+    // FUN_142009430. Constructor zeroes 16 bytes; no destructor.
+    Guid CurrentShot;
+    // inferred: Constructor zeroes a map at 0x58 (sizes at 0x74 / 0x84); destructor frees the
+    // value array at 0x88 without element destructors and the key set at 0x58. bg3.exe+0x1D56760
+    // (ecl::TimelineSystem): keys = comp[0x78] walked as 16-byte Guids up to count comp[0x84],
+    // values = comp[0x88] walked as 8-byte entity handles; for each pair it creates a component on
+    // the value entity and stores the key Guid and the timeline Guid in it.
+    HashMap<Guid, EntityHandle> Actors;
+    // inferred: Constructor zeroes a 48-byte set at 0x98 (sizes at 0xB4 / 0xC4); destructor calls
+    // the set destructor on comp + 0x98. Element type not established - EntityHandle assumed from
+    // the neighbours.
+    HashSet<EntityHandle> field_98;
+    // inferred: Constructor writes the null-handle constant DAT_146174970. Probe: null handle.
+    EntityHandle field_C8;
+    // inferred: Constructor writes 1 (16-bit write of 1 at 0xD0). bg3.exe+0x1F21DB0
+    // (ecl::TimelinePostSystem) switches on it: 4 -> 5, 5 = running (timers), 6 = ...;
+    // bg3.exe+0x1D56760 sets 5 when it calls aspk::Timeline::Play. Probe: 1.
+    uint8_t State;
+    // inferred: Constructor 0. Read by other systems: bg3.exe+0x170ED10 and bg3.exe+0x19DE370
+    // fetch the component (FUN_141f9fbb0) only to test 'comp[0xD1] != 0' (the combat timeline is
+    // active/visible).
+    bool field_D1;
+    // inferred: Constructor writes 0xFFC0000000000000. Probe: null handle.
+    EntityHandle field_D8;
+    // unknown: Constructor writes one byte 5. Probe: 5.
+    uint8_t field_E0;
+    // unknown: Constructor writes two 8-byte zeros (0xE8, 0xF0); typed as Guid by size and by the
+    // Guid neighbours, no reader found. Probe: zero.
+    Guid field_E8;
+    // inferred: Constructor -1; destructor bg3.exe+0x6A6420 DecRefs it; bg3.exe+0x1F221E0 hashes
+    // it (FUN_14412e1f0) and compares it with entries of a FixedString table.
+    FixedString field_F8;
+    // unknown: Constructor writes 1 (16-bit write of 1 at 0xFC). Probe: 1.
+    bool field_FC;
+    // unknown: High byte of the same 16-bit write, 0.
+    bool field_FD;
+    // inferred: bg3.exe+0x1D56760 compares the two qwords at 0x100/0x108 with the Guid of a
+    // timeline request (16-byte compare) to find the component of a timeline. Probe: GUID-like
+    // bytes.
+    Guid Timeline;
+    // inferred: Constructor writes 0xFFC0000000000000. Probe: live handle 0xA5 = the entity that
+    // carries ecl::CombatTimelineCreationComponent in the same probe (the creation request
+    // entity).
+    EntityHandle field_110;
+    // inferred: Constructor writes 0xFFC0000000000000. Probe: null handle.
+    EntityHandle field_118;
+    // inferred: Constructor zeroes 16 bytes (pointer, capacity, size at 0x12C); destructor
+    // bg3.exe+0x6A6420 clears it (FUN_1405bd630) and frees the pointer at 0x120. Element type not
+    // established (uint64_t is a placeholder).
+    Array<uint64_t> field_120;
+    // unknown: Constructor 0; bg3.exe+0x1F221E0 sets it to 1 on its success path.
+    bool field_130;
+    // unknown: Constructor 0 (16-bit write at 0x130).
+    bool field_131;
+    // unknown: Constructor 0; bg3.exe+0x1F221E0 sets it to 1 together with field_130.
+    bool field_132;
+    // inferred: bg3.exe+0x1F21DB0, state 6: 'x = comp[0x134] - deltaTime' - a countdown timer.
+    float field_134;
+    // inferred: bg3.exe+0x1F21DB0, state 5: decremented by the frame time while > 0; when it
+    // reaches 0 a new shot is chosen and it is reset from the float at 0x154.
+    float ChangeCameraTimer;
+    // inferred: bg3.exe+0x1F21DB0, state 5: decremented while > 0; started from the float at 0x150
+    // when a shot entry has its +0xD flag; cleared together with the bool at 0x140.
+    float ObstructionTimer;
+    // inferred: bg3.exe+0x1F21DB0: set to 1 when ObstructionTimer is started, 0 when it is
+    // cleared.
+    bool ObstructionTimerActive;
+    // unknown: bg3.exe+0x1F21DB0, state 6: passed as a flag argument to FUN_14200c180.
+    bool field_141;
+    // inferred: Constructor default 1.5. The six floats 0x144..0x15B are the six floats of Script
+    // Extender's CombatCameraParams (Timeline.h) copied per timeline; names follow that struct's
+    // order for the first three.
+    float HoldTimeAfterEvent;
+    // inferred: Constructor default -1.0 (second CombatCameraParams float).
+    float MaxSequenceTime;
+    // inferred: Constructor default 0.2 (third CombatCameraParams float).
+    float ObstructionCheckRadius;
+    // inferred: Constructor default 0. bg3.exe+0x1F21DB0 uses it as the start value of
+    // ObstructionTimer ('if (0 < comp[0x150]) comp[0x13C] = comp[0x150]').
+    float ObstructionBufferTime;
+    // inferred: Constructor default 0.6. bg3.exe+0x1F21DB0 reloads ChangeCameraTimer from it after
+    // a camera change.
+    float MinChangeCameraTime;
+    // inferred: Constructor default 0.1745 = 10 degrees in radians; the remaining
+    // CombatCameraParams float (MinAngleDegreesDifferenceToChangeCamera).
+    float MinAngleDifferenceToChangeCamera;
+};
+
+struct EquipmentVisualsUpdatedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ClientEquipmentVisualsUpdatedEvent, "ecl::EquipmentVisualsUpdatedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x19939C0 (size 16, default null handle). bg3.exe+0x198DF20
+    // (ecl::EquipmentVisualsSystem) walks a per-frame map {owner entity -> array of slot bytes};
+    // for every slot it fires a signal with {entity, slot}, creates a fresh event entity and
+    // writes the map key (the owner whose equipment visuals were updated) here. Capture: one and
+    // the same handle 0x0140000100003931 in all 16 instances.
+    EntityHandle Entity;
+    // inferred: Same loop: one byte taken from the slot array of that owner (the system puts
+    // 3,4,5,6 = MeleeMainHand..RangedOffHand into such arrays with FUN_1410449e0). Creator default
+    // 0x13. ItemSlot is uint8_t. Capture first byte: 0,1,2,3 (the other 7 bytes are garbage).
+    ItemSlot Slot;
+};
+
 struct EquipmentVisualsVFXTargetComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientEquipmentVisualsVFXTarget, "ecl::EquipmentVisualsVFXTargetComponent")
@@ -66,6 +230,22 @@ struct InvisibilityVisualComponent : public BaseComponent
     uint32_t SlotFlags2;
 };
 
+struct PlayersInTimelineGlobalComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientPlayersInTimelineGlobal, "ecl::PlayersInTimelineGlobalComponent")
+
+    // inferred: Creator bg3.exe+0x1D7A710 zero-initialises a 64-byte hash map (hash set of keys +
+    // value array); destructor bg3.exe+0x5C4870 frees the value array at +0x30 without per-element
+    // destructors. Key = 2 bytes: bg3.exe+0x1D34EC0 (ecl::sound::SneakStateSystem update) walks
+    // the key array at +0x20 as shorts (count at +0x2C) and matches them against a set of player
+    // ids. Value = 16 bytes: lookup bg3.exe+0x1D159C0 (key short, hashed by value) returns values
+    // + index*0x10; bg3.exe+0x1D99430 compares the two qwords of the value with +0x08/+0x10 of a
+    // 0xA8-byte component (eoc::TimelineDataComponent::InstanceId). Singleton getter
+    // bg3.exe+0x1D3DAA0 confirms stride 0x40. Probe: 1 key, value capacity 1 (one local player in
+    // a dialogue).
+    HashMap<PlayerId, Guid> Timelines;
+};
+
 struct SurfaceLightComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientSurfaceLight, "ecl::SurfaceLightComponent")
@@ -97,6 +277,272 @@ struct SurfaceLightComponent : public BaseComponent
     // (bg3.exe+0x1BA0340) for entities that have the component. Probe: 5 distinct values such as
     // (24, 0.76, -381), (-26.5, 15, -438.5).
     glm::vec3 SubgridPosition;
+};
+
+struct TimelineAnimationStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineAnimationState, "ecl::TimelineAnimationStateComponent")
+
+    // unknown: Used as a boolean: the update bg3.exe+0x1D51750 (query {ls::VisualComponent, this,
+    // eoc::TimelineActorDataComponent}) passes it to bg3.exe+0x1D51B60, which calls the
+    // visibility-request helper bg3.exe+0x426C9A0 with visible = (field_0 == 0) for every matching
+    // attached effect. Not initialised by the add-or-get helper bg3.exe+0x6D4580 (live instances
+    // hold 01/02/05/10/FF.. - partly garbage), so kept as uint8_t. Which state it stands for
+    // (playing / hidden) was not established.
+    uint8_t field_0;
+    // inferred: bg3.exe+0x6D4580 creates the component with 0 here; bg3.exe+0x1D51750 skips the
+    // entity when it is 0 and writes 0 back after at least one attached effect was processed.
+    bool NeedsUpdate;
+    // inferred: Created as invalid (0xFFFFFFFF) by bg3.exe+0x6D4580 (all 21 live instances hold
+    // 0xFFFFFFFF). bg3.exe+0x1D51B60 compares it with +0x30 of the ls::EffectComponent of each
+    // entity attached to the dummy visual (attachment flag bit 10); +0x30 is
+    // EffectComponent::AnimationName in Script Extender's Effect.h. Only effects with an equal
+    // name get the visibility request.
+    FixedString AnimationName;
+};
+
+struct TimelineAutomatedLookatComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineAutomatedLookat, "ecl::TimelineAutomatedLookatComponent")
+
+    // inferred: Created with 0 (16-bit store at +0 in bg3.exe+0x6D70B0). The look-at update
+    // bg3.exe+0x20548B0 (called per entity from bg3.exe+0x1D50BA0, query
+    // {eoc::TimelineActorDataComponent, this, eoc::timeline::steering::TimelineSteeringComponent,
+    // optional ecl::TimelineEyeLookAtOverrideComponent}, stride 0x20) returns at once when it is
+    // 0. Live: 0.
+    bool IsEnabled;
+    // inferred: bg3.exe+0x20548B0: when set, a random delay between TLLookAtAutomationConfig
+    // MinDelayTimeSeconds (+0x48) and MaxDelayTimeSeconds (+0x4C) is added to the timeline time
+    // and stored in TriggerTime, Pending is set to 1 and this flag is cleared. Live: 0.
+    bool DelayRequested;
+    // inferred: Two qwords created as 0. bg3.exe+0x20548B0: when both are 0 the target is taken
+    // from the current speaker / listener of the timeline, otherwise these 16 bytes are passed as
+    // an actor Guid to the timeline's actor-to-entity lookup (bg3.exe+0x3CBB2F0). Live: 0.
+    Guid Target;
+    // inferred: Created with 0; set together with TriggerTime, cleared when the look-at request
+    // has been issued to the steering component or the target turns out to be the actor itself
+    // (bg3.exe+0x20548B0). The decompiler lost the pointer assignment; +0x18 is the only byte of
+    // the constructor that fits. Live: 0.
+    bool Pending;
+    // inferred: Created with 0; written as timeline time (Timeline+0x2C) + random delay, and the
+    // look-at is issued once the timeline time passes it (bg3.exe+0x20548B0). Live: 0.
+    float TriggerTime;
+};
+
+struct TimelineCameraShotComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineCameraShot, "ecl::TimelineCameraShotComponent")
+
+    // unknown: Creator bg3.exe+0x1D78680 writes a 16-bit 0 at +0. bg3.exe+0x1D64DF0 tests it: the
+    // camera is (re)applied when field_0 == 0 or NeedsUpdate != 0; when field_0 and field_1 are
+    // both set it only ORs 4 into flags at +0xB0 of the camera object. Probe: 0 in both instances.
+    bool field_0;
+    // unknown: Second byte of the same 16-bit 0; passed as a flag to bg3.exe+0x200C180 together
+    // with field_30/field_40. Probe: 0 and 1.
+    bool field_1;
+    // inferred: bg3.exe+0x1D64DF0 and bg3.exe+0x1F21DB0 resolve comp+8 to an entity through
+    // bg3.exe+0x3CBB2F0 (timeline actor guid -> entity); bg3.exe+0x204F010 compares it with a
+    // camera actor guid; bg3.exe+0x1D65220 fills it from the Guid values of a HashMap<Guid, Guid>
+    // at ecl::Timeline+0x3F8 looked up by field_20. Probe: a GUID-looking value in one instance,
+    // zero in the other.
+    Guid CameraActor;
+    // inferred: Creator writes one byte 0 at +0x18; bg3.exe+0x1D64DF0 requires it to be set before
+    // using CameraActor and clears it together with the 16 bytes at +8 (std::optional<Guid>
+    // pattern).
+    bool HasCameraActor;
+    // unknown: 16 bytes: bg3.exe+0x1D65220 hashes them (qword0 ^ qword1) as the key into the
+    // HashMap<Guid, Guid> at ecl::Timeline+0x3F8 and into a HashMap<Guid, T*> at +0x48 of the
+    // object at TimelineContent+0x250; cleared by bg3.exe+0x1D64DF0. Probably a scene/shot id (the
+    // two maps of ecl::Timeline in that area are QuestionHoldCameraActorIdToSceneId and
+    // CompanionCameraSceneIdToActorId) - not established which.
+    Guid field_20;
+    // unknown: bg3.exe+0x1D65220 resets it to the null Guid constant (bg3.exe+0x625AAD0) and fills
+    // it through bg3.exe+0x1D653E0 with the Guid of the timeline actor whose slot index equals the
+    // int at +0x2C of the object found by field_20.
+    Guid field_30;
+    // unknown: Same as field_30 for the int at +0x30 of that object (-2 = copy field_30);
+    // bg3.exe+0x1D65220 returns false when it stays null.
+    Guid field_40;
+    // unknown: Creator writes a 16-bit 0 at +0x50; bg3.exe+0x1D64DF0 sets this byte to 1 when the
+    // lookup of field_20 fails and the component is reset.
+    bool field_50;
+    // inferred: bg3.exe+0x1D64DF0: when set, the camera actor is re-resolved (bg3.exe+0x1D65220)
+    // and the byte is cleared afterwards.
+    bool NeedsUpdate;
+    // unknown: Creator zeroes two qwords; bg3.exe+0x1D653E0 compares an actor Guid with
+    // comp+0x58/+0x60 and returns at once on a match (a preferred actor); zeroed on reset by
+    // bg3.exe+0x1D64DF0.
+    Guid field_58;
+};
+
+struct TimelineDummyAnimationThrottleSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineDummyAnimationThrottleSingleton, "ecl::TimelineDummyAnimationThrottleSingletonComponent")
+
+    // inferred: bg3.exe+0x1F1C430 (ecl::TimelineDummyAnimationThrottleSystem update, reached from
+    // the callback bg3.exe+0x7627B0 set by the registration bg3.exe+0x7490E0) sets the size at
+    // +0x0C to 0 every frame, then for every dummy whose wanted state differs from bit 4 of a byte
+    // at +0x24 of its animation object: when the wanted state is 1 it appends the 8-byte entity
+    // handle of the row here (stride 8, grow helper bg3.exe+0x5C4620) and writes 1 to +0xC0 of the
+    // row's first component. The wanted state is 1 when the global switch at
+    // ls::GlobalSwitches+0x132E is off, so 1 = animation runs normally. Probe: heap pointer,
+    // capacity 8, size 0.
+    Array<EntityHandle> Unthrottled;
+    // inferred: Same function: size at +0x1C set to 0 every frame; when the wanted state is 0
+    // (switch on, the system's check object at system+0x10 says yes, and the dummy is not shown /
+    // flags at +2,+3 of a 12-byte row are not both 1) the entity handle is appended here and 0 is
+    // written to +0xC0 of the row's first component. Probe: heap pointer, capacity 4, size 0.
+    Array<EntityHandle> Throttled;
+};
+
+struct TimelineEyeLookAtOverrideComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineEyeLookAtOverride, "ecl::TimelineEyeLookAtOverrideComponent")
+
+    // inferred: Created with 0 (bg3.exe+0x6D7390). The automated look-at bg3.exe+0x20548B0 writes
+    // TLLookAtAutomationConfig+0x37 (IsEyeLookAtEnabled, Timeline.h) here and fills the other
+    // fields only when it is set; the eye update bg3.exe+0x1D918A0 uses the component only when it
+    // is non-zero. Live: 0.
+    bool IsEnabled;
+    // inferred: Created as the null handle (live 0xFFC0000000000000 on all 4 instances);
+    // bg3.exe+0x20548B0 stores the entity the actor was told to look at; bg3.exe+0x1D918A0 passes
+    // &Target, &Bone to bg3.exe+0x2054C00 to compute the position.
+    EntityHandle Target;
+    // inferred: Created invalid (0xFFFFFFFF, live the same); assigned with the FixedString copy
+    // helper bg3.exe+0x412E090 from TLLookAtAutomationConfig+0x38 (EyeLookAtBone).
+    FixedString Bone;
+    // inferred: 12 bytes copied from TLLookAtAutomationConfig+0x3C (EyeLookAtOffset) in
+    // bg3.exe+0x20548B0; created as 0.
+    glm::vec3 Offset;
+    // inferred: Output of bg3.exe+0x2054C00(&Target, &Bone, &this) in bg3.exe+0x1D918A0; when that
+    // fails the 12 bytes are overwritten with the default look-at position passed by the caller.
+    // Created as 0.
+    glm::vec3 TargetPosition;
+};
+
+struct TimelineFadeRequest
+{
+    // unknown: bg3.exe+0x1D6BA20 writes 0 when it inserts / overwrites the map value (value stride
+    // 0x10: 'values + index * 0x10').
+    float field_0;
+    // unknown: bg3.exe+0x1D6BA20 writes 0x40800000 = 4.0 (same pair '0, 4.0' that starts
+    // ecl::TimelineFadeView0Component in the probe) - probably the fade speed/duration.
+    float field_4;
+    // inferred: bg3.exe+0x1D6BA20: set to '(systemValue == 0)' where systemValue is the bool of
+    // ecl::TimelineSystem::FadeRequests[view] (HashMap<EntityHandle, bool> at system +0xA40,
+    // Script Extender name) for the same entity.
+    bool FadeIn;
+    // unknown: bg3.exe+0x1D6BA20 writes the same '(systemValue == 0)' value.
+    bool field_9;
+    // unknown: bg3.exe+0x1D6BA20 writes 0.
+    bool field_A;
+    [[bg3::hidden]] std::array<uint8_t, 1> _PadB;
+    // unknown: bg3.exe+0x1D6BA20 writes 1 (low byte of the last dword; the other three bytes keep
+    // stack garbage).
+    bool field_C;
+};
+
+struct TimelineFadeRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineFadeRequestsSingleton, "ecl::TimelineFadeRequestsSingletonComponent")
+
+    // inferred: Constructor bg3.exe+0x1D77460 zeroes 0..0x80 and runs FUN_1418c2f60 (loop of 2
+    // over 0x40-byte maps); destructor bg3.exe+0x697CD0 = vector destructor (count 2, size 0x40,
+    // map destructor FUN_1405c4870 that frees +0x30 and the key set). bg3.exe+0x1D6BA20
+    // (ecl::TimelineSystem, component fetched by FUN_141d43000 whose query is
+    // Spec<TimelineFadeRequestsSingletonComponent>) indexes 'view * 0x40 + comp' for view 0..1,
+    // inserts with the 8-byte entity key from the system's FadeRequests[view] and writes a 16-byte
+    // value. The index is the render view (the fade components come in View0 / View1 pairs). Name
+    // taken from the Script Extender member ecl::TimelineSystem::FadeRequests that feeds it.
+    std::array<HashMap<EntityHandle, TimelineFadeRequest>, 2> FadeRequests;
+    // inferred: Constructor zeroes 0x80..0xE0; destructor runs the vector destructor (count 2,
+    // size 0x30, set destructor) on +0x80. bg3.exe+0x1D6BA20 inserts 8-byte entity handles taken
+    // from two queries into +0x80 (first query) and +0xB0 (second query) when the entity is not in
+    // the system's FadeRequests map (FUN_140721030(comp + 0x80 / 0xB0, .., &entity)). The system
+    // registration lists ecl::timeline::RemoveFadeRequestEntityOneFrameComponent, hence the name
+    // (not confirmed). bg3.exe+0x18C2070 clears all four containers each frame.
+    std::array<HashSet<EntityHandle>, 2> RemoveFadeRequests;
+};
+
+struct TimelineFadeView0Component : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineFadeView0, "ecl::TimelineFadeView0Component")
+
+    // inferred: bg3.exe+0x18F6530 creates the component with 0.0. bg3.exe+0x18EB2D0 copies the
+    // first 8 bytes of the per-entity fade request (16-byte values of a HashMap<EntityHandle,
+    // request> in ecl::TimelineFadeRequestsSingletonComponent) here on every request, and copies
+    // this value into +0x0C when the request is immediate - so +0 is the value being faded to and
+    // +0x0C the value reached so far. Live: 0.0 (faded out).
+    float TargetValue;
+    // unknown: Default 4.0 in bg3.exe+0x18F6530; overwritten from the second float of the fade
+    // request in bg3.exe+0x18EB2D0. Live: 4.0. Probably the fade speed, but no reader was found.
+    float field_4;
+    // inferred: Default 0; copied from byte 8 of the request. When set, bg3.exe+0x18EB2D0 writes
+    // TargetValue into CurrentValue at once instead of leaving the fade to run. Live: 1.
+    bool Immediate;
+    // unknown: Default 0 (one 16-bit store with +8); copied from byte 9 of the request. Live: 1.
+    bool field_9;
+    // unknown: Default 1; copied from byte 10 of the request, which bg3.exe+0x18EB2D0 also
+    // forwards (with a 'fully faded out at once' flag) into a second per-entity request map. Live:
+    // 0.
+    bool field_A;
+    // inferred: Default 1.0; set to TargetValue by bg3.exe+0x18EB2D0 when Immediate is set. Live:
+    // 0.0.
+    float CurrentValue;
+    // inferred: Default 1; bg3.exe+0x18EB2D0 sets 1 when a request arrives (0 only when a new
+    // component is created by an immediate request on an entity that already had the fade tag),
+    // and writes 0 when the entity is in the 'remove fade' list (it then also removes
+    // ecl::TimelineFadeActiveView0Component). Live: 1.
+    bool Active;
+};
+
+struct TimelineQuestionHoldAutomationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineQuestionHoldAutomation, "ecl::TimelineQuestionHoldAutomationComponent")
+
+    // inferred: Created with 0 (bg3.exe+0x1D78810). bg3.exe+0x1D5EF90 sets it to 1 when the active
+    // source of aspk::QuestionHoldAutomationSettings (phase override, timeline header or
+    // TLSystemConfig default) has IsEnabled set and the node type is not 0x80; bg3.exe+0x1D64DF0
+    // does nothing while it is 0. Live: 0.
+    bool IsEnabled;
+    // inferred: bg3.exe+0x1D5EF90 copies it from QuestionHoldAutomationSettings+0x0C (phase +0x3C
+    // = CycleSpeed in AllSparkShared.h). Live: 5.0.
+    float CycleSpeed;
+    // inferred: Copied from QuestionHoldAutomationSettings+0x10 (CycleSpeedDeviation) in
+    // bg3.exe+0x1D5EF90. Live: 1.0.
+    float CycleSpeedDeviation;
+    // inferred: bg3.exe+0x1D64DF0 adds the frame time to it every update, compares it with
+    // StartTime / CurrentCycleTime and resets it to 0 when a camera switch is triggered. Live: 0.
+    float Timer;
+    // inferred: Set to 1 in bg3.exe+0x1D64DF0 once Timer reaches StartTime (start offset passed);
+    // after that a switch happens each time Timer reaches CurrentCycleTime. Copied to
+    // Timeline+0x498 (IsDuringQuestionHoldAutomation) every update; cleared in bg3.exe+0x1D5EF90
+    // and bg3.exe+0x1D65580. Live: 0.
+    bool IsCycling;
+    // inferred: Result of bg3.exe+0x1F96000(component) (random time from CycleSpeed and
+    // CycleSpeedDeviation), re-rolled in bg3.exe+0x1D65580 after each switch. Live: 4.197 (within
+    // 5 +- 1).
+    float CurrentCycleTime;
+    // inferred: bg3.exe+0x1D5EF90: phase duration (TimelinePhase+0x08) minus a random value in
+    // StartOffset +- StartOffsetDeviation (settings +0x14 / +0x18), 0 when there is no phase.
+    // bg3.exe+0x1D64DF0 starts cycling when Timer >= StartTime. Live: 6.98.
+    float StartTime;
+};
+
+struct TimelineShapeShiftComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineShapeShift, "ecl::TimelineShapeShiftComponent")
+
+    // inferred: bg3.exe+0x6D4DF0 creates it as a copy of the empty FixedString constant (with
+    // IncRef). The update bg3.exe+0x1D4EB00 (query {eoc::TimelineActorDataComponent, this,
+    // ecl::TLPreviewDummy}, stride 4) compares it with TLPreviewDummy+0x7C
+    // (ShapeShiftSourceTemplateOverride in Timeline.h); when different it resolves it as a
+    // template id through the level / global template manager (bg3.exe+0x1B4EF50), falls back to
+    // TLPreviewDummy+0x80 (OriginalCharacterTemplate) when it is invalid, re-applies the dummy
+    // component layout (bg3.exe+0x426A420), sets the dummy visual resource, stores the template id
+    // into TLPreviewDummy+0x7C and calls ecl::TLPreviewDummy::ReloadVisual. Live: 0xFFFFFFFF
+    // (invalid = not shape-shifted) on all 21 instances.
+    FixedString Template;
 };
 
 DEFINE_TAG_COMPONENT(ecl, BasicGOVisualFadeActiveView0Component, ClientBasicGOVisualFadeActiveView0)
@@ -322,6 +768,43 @@ END_NS()
 
 BEGIN_NS(ecl::sound)
 
+struct TimelinePlayerSoundState
+{
+    // inferred: bg3.exe+0x1D99430 fills the 16 bytes from the value of
+    // ecl::PlayersInTimelineGlobalComponent for the player (timeline instance id) and sets the
+    // flag at +0x10; bg3.exe+0x1D9BBC0 compares old and new entries by these two qwords and counts
+    // players per Guid.
+    Guid Timeline;
+    // inferred: bg3.exe+0x1D99430 clears it first and sets it when the player has a timeline;
+    // bg3.exe+0x1D9BBC0 tests it before using the Guid (std::optional<Guid> pattern).
+    bool HasTimeline;
+    // inferred: bg3.exe+0x1D9A490 stores the time argument of the update here; bg3.exe+0x1D9BBC0
+    // compares it as a double (the earlier one wins among equal priorities; initial best
+    // 0x47EFFFFFE0000000 = FLT_MAX as double).
+    double Time;
+    // inferred: bg3.exe+0x1D9A490 stores 0..3 (result of bg3.exe+0x1D99430: 0 or 2 by timeline
+    // state, else 1, 3 when the player has no entity); bg3.exe+0x1D9BBC0 picks the player with the
+    // lowest value (initial best 4) and compares it between old and new state.
+    uint8_t Priority;
+};
+
+struct TimelineStateSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSoundTimelineStateSingleton, "ecl::sound::TimelineStateSingletonComponent")
+
+    // inferred: bg3.exe+0x1D99C70 (ecl::sound::TimelinePrioritySystem update; registration
+    // bg3.exe+0x733260 lists the component as written) copies the map: keys are shorts (compared
+    // as *(short*)(keys + i*2)), values are copied with stride 0x28 from +0x30, count from +0x2C.
+    // bg3.exe+0x1D9BBC0 writes the new map back (alloc of count * 0x28). Probe: 1 key, 1 value.
+    HashMap<PlayerId, TimelinePlayerSoundState> Players;
+    // inferred: bg3.exe+0x1D9BBC0 writes a short at +0x40: the key of the entry with the lowest
+    // Priority, then earliest Time. Probe: 1.
+    PlayerId ActivePlayer;
+    // inferred: bg3.exe+0x1D9BBC0 writes a byte at +0x42: true when all entries with a timeline
+    // name exactly one timeline and at least two players are in it. Probe: 0 (single player).
+    bool SharedTimeline;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::sound, ListenerSpatializationConfigChangedOneFrameComponent, ClientSoundListenerSpatializationConfigChanged)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::sound, ModuleSoundLoadedRequestOneFrameComponent, ClientSoundModuleSoundLoadedRequest)
 DEFINE_TAG_COMPONENT(ecl::sound, SneakStateSingletonComponent, ClientSoundSneakStateSingleton)
@@ -354,6 +837,100 @@ DEFINE_ONEFRAME_TAG_COMPONENT(ecl::thrown, PrepareAnimationRequestOneFrameCompon
 END_NS()
 
 BEGIN_NS(ecl::timeline)
+
+struct ActorParticipationSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineActorParticipationSingleton, "ecl::timeline::ActorParticipationSingletonComponent")
+
+    // inferred: bg3.exe+0x1D3B830 (ecl::timeline::ActorParticipationSystem update; registration
+    // bg3.exe+0x732270 lists the component as written, callback bg3.exe+0x75B750). For every
+    // entity of a query over a 0x20-byte component it walks an Array of 8-byte entity handles
+    // (stride 8) and inserts each handle as key (bg3.exe+0x721030) with the 8-byte handle of the
+    // query row's own entity as value (values at +0x30, stride 8, reallocated as count * 8); it
+    // then inserts a second key - the entity at +0x88 of the object returned by bg3.exe+0x13FB710
+    // for the actor, when valid (not 0xFFC0000000000000) - with the same value. A second query
+    // over a 0xB0-byte component removes keys (swap with last, stride 8). Probe: 92 keys, capacity
+    // 128, values capacity 128.
+    HashMap<EntityHandle, EntityHandle> ActorTimelines;
+};
+
+struct TimelineThothRunRequest
+{
+    // inferred: bg3.exe+0x18A9610 renumbers the pending requests 0..n-1 by writing the loop
+    // counter at +0 of every 0x238-byte element; bg3.exe+0x18AC420 copies it into the result
+    // record.
+    int32_t Index;
+    // inferred: bg3.exe+0x18AC420 uses the byte at +4 as the key of a HashMap<uint8_t,
+    // Array<0x68-byte rule>> (hash = value % size, keys compared as bytes).
+    uint8_t Type;
+    [[bg3::hidden]] std::array<uint8_t, 3> _Pad5;
+    // unknown: NOT decoded. An object destroyed by bg3.exe+0x18856E0 starts at +8. Known inside
+    // it: +0x1E8 and +0x1F8 are two condition/tag blocks passed to a virtual call (slot 2 of the
+    // object at system + 0x58) and guarded by bool flags at +0x1F4 and +0x204 (bg3.exe+0x18AB4F0).
+    std::array<uint8_t, 560> field_8;
+};
+
+struct TimelineThothRunResult
+{
+    // inferred: bg3.exe+0x18A9610 copies it from +0x18 of the system's 0x20-byte match record,
+    // which bg3.exe+0x18AC420 fills with TimelineThothRunRequest::Index.
+    int32_t RequestIndex;
+    // inferred: 16 bytes copied from +0 of the match record = the first 16 bytes of the matching
+    // 0x68-byte rule (bg3.exe+0x18AC420); bg3.exe+0x18AC5A0 evaluates the rule's condition at
+    // +0x14.
+    Guid Id;
+};
+
+struct GlobalRunThothComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineGlobalRunThoth, "ecl::timeline::GlobalRunThothComponent")
+
+    // inferred: Creator bg3.exe+0x18AD230 zeroes three arrays; destructor bg3.exe+0x18884B0
+    // destroys elements of +0x00 and +0x10 with bg3.exe+0x1889320. bg3.exe+0x18A9610
+    // (ecl::timeline::ArenaDecisionSystem update; registration bg3.exe+0x7466C0, callback
+    // bg3.exe+0x761A70) swaps the system's pending array (system + 0x70, stride 0x238) into +0x00
+    // (bg3.exe+0x18ACBD0) and then walks +0x00 with stride 0x238, size at +0x0C.
+    Array<TimelineThothRunRequest> Requests;
+    // inferred: Same function: the second bg3.exe+0x18ACBD0 call swaps the array that was in +0x00
+    // into +0x10 through a local; the old +0x10 contents are destroyed with stride 0x238.
+    Array<TimelineThothRunRequest> PreviousRequests;
+    // inferred: Same function: size at +0x2C reset to 0 every frame, then one 0x18-byte element
+    // appended (grow helper bg3.exe+0x5C4B00) per match record of the system (system + 0x80,
+    // stride 0x20, sorted first).
+    Array<TimelineThothRunResult> Results;
+    // inferred: Creator bg3.exe+0x18AD230 stores the result of rand() at +0x30 and the same value
+    // at +0x34. Probe: 0x2CD6 in both.
+    int32_t Seed;
+    // inferred: See Seed; which of the two advances was not established (both equal in the probe).
+    int32_t InitialSeed;
+};
+
+struct TimelineRenderFrameVisibilityRequest
+{
+    // inferred: Toolkit build,
+    // ecl::TLPreviewDummyHelpers::SetDummyVisibility(RenderFrameVisibilityRequestsComponent*,
+    // ecs::EntityRef const&, bool, short const&) at EoCClient.dll+0xA99830: the handle of the
+    // EntityRef is the first 8 bytes of the 16-byte element pushed with EoCClient.dll+0x67EFA0.
+    EntityHandle Entity;
+    // inferred: Same function: the 'short const&' argument is stored at +8. The game caller
+    // bg3.exe+0x1D51B60 passes each entry of the timeline's int16 player list (bg3.exe+0x1F916C0),
+    // i.e. Script Extender's PlayerId (int16_t).
+    int16_t PlayerId;
+    // inferred: Same function: the bool argument is stored at +10.
+    bool Visible;
+};
+
+struct RenderFrameVisibilityRequestsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineRenderFrameVisibilityRequests, "ecl::timeline::RenderFrameVisibilityRequestsComponent")
+
+    // inferred: bg3.exe+0x1A4BF00 creates the component as an empty array (pointer 0, capacity 0,
+    // size 0) and registers the array destructor thunk bg3.exe+0x5946C0. The component argument of
+    // SetDummyVisibility is used directly as the array (EoCClient.dll+0x67EFA0: growth with
+    // element size 0x10, alignment 8). Live: heap pointer, capacity 256, size 0 (requests are
+    // consumed every frame).
+    Array<TimelineRenderFrameVisibilityRequest> Requests;
+};
 
 DEFINE_TAG_COMPONENT(ecl::timeline, ActiveMainMenuTriggerComponent, ClientTimelineActiveMainMenuTrigger)
 DEFINE_TAG_COMPONENT(ecl::timeline, LoadedMainMenuTriggerComponent, ClientTimelineLoadedMainMenuTrigger)
@@ -415,6 +992,21 @@ DEFINE_TAG_COMPONENT(ecs, IsReplicationOwnedComponent, EcsIsReplicationOwned)
 END_NS()
 
 BEGIN_NS(eoc)
+
+struct MusicalInstrumentComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(MusicalInstrument, "eoc::stats::MusicalInstrumentComponent")
+
+    // inferred: Creator bg3.exe+0x2EC4770; its caller bg3.exe+0x2EC4490 takes the item's stats
+    // object, checks that stat attribute at global bg3.exe+0x617531C (Slot) equals 0x10
+    // (ItemSlot::MusicalInstrument) and stores the integer value of the stat attribute named by
+    // the FixedString global bg3.exe+0x6253568 (FUN_14102aee0). Stats data: Armor entries have
+    // 'InstrumentType' (ARM_Instrument_Lute: Lute, ARM_Instrument_Lyre: Lyre) and ValueLists.txt
+    // defines valuelist InstrumentType: None=0, Bagpipes=1, Drum=2, Dulcimer=3, Flute=4, Lute=5,
+    // Lyre=6, Horn=7, Shawm=8, Violin=9, Musicbox=10, Saxophone=11. Live: 5 on
+    // ARM_Instrument_Lute_B, 6 on SCL_SpidersLyre - matches Lute/Lyre. Replicated component.
+    uint8_t InstrumentType;
+};
 
 DEFINE_TAG_COMPONENT(eoc, BodyTypeUpdatedNotification, BodyTypeUpdatedNotification)
 DEFINE_TAG_COMPONENT(eoc, RPGStatsComponent, RPGStats)
@@ -654,7 +1246,116 @@ END_NS()
 
 BEGIN_NS(eoc::timeline)
 
+struct ActorVisualDataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(TimelineActorVisualData, "eoc::timeline::ActorVisualDataComponent")
+
+    // inferred: Server writer bg3.exe+0x330CEC0 (after bg3.exe+0x33162A0 fetches the component for
+    // writing with replication) assigns it with the FixedString copy helper bg3.exe+0x412E090 from
+    // the actor's template +0x74 (visual template), then overrides it with +0x1A0 of the
+    // template's character-visual resource (resource type 0x1A) when that exists. Toolkit build
+    // EoCClient.dll+0xA96FA0 passes this field to ecl::TLPreviewDummy::SetVisualResourceId. Live
+    // (both sides): 0x20800541, a FixedString index.
+    FixedString Visual;
+    // inferred: bg3.exe+0x330CEC0 assigns it from the actor's template +0x10 (template id).
+    // EoCClient.dll+0xA96FA0 copies it into the dummy's template-id field next to
+    // SetVisualResourceId. Live: 0x1D101B01.
+    FixedString Template;
+};
+
 DEFINE_TAG_COMPONENT(eoc::timeline, HideEquipmentComponent, TimelineHideEquipment)
+
+END_NS()
+
+BEGIN_NS(eoc::timeline::steering)
+
+struct TimelineSteeringComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(TimelineSteering, "eoc::timeline::steering::TimelineSteeringComponent")
+
+    // inferred: Constructors bg3.exe+0x1D793C0 / reset bg3.exe+0x2054700 write 3.
+    // bg3.exe+0x20425F0 (timeline look-at event handler) builds a request with 'mode = 3; if
+    // (key.TurnMode != 0) mode = key.TurnMode' from aspk LookAtEventKey +0x24 (TurnMode in
+    // AllSpark.h) and bg3.exe+0x20547D0 stores it here. Probe: 3 in all 4 instances.
+    uint8_t TurnMode;
+    // inferred: Constructor writes the null handle constant DAT_146174970; bg3.exe+0x20547D0
+    // copies the request's first 8 bytes (entity resolved from the key's Target Guid by
+    // FUN_143cbb2f0); bg3.exe+0x2054C00 resolves the look-at position from this entity. Probe: a
+    // live entity in one instance, null handle in the others.
+    EntityHandle Target;
+    // inferred: bg3.exe+0x20547D0 copies 16 bytes that bg3.exe+0x20425F0 took from LookAtEventKey
+    // +0x10 (Target Guid); bg3.exe+0x20425F0 compares the 16 bytes with the previous key's to
+    // detect a target change. Probe: GUID-like bytes in the instance that has a target.
+    Guid TargetId;
+    // inferred: Default -1; destructor bg3.exe+0xD91000 DecRefs it; bg3.exe+0x20547D0 assigns the
+    // FixedString from LookAtEventKey +0x20 (Bone); bg3.exe+0x2054C00 looks the bone up on the
+    // target's visual.
+    FixedString Bone;
+    // inferred: Default 1.0; bg3.exe+0x20425F0 -> 0x20547D0 from LookAtEventKey +0x28.
+    float TurnSpeedMultiplier;
+    // inferred: Default 1.0; from LookAtEventKey +0x2C.
+    float TorsoTurnSpeedMultiplier;
+    // inferred: Default 1.0; from LookAtEventKey +0x30. Probe: 1.0 or 0.2.
+    float HeadTurnSpeedMultiplier;
+    // unknown: Default 1.0; bg3.exe+0x20547D0 copies request +0x20, which bg3.exe+0x20425F0 sets
+    // to 0. Probe: 0 or 1.
+    float field_30;
+    // unknown: Constructor writes 0 (upper half of the 8-byte write at 0x30); not written by
+    // bg3.exe+0x20547D0. Probe: always 0.
+    float field_34;
+    // inferred: Default 0; bg3.exe+0x20425F0: '(float) key.Weight' when the optional<double> at
+    // LookAtEventKey +0x38 is set, or forced to 1.0 in one branch; stored by bg3.exe+0x20547D0.
+    float Weight;
+    // inferred: Default 22.0; '(float) key.SafeZoneAngle' from the optional<double> at
+    // LookAtEventKey +0x48. Probe: 22 or 80.
+    float SafeZoneAngle;
+    // inferred: Default 26.0; from the optional<double> at LookAtEventKey +0x58. Probe: 26 or 80.
+    float HeadSafeZoneAngle;
+    // inferred: bg3.exe+0x20547D0 copies 12 bytes taken from LookAtEventKey +0x68 (Offset);
+    // bg3.exe+0x2055500 rotates the three floats by a quaternion and adds them to TargetPosition.
+    glm::vec3 Offset;
+    // unknown: Constructor writes 0; no writer found. Probe: always 0.
+    uint8_t field_50;
+    // unknown: bg3.exe+0x20547D0 copies request +0x3C, which bg3.exe+0x20425F0 sets to 1. Probe: 0
+    // or 1.
+    bool field_51;
+    // inferred: From LookAtEventKey +0x74 (Reset). bg3.exe+0x20542C0: when set, the turn state at
+    // 0x64..0x6F is cleared (and the rotation applied at once for LookAtMode 4).
+    bool Reset;
+    // inferred: bg3.exe+0x20425F0 computes it: 1 when the target Guid, the Reset/TrackingMode pair
+    // or the bone differs from the previous key's, else 0.
+    bool TargetChanged;
+    // inferred: bg3.exe+0x20425F0 sets the request byte to 1 only when the owner entity is valid,
+    // together with TargetChanged; constructor 0.
+    bool HasRequest;
+    // inferred: Constructor default 2 (dword 0x30200 at 0x54); from LookAtEventKey +0x75
+    // (LookAtMode). bg3.exe+0x20542C0 compares with 4, bg3.exe+0x2055500 with '> 1'.
+    uint8_t LookAtMode;
+    // inferred: Constructor default 3; from LookAtEventKey +0x76 (LookAtInterpMode). Probe: 3.
+    uint8_t LookAtInterpMode;
+    // inferred: From LookAtEventKey +0x25 (TrackingMode), request +0x51.
+    uint8_t TrackingMode;
+    // inferred: bg3.exe+0x20542C0 calls bg3.exe+0x2054C00(&Target, &Bone, &this[0x58]), which
+    // writes the world position of the target (bone / bounds / transform translate); the result is
+    // then used to compute the turn angle. Probe: a world position (46.2, 17.0, -422.9).
+    glm::vec3 TargetPosition;
+    // inferred: bg3.exe+0x20542C0: small state machine 0 -> 1 (stores the two angles) -> 2 -> 0.
+    uint8_t TurnState;
+    // unknown: bg3.exe+0x20542C0: tested to advance TurnState and cleared on each transition (a
+    // 'step finished' flag set elsewhere).
+    bool field_65;
+    // inferred: Constructor writes 1; bg3.exe+0x20542C0 does nothing when it is 0. Probe: 1 in all
+    // instances.
+    bool Enabled;
+    // inferred: bg3.exe+0x20542C0 stores the entity's current yaw (atan2 of its rotation) here
+    // when TurnState goes 0 -> 1 and compares against it in state 1.
+    float TurnStartAngle;
+    // inferred: bg3.exe+0x20542C0 stores the wrapped angle difference to the target (compared with
+    // pi/4 beforehand), negates it on 1 -> 2.
+    float TurnAngleDelta;
+    // unknown: Constructor bg3.exe+0x1D793C0 writes one byte 0; no reader found.
+    uint8_t field_70;
+};
 
 END_NS()
 
@@ -677,6 +1378,45 @@ DEFINE_ONEFRAME_TAG_COMPONENT(eoc::weight, ChangedEventOneFrameComponent, Weight
 END_NS()
 
 BEGIN_NS(esv)
+
+struct ServerTimelineActorDataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerTimelineActorData, "esv::ServerTimelineActorDataComponent")
+
+    // inferred: bg3.exe+0x3312010 (called per entry of a HashMap<Guid, ...> of the timeline's
+    // actors from bg3.exe+0x3308CB0) creates the component (bg3.exe+0x3316120) on the actor's
+    // entity and copies the 16-byte map key here; the same key is passed as the actor Guid to the
+    // actor-data creation bg3.exe+0x330CEC0, and in the sibling branch it is stored after the
+    // timeline Guid of a request. Live: two different GUIDs for the two actors.
+    Guid Actor;
+    // unknown: Copied with the array copy bg3.exe+0x2FBE710, whose element size is 4 (allocation
+    // count*4, 4-byte plain copies without reference counting - so not FixedString) from the first
+    // array of the component returned by bg3.exe+0x3311E10 for the timeline entity.
+    // bg3.exe+0x3308E10 treats the timeline as still waiting (keeps
+    // esv::ServerTimelineCreationConfirmationComponent) while any actor of that timeline has a
+    // non-empty array (size at +0x1C != 0). Live: pointer, capacity 1, size 1 on both instances.
+    // Most likely the users (UserId) that still have to confirm the actor, not proven.
+    Array<uint32_t> field_10;
+    // inferred: bg3.exe+0x3312010 stores the timeline entity (first field of the timeline query
+    // result) here; bg3.exe+0x3308E10 compares it with the timeline entity being checked. Live:
+    // the same entity handle on both instances.
+    EntityHandle Timeline;
+};
+
+struct ServerTimelineDataComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerTimelineData, "esv::ServerTimelineDataComponent")
+
+    // inferred: bg3.exe+0x330C7C0 fills it right after creation (bg3.exe+0x3314E70) with the 16
+    // bytes at +0xE8 of the timeline creation request - the same bytes it stores into
+    // eoc::SyncedTimelineControlComponent+0x38 (SceneTrigger in Timeline.h). bg3.exe+0x330A1E0
+    // passes a pointer to it to esv::TimelineSystem::GetSceneTrigger(Guid*) (named function) next
+    // to the new SceneTrigger of the synced control, i.e. it keeps the scene trigger the timeline
+    // was created with. Live: a valid v4 GUID (7f7e953c-fa7d-4e98-...).
+    Guid SceneTrigger;
+    // unknown: bg3.exe+0x330C7C0 writes one byte 0 here after creation; live 0. No reader found.
+    bool field_10;
+};
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseSightReloadedOneFrameComponent, ServerBaseSightReloaded)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv, BaseSizeReloadedOneFrameComponent, ServerBaseSizeReloaded)
@@ -1119,6 +1859,61 @@ END_NS()
 
 BEGIN_NS(esv::unsheath)
 
+struct ConsumingComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerUnsheathConsuming, "esv::unsheath::ConsumingComponent")
+
+    // inferred: Creator bg3.exe+0x32E7A00 (size 4, default 0). bg3.exe+0x32E73A0
+    // (esv::unsheath::ConsumingSystem; for a status of type 5 whose item use type is 2 or 3)
+    // writes 0x3F19999A (0.6 s) right after creating/refreshing it, then every tick subtracts the
+    // frame time (GameTime+8, scaled by an optional per-entity time factor; 0 while paused) and
+    // removes the component when the value is <= 0. The resolver bg3.exe+0x32F1AD0 tests presence
+    // only and adds reason 0xF with Sheathed.
+    float Timer;
+};
+
+struct DefaultChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerUnsheathDefaultChanged, "esv::unsheath::DefaultChangedOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x32E9260 (size 4, default 0). Its only caller bg3.exe+0x32E8810
+    // (esv::unsheath::DefaultSystem update) applies a pending 8-byte record {int, bool} to
+    // esv::unsheath::DefaultComponent (+0 int field_0, +4 bool field_4) and writes the same int
+    // here: the new DefaultComponent.field_0. Reader bg3.exe+0x32E2DE0 (CombatSystem, via getter
+    // bg3.exe+0x32E44C0) treats values 2 and 3 as a trigger (value-2 < 2). Capture: 2.
+    int32_t Value;
+};
+
+struct EquipmentChangedOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerUnsheathEquipmentChanged, "esv::unsheath::EquipmentChangedOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x32F4070 (size 16, both null handles). bg3.exe+0x32F1AD0 creates
+    // it when the newly resolved weapon pair differs from eoc::unsheath::StateComponent+0x0/+0x8
+    // and copies StateComponent+0x0 (MainHandWeapon, value before the update) here; the new pair
+    // is then written to StateComponent. Capture: null handle (was sheathed).
+    EntityHandle OldMainHandWeapon;
+    // inferred: Same place: copy of StateComponent+0x8 (OffHandWeapon) before the update. Capture:
+    // null handle.
+    EntityHandle OldOffHandWeapon;
+};
+
+struct StateChangedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_ONEFRAME_COMPONENT(ServerUnsheathStateChangedEvent, "esv::unsheath::StateChangedEventOneFrameComponent")
+
+    // inferred: Creator bg3.exe+0x32F3F00 (size 8, defaults 3,3 = Sheathed). bg3.exe+0x32F1AD0
+    // (server unsheath state resolver: builds a list of 12-byte records {reason,
+    // stats::UnsheathState, 3 flag bytes}, sorts by reason, the last one wins) writes
+    // eoc::unsheath::StateComponent+0x14 (State, before the update) here when the resolved state
+    // differs from it. Enum underlying size 4. Capture: 3 (Sheathed).
+    stats::UnsheathState OldState;
+    // inferred: Same place in bg3.exe+0x32F1AD0: the resolved state (state of the winning record)
+    // that is then stored into StateComponent.State. Capture: 1 (Melee) - the character drew a
+    // melee weapon.
+    stats::UnsheathState NewState;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::unsheath, AnimationRequestOneFrameComponent, ServerUnsheathAnimationRequest)
 DEFINE_TAG_COMPONENT(esv::unsheath, ClimbingComponent, ServerUnsheathClimbing)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::unsheath, RefreshAnimationSubSetRequestOneFrameComponent, ServerUnsheathRefreshAnimationSubSetRequest)
@@ -1353,14 +2148,47 @@ DEFINE_TAG_COMPONENT(navcloud::generate, IsWaitingForGenerateComponent, Navcloud
 END_NS()
 
 // The sizes the game registers for these types.
+static_assert(sizeof(bg3se::ecl::CombatTimelineCreationComponent) == 16);
+static_assert(sizeof(bg3se::ecl::CombatTimelineDataComponent) == 352);
+static_assert(sizeof(bg3se::ecl::CombatTimelineShotEntry) == 16);
+static_assert(sizeof(bg3se::ecl::CombatTimelineShot) == 120);
+static_assert(sizeof(bg3se::ecl::EquipmentVisualsUpdatedEventOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ecl::EquipmentVisualsVFXTargetComponent) == 16);
 static_assert(sizeof(bg3se::ecl::GroundMaterialComponent) == 2);
 static_assert(sizeof(bg3se::ecl::InvisibilityVisualComponent) == 12);
+static_assert(sizeof(bg3se::ecl::PlayersInTimelineGlobalComponent) == 64);
 static_assert(sizeof(bg3se::ecl::SurfaceLightComponent) == 64);
+static_assert(sizeof(bg3se::ecl::TimelineAnimationStateComponent) == 8);
+static_assert(sizeof(bg3se::ecl::TimelineAutomatedLookatComponent) == 32);
+static_assert(sizeof(bg3se::ecl::TimelineCameraShotComponent) == 104);
+static_assert(sizeof(bg3se::ecl::TimelineDummyAnimationThrottleSingletonComponent) == 32);
+static_assert(sizeof(bg3se::ecl::TimelineEyeLookAtOverrideComponent) == 48);
+static_assert(sizeof(bg3se::ecl::TimelineFadeRequestsSingletonComponent) == 224);
+static_assert(sizeof(bg3se::ecl::TimelineFadeRequest) == 16);
+static_assert(sizeof(bg3se::ecl::TimelineFadeView0Component) == 20);
+static_assert(sizeof(bg3se::ecl::TimelineQuestionHoldAutomationComponent) == 28);
+static_assert(sizeof(bg3se::ecl::TimelineShapeShiftComponent) == 4);
 static_assert(sizeof(bg3se::ecl::item::animation::StateComponent) == 6);
+static_assert(sizeof(bg3se::ecl::sound::TimelineStateSingletonComponent) == 72);
+static_assert(sizeof(bg3se::ecl::sound::TimelinePlayerSoundState) == 40);
+static_assert(sizeof(bg3se::ecl::timeline::ActorParticipationSingletonComponent) == 64);
+static_assert(sizeof(bg3se::ecl::timeline::GlobalRunThothComponent) == 56);
+static_assert(sizeof(bg3se::ecl::timeline::TimelineThothRunRequest) == 568);
+static_assert(sizeof(bg3se::ecl::timeline::TimelineThothRunResult) == 24);
+static_assert(sizeof(bg3se::ecl::timeline::RenderFrameVisibilityRequestsComponent) == 16);
+static_assert(sizeof(bg3se::ecl::timeline::TimelineRenderFrameVisibilityRequest) == 16);
 static_assert(sizeof(bg3se::ecl::unsheath::VisualStateComponent) == 8);
+static_assert(sizeof(bg3se::eoc::MusicalInstrumentComponent) == 1);
 static_assert(sizeof(bg3se::eoc::room_portal::PortalComponent) == 24);
+static_assert(sizeof(bg3se::eoc::timeline::ActorVisualDataComponent) == 8);
+static_assert(sizeof(bg3se::eoc::timeline::steering::TimelineSteeringComponent) == 120);
+static_assert(sizeof(bg3se::esv::ServerTimelineActorDataComponent) == 40);
+static_assert(sizeof(bg3se::esv::ServerTimelineDataComponent) == 24);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundStateProxyComponent) == 24);
+static_assert(sizeof(bg3se::esv::unsheath::ConsumingComponent) == 4);
+static_assert(sizeof(bg3se::esv::unsheath::DefaultChangedOneFrameComponent) == 4);
+static_assert(sizeof(bg3se::esv::unsheath::EquipmentChangedOneFrameComponent) == 16);
+static_assert(sizeof(bg3se::esv::unsheath::StateChangedEventOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::ls::ClusterContentComponent) == 48);
 static_assert(sizeof(bg3se::ls::CopyParentVisibilityComponent) == 8);
 static_assert(sizeof(bg3se::ls::LightFlickerComponent) == 12);
