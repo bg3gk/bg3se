@@ -105,7 +105,7 @@ struct ReactionComponent : public BaseComponent
 {
     DEFINE_COMPONENT(HitReaction, "eoc::hit::ReactionComponent")
 
-    HashMap<EntityHandle, ReactionSource> Reactions;
+    [[bg3::legacy(Reactions)]] HashMap<EntityHandle, ReactionSource> ReactionsTriggered;
 };
 
 END_NS()

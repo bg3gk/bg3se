@@ -501,7 +501,7 @@ struct CustomIconsStorageSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(CustomIconsStorage, "eoc::CustomIconsStorageSingletonComponent")
 
-    HashMap<Guid, ScratchBuffer> Icons;
+    [[bg3::legacy(Icons)]] HashMap<Guid, ScratchBuffer> CustomIconsMap;
 };
 
 struct FogVolumeRequestComponent : public BaseComponent

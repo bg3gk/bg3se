@@ -154,7 +154,7 @@ struct AttackSpellOverrideComponent : public BaseComponent
 {
     DEFINE_COMPONENT(AttackSpellOverride, "eoc::spell::AttackSpellOverrideComponent")
 
-    HashMap<uint8_t, FixedString> AttackSpells;
+    [[bg3::legacy(AttackSpells)]] HashMap<uint8_t, FixedString> SpellIds;
 };
 
 struct ScriptedExplosionComponent : public BaseComponent

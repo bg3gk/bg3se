@@ -35,7 +35,7 @@ struct ContainerComponent : public BaseComponent
 {
     DEFINE_COMPONENT(InventoryContainer, "eoc::inventory::ContainerComponent")
 
-    HashMap<uint16_t, ContainerSlotData> Items;
+    [[bg3::legacy(Items)]] HashMap<uint16_t, ContainerSlotData> Slots;
 };
 
 struct MemberComponent : public BaseComponent

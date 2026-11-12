@@ -39,7 +39,7 @@ struct UsageCountComponent : public BaseComponent
 {
     DEFINE_COMPONENT(PassiveUsageCount, "eoc::passive::UsageCountComponent")
 
-    HashMap<FixedString, PassiveUsageCount> Passives;
+    [[bg3::legacy(Passives)]] HashMap<FixedString, PassiveUsageCount> Counters;
 };
 
 END_SE()

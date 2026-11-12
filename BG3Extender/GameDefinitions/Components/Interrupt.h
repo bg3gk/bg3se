@@ -43,14 +43,14 @@ struct DecisionComponent : public BaseComponent
 {
     DEFINE_COMPONENT(InterruptDecision, "eoc::interrupt::DecisionComponent")
 
-    HashMap<InterruptEvent, InterruptDecision> Decisions;
+    [[bg3::legacy(Decisions)]] HashMap<InterruptEvent, InterruptDecision> EventDecisions;
 };
 
 struct PreferencesComponent : public BaseComponent
 {
     DEFINE_COMPONENT(InterruptPreferences, "eoc::interrupt::PreferencesComponent")
 
-    HashMap<FixedString, InterruptInteractionTypes> Preferences;
+    [[bg3::legacy(Preferences)]] HashMap<FixedString, InterruptInteractionTypes> DesiredInteractions;
 };
 
 struct PreparedComponent : public BaseComponent
@@ -71,7 +71,7 @@ struct ZoneParticipantComponent : public BaseComponent
 {
     DEFINE_COMPONENT(InterruptZoneParticipant, "eoc::interrupt::ZoneParticipantComponent")
 
-    HashMap<EntityHandle, uint8_t> field_0;
+    [[bg3::legacy(field_0)]] HashMap<EntityHandle, uint8_t> ZoneEntities;
 };
 
 struct ZoneSourceComponent : public BaseComponent

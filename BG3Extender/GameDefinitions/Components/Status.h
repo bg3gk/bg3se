@@ -53,7 +53,7 @@ struct VisualDisabledComponent : public BaseComponent
 {
     DEFINE_COMPONENT(StatusVisualDisabled, "eoc::status::visual::DisabledComponent")
 
-    HashSet<FixedString> Visuals;
+    [[bg3::legacy(Visuals)]] HashSet<FixedString> StatusesWithDisabledVisuals;
 };
 
 DEFINE_TAG_COMPONENT(eoc::status, IndicateDarknessComponent, StatusIndicateDarkness)

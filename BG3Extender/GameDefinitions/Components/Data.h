@@ -97,14 +97,14 @@ struct BaseStatsComponent : public BaseComponent
 {
     DEFINE_COMPONENT(BaseStats, "eoc::BaseStatsComponent")
 
-    std::array<int, 7> BaseAbilities;
+    [[bg3::legacy(BaseAbilities)]] std::array<int, 7> Abilities;
 };
 
 struct ExpertiseComponent : public BaseComponent
 {
     DEFINE_COMPONENT(Expertise, "eoc::expertise::ExpertiseComponent")
 
-    HashSet<SkillId> Expertise;
+    [[bg3::legacy(Expertise)]] HashSet<SkillId> Skills;
 };
 
 struct StatusImmunitiesComponent : public BaseComponent
@@ -174,7 +174,7 @@ struct CharacterCreationStatsComponent : public BaseComponent
     uint8_t BodyType;
     uint8_t BodyShape;
     STDString Name;
-    std::array<int32_t, 7> Abilities;
+    [[bg3::legacy(Abilities)]] std::array<int32_t, 7> PointBuyAbilities;
     uint8_t field_5C;
 };
 
@@ -456,7 +456,7 @@ struct InteractionFilterComponent : public BaseComponent
 {
     DEFINE_COMPONENT(InteractionFilter, "eoc::InteractionFilterComponent")
 
-    HashSet<Guid> field_0;
+    [[bg3::legacy(field_0)]] HashSet<Guid> Tags;
     uint8_t field_30;
     uint8_t field_31;
 };
@@ -555,7 +555,7 @@ struct AttitudesToPlayersComponent : public BaseComponent
 {
     DEFINE_COMPONENT(AttitudesToPlayers, "eoc::attitude::AttitudesToPlayersComponent")
 
-    HashMap<AttitudeIdentifier, int> Attitudes;
+    [[bg3::legacy(Attitudes)]] HashMap<AttitudeIdentifier, int> AttitudeTowardsPlayers;
 };
 
 template <>

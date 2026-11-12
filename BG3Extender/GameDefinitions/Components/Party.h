@@ -42,7 +42,7 @@ struct PortalsComponent : public BaseComponent
 {
     DEFINE_COMPONENT(PartyPortals, "eoc::party::PortalsComponent")
 
-    HashSet<EntityHandle> Portals;
+    [[bg3::legacy(Portals)]] HashSet<EntityHandle> DiscoveredPortals;
 };
 
 
@@ -78,7 +78,7 @@ struct WaypointsComponent : public BaseComponent
 {
     DEFINE_COMPONENT(PartyWaypoints, "eoc::party::WaypointsComponent")
 
-    HashSet<Waypoint> Waypoints;
+    [[bg3::legacy(Waypoints)]] HashSet<Waypoint> UnlockedWaypoints;
 };
 
 
@@ -125,7 +125,7 @@ struct RecruiterComponent : public BaseComponent
 {
     DEFINE_COMPONENT(Recruiter, "eoc::recruit::RecruiterComponent")
 
-    HashSet<EntityHandle> Recruiters;
+    [[bg3::legacy(Recruiters)]] HashSet<EntityHandle> RecruitedHandles;
 };
 
 END_NS()

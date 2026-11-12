@@ -12,7 +12,7 @@ struct RulesetComponent : public BaseComponent
 
     Array<Guid> Rulesets;
     // FIXME: First variant is void
-    HashMap<Guid, std::variant<uint8_t, int32_t, float, FixedString, bool>> Modifiers;
+    [[bg3::legacy(Modifiers)]] HashMap<Guid, std::variant<uint8_t, int32_t, float, FixedString, bool>> CustomModifiers;
     Guid field_40;
 };
 
@@ -440,7 +440,7 @@ struct IgnoreSurfacesComponent : public BaseComponent
 {
     DEFINE_COMPONENT(IgnoreSurfaces, "eoc::sight::IgnoreSurfacesComponent")
 
-    HashSet<SurfaceType> SurfaceTypes;
+    [[bg3::legacy(SurfaceTypes)]] HashSet<SurfaceType> IgnoreSurfaces;
 };
 
 END_NS()

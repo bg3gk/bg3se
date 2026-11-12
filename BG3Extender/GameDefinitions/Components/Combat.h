@@ -39,7 +39,7 @@ struct StateComponent : public BaseComponent
     DEFINE_COMPONENT(CombatState, "eoc::combat::StateComponent")
 
     Guid MyGuid;
-    HashMap<EntityHandle, int32_t> Initiatives;
+    [[bg3::legacy(Initiatives)]] HashMap<EntityHandle, int32_t> InitiativeState;
     Array<EntityHandle> Participants;
     EntityHandle field_98;
     EntityHandle field_A0;

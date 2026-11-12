@@ -51,7 +51,7 @@ struct DataCacheSingletonComponent : public BaseComponent
 {
     DEFINE_COMPONENT(SpellCastDataCache, "eoc::spell_cast::DataCacheSingletonComponent")
 
-    HashMap<Guid, DataCache> Spells;
+    [[bg3::legacy(Spells)]] HashMap<Guid, DataCache> CachedSpellCasts;
 };
 
 struct IsCastingComponent : public BaseComponent
@@ -66,7 +66,7 @@ struct InterruptResultsComponent : public BaseComponent
     DEFINE_COMPONENT(SpellCastInterruptResults, "eoc::spell_cast::InterruptResultsComponent")
     
     bool HasReplacement;
-    HashSet<EntityHandle> Results;
+    [[bg3::legacy(Results)]] HashSet<EntityHandle> Interruptors;
 };
 
 struct MovementComponent : public BaseComponent

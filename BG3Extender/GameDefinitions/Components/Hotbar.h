@@ -26,7 +26,7 @@ struct ContainerComponent : public BaseComponent
 {
     DEFINE_COMPONENT(HotbarContainer, "eoc::hotbar::ContainerComponent")
 
-    HashMap<FixedString, Array<Bar>> Containers;
+    [[bg3::legacy(Containers)]] HashMap<FixedString, Array<Bar>> BarContainers;
     FixedString ActiveContainer;
     bool Locked{ false };
 };
@@ -35,7 +35,7 @@ struct CurrentDecksComponent : public BaseComponent
 {
     DEFINE_COMPONENT(HotbarDecks, "eoc::hotbar::CurrentDecksComponent")
 
-    HashMap<FixedString, int32_t> Decks;
+    [[bg3::legacy(Decks)]] HashMap<FixedString, int32_t> CurrentBars;
 };
 
 struct ContainerKeyCreatedOneFrameComponent : public BaseComponent
