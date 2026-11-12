@@ -174,6 +174,27 @@ public:
         return ecsComponentData_.Get(index).Name;
     }
 
+    // Every component type the game registered, mapped by the extender or not: f(name, index)
+    template <class F>
+    void ForEachComponentType(F f) const
+    {
+        for (auto const& it : componentNameToIndexMappings_) {
+            if (it.second.ComponentIndex != UndefinedComponent) {
+                f(it.first, it.second.ComponentIndex);
+            }
+        }
+    }
+
+    // Every system type the game registered: f(name, index, mapped by the extender)
+    template <class F>
+    void ForEachSystemType(F f) const
+    {
+        for (auto const& it : systemIndexMappings_) {
+            bool mapped = std::find(systemIndices_.begin(), systemIndices_.end(), it.second) != systemIndices_.end();
+            f(it.first, it.second, mapped);
+        }
+    }
+
     inline STDString const* GetComponentName(ReplicationTypeIndex index) const
     {
         return ecsComponentData_.Get(index).Name;

@@ -221,6 +221,144 @@ bool IsDeveloperMode()
     return gExtender->GetConfig().DeveloperMode;
 }
 
+// --- Raw access for reverse engineering -------------------------------------------------------
+// Available in developer mode only. Reading and writing go through Read/WriteProcessMemory on
+// the game's own process, so an address that is not mapped (or not writable) makes the call
+// fail instead of crashing the game. Addresses are plain integers.
+
+void RequireDeveloperMode(lua_State* L, char const* function)
+{
+    if (!gExtender->GetConfig().DeveloperMode) {
+        luaL_error(L, "Ext.Debug.%s() is only available in developer mode", function);
+    }
+}
+
+// Ext.Debug.ReadMemory(address, size) -> string of `size` bytes, or nil if any of them cannot be read
+UserReturn ReadMemory(lua_State* L, int64_t address, int32_t size)
+{
+    RequireDeveloperMode(L, "ReadMemory");
+    if (size <= 0 || size > 0x100000) {
+        return luaL_error(L, "Size must be between 1 and 1048576 bytes");
+    }
+
+    STDString buffer;
+    buffer.resize((std::size_t)size);
+    SIZE_T read{ 0 };
+    if (ReadProcessMemory(GetCurrentProcess(), (LPCVOID)address, buffer.data(), (SIZE_T)size, &read) && read == (SIZE_T)size) {
+        lua_pushlstring(L, buffer.data(), buffer.size());
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 1;
+}
+
+// Ext.Debug.WriteMemory(address, bytes) -> whether all bytes were written.
+// Nothing checks what is being overwritten: a wrong address corrupts the game.
+bool WriteMemory(lua_State* L, int64_t address, StringView bytes)
+{
+    RequireDeveloperMode(L, "WriteMemory");
+    if (bytes.empty() || bytes.size() > 0x100000) {
+        luaL_error(L, "Between 1 and 1048576 bytes can be written at once");
+    }
+
+    SIZE_T written{ 0 };
+    return WriteProcessMemory(GetCurrentProcess(), (LPVOID)address, bytes.data(), bytes.size(), &written)
+        && written == bytes.size();
+}
+
+// Ext.Debug.GetModuleInfo() -> { Base = address, Size = bytes } of the game executable
+UserReturn GetModuleInfo(lua_State* L)
+{
+    RequireDeveloperMode(L, "GetModuleInfo");
+    auto base = (uint8_t const*)GetModuleHandleW(NULL);
+    auto dos = (IMAGE_DOS_HEADER const*)base;
+    auto nt = (IMAGE_NT_HEADERS const*)(base + dos->e_lfanew);
+
+    lua_newtable(L);
+    settable(L, "Base", (int64_t)base);
+    settable(L, "Size", (int64_t)nt->OptionalHeader.SizeOfImage);
+    return 1;
+}
+
+// Ext.Debug.GetComponentTypes() -> every component type the game registered on this side:
+//   { Name, Index, InlineSize, TotalSize, OneFrame, Replicated, Mapped }
+// Mapped tells whether the extender has a layout for it (entity.<Name> works).
+UserReturn GetComponentTypes(lua_State* L)
+{
+    RequireDeveloperMode(L, "GetComponentTypes");
+    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs.GetEntityWorld();
+
+    lua_newtable(L);
+    if (world == nullptr) return 1;
+
+    int index = 1;
+    ecs.ForEachComponentType([&](STDString const& name, ecs::ComponentTypeIndex type) {
+        lua_newtable(L);
+        settable(L, "Name", name);
+        settable(L, "Index", (int32_t)type);
+        auto entry = world->ComponentRegistry_.Get(type);
+        if (entry != nullptr) {
+            settable(L, "InlineSize", (int32_t)entry->InlineSize);
+            settable(L, "TotalSize", (int32_t)entry->TotalSize);
+            settable(L, "OneFrame", entry->OneFrame);
+            settable(L, "Replicated", entry->Replicated);
+        }
+        settable(L, "Mapped", ecs.GetComponentType(type).has_value());
+        lua_rawseti(L, -2, index++);
+    });
+
+    return 1;
+}
+
+// Ext.Debug.GetSystemTypes() -> { { Name, Index, Mapped } } for every system the game registered on this side
+UserReturn GetSystemTypes(lua_State* L)
+{
+    RequireDeveloperMode(L, "GetSystemTypes");
+    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
+
+    lua_newtable(L);
+    int index = 1;
+    ecs.ForEachSystemType([&](STDString const& name, ecs::SystemTypeIndex type, bool mapped) {
+        lua_newtable(L);
+        settable(L, "Name", name);
+        settable(L, "Index", (int32_t)type);
+        settable(L, "Mapped", mapped);
+        lua_rawseti(L, -2, index++);
+    });
+
+    return 1;
+}
+
+// Ext.Debug.GetComponentAddress(entity, name) -> { Address, InlineSize, TotalSize } or nil.
+// Works for components the extender has no layout for. When InlineSize is smaller than
+// TotalSize the entity stores a pointer: the component itself is at the address read from there.
+UserReturn GetComponentAddress(lua_State* L, EntityHandle entity, STDString name)
+{
+    RequireDeveloperMode(L, "GetComponentAddress");
+    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    auto world = ecs.GetEntityWorld();
+    auto type = ecs.GetComponentIndex(name);
+    auto entry = (world != nullptr && type) ? world->ComponentRegistry_.Get(*type) : nullptr;
+    if (entry == nullptr) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    auto component = world->GetRawComponent(entity, *type, entry->InlineSize);
+    if (component == nullptr) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_newtable(L);
+    settable(L, "Address", (int64_t)component);
+    settable(L, "InlineSize", (int32_t)entry->InlineSize);
+    settable(L, "TotalSize", (int32_t)entry->TotalSize);
+    return 1;
+}
+
 void LuaDebugBreak(lua_State* L)
 {
     auto debugger = gExtender->GetLuaDebugger();
@@ -294,6 +432,12 @@ void RegisterDebugLib()
     MODULE_FUNCTION(GenerateIdeHelpers)
     MODULE_NAMED_FUNCTION("DebugBreak", LuaDebugBreak)
     MODULE_FUNCTION(IsDeveloperMode)
+    MODULE_FUNCTION(ReadMemory)
+    MODULE_FUNCTION(WriteMemory)
+    MODULE_FUNCTION(GetModuleInfo)
+    MODULE_FUNCTION(GetComponentTypes)
+    MODULE_FUNCTION(GetSystemTypes)
+    MODULE_FUNCTION(GetComponentAddress)
     MODULE_FUNCTION(SetEntityRuntimeCheckLevel)
     MODULE_FUNCTION(Crash)
     MODULE_FUNCTION(Reset)
