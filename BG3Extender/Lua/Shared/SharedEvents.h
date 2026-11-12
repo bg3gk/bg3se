@@ -11,6 +11,15 @@ struct DoConsoleCommandEventParams : public lua::EventBase
     [[bg3::readonly]] STDString Command;
 };
 
+struct ConsoleMessageEventParams : public lua::EventBase
+{
+    // Running number of the message; a gap means messages were dropped
+    [[bg3::readonly]] uint64_t Index;
+    // "Debug", "Info", "Osiris", "Warning" or "Error"
+    [[bg3::readonly]] FixedString Type;
+    [[bg3::readonly]] STDString Message;
+};
+
 struct TickEventParams : public lua::EventBase
 {
     GameTime Time;

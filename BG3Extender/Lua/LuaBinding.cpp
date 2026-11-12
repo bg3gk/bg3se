@@ -7,6 +7,7 @@
 #include <GameDefinitions/RootTemplates.h>
 #include <GameDefinitions/Ai.h>
 #include <Lua/LuaBinding.h>
+#include <Extender/Shared/Console.h>
 #include "resource.h"
 #include <fstream>
 #include <lstate.h>
@@ -517,6 +518,8 @@ State::State(ExtensionStateBase& state, uint32_t generationId, bool isServer)
     networkRequests_(*this),
     guidResourceHelpers_(*this)
 {
+    // Console messages from before this state existed are not replayed
+    consoleMessageCursor_ = gConsoleMessageLog.LastIndex();
     GetExtra(L.L)->State = this;
     GetExtra(L.L)->CurrentLifetime = LifetimeHandle{};
     OpenLibs();
@@ -673,6 +676,8 @@ void State::OnUpdate(GameTime const& time)
     TickEventParams params{ .Time = time };
     ThrowEvent<TickEvent>(params);
 
+    DispatchConsoleMessages();
+
     {
         OPTICK_EVENT("GC");
         lua_gc(L, LUA_GCSTEP, 10);
@@ -683,6 +688,29 @@ void State::OnUpdate(GameTime const& time)
         variableManager_.Flush();
         modVariableManager_.Flush();
     }
+}
+
+void State::DispatchConsoleMessages()
+{
+    if (consoleMessageCursor_ >= gConsoleMessageLog.LastIndex()) return;
+
+    static constexpr char const* typeNames[] = { "Debug", "Info", "Osiris", "Warning", "Error" };
+
+    std::vector<ConsoleMessageLog::Message> messages;
+    gConsoleMessageLog.Fetch(consoleMessageCursor_, messages);
+
+    // What the handlers print while they run is not captured, or a handler that
+    // prints would be called for its own output on every tick.
+    ConsoleMessageLog::Dispatching = true;
+    for (auto const& msg : messages) {
+        auto type = (unsigned)msg.Type;
+        ConsoleMessageEventParams params;
+        params.Index = msg.Index;
+        params.Type = FixedString(type < std::size(typeNames) ? typeNames[type] : "Info");
+        params.Message = msg.Text.c_str();
+        ThrowEvent<ConsoleMessageEvent>(params);
+    }
+    ConsoleMessageLog::Dispatching = false;
 }
 
 void State::OnNetMessageReceived(StringView channel, StringView payload, StringView moduleUuid, int32_t requestId,

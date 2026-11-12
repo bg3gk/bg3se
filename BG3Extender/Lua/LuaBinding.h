@@ -352,7 +352,11 @@ namespace bg3se::lua
         net::NetworkRequestSystem networkRequests_;
         res::GuidResourceHelpers guidResourceHelpers_;
 
+        // Index of the last console message this state raised a ConsoleMessage event for
+        uint64_t consoleMessageCursor_{ 0 };
+
         void OpenLibs();
+        void DispatchConsoleMessages();
         EventResult DispatchEvent(EventBase& evt, FixedString const& eventName, bool canPreventAction, RestrictionFlag restrictions);
     };
 

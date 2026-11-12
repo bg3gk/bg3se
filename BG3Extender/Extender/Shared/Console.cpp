@@ -9,6 +9,40 @@ BEGIN_SE()
 
 char const* BuildDate = __DATE__ " " __TIME__;
 
+ConsoleMessageLog gConsoleMessageLog;
+thread_local bool ConsoleMessageLog::Dispatching{ false };
+
+void ConsoleMessageLog::Add(DebugMessageType type, char const* msg)
+{
+    if (Dispatching || msg == nullptr) return;
+
+    std::lock_guard _(mutex_);
+    messages_.push_back(Message{ ++lastIndex_, type, msg });
+    if (messages_.size() > MaxMessages) {
+        messages_.pop_front();
+    }
+}
+
+uint64_t ConsoleMessageLog::LastIndex()
+{
+    std::lock_guard _(mutex_);
+    return lastIndex_;
+}
+
+void ConsoleMessageLog::Fetch(uint64_t& cursor, std::vector<Message>& out)
+{
+    std::lock_guard _(mutex_);
+    if (cursor >= lastIndex_) return;
+
+    for (auto const& msg : messages_) {
+        if (msg.Index > cursor) {
+            out.push_back(msg);
+        }
+    }
+
+    cursor = lastIndex_;
+}
+
 void DebugConsole::SubmitTaskAndWait(bool server, std::function<void()> task)
 {
     if (server) {
@@ -173,6 +207,7 @@ void DebugConsole::HandleCommand(std::string const& cmd)
 void DebugConsole::Print(DebugMessageType type, char const* msg)
 {
     Console::Print(type, msg);
+    gConsoleMessageLog.Add(type, msg);
 
     if (!silence_ && gExtender) {
         auto debugger = gExtender->GetLuaDebugger();

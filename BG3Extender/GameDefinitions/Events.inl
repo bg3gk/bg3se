@@ -11,6 +11,7 @@ EVENT_NS(ServerGameStateChanged, GameStateChanged, esv::lua, GameStateChangedEve
 EVENT_NS(ClientGameStateChanged, GameStateChanged, ecl::lua, GameStateChangedEventParams, Client, false, lua::RestrictionFlag::None)
 
 EVENT_NS(DoConsoleCommand, DoConsoleCommand, lua, DoConsoleCommandEventParams, Both, false, lua::RestrictionFlag::None)
+EVENT_NS(ConsoleMessage, ConsoleMessage, lua, ConsoleMessageEventParams, Both, false, lua::RestrictionFlag::None)
 
 EVENT_NS(KeyInput, KeyInput, ecl::lua, KeyInputEventParams, Client, false, lua::RestrictionFlag::None)
 EVENT_NS(MouseButtonInput, MouseButtonInput, ecl::lua, MouseButtonEventParams, Client, false, lua::RestrictionFlag::None)
