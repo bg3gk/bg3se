@@ -204,6 +204,16 @@ struct GroundMaterialComponent : public BaseComponent
     uint8_t Material;
 };
 
+struct InvisibilityAttachmentComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientInvisibilityAttachment, "ecl::InvisibilityAttachmentComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 100E6DDA8) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 struct InvisibilityVisualComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientInvisibilityVisual, "ecl::InvisibilityVisualComponent")
@@ -651,6 +661,16 @@ struct TimelineSplatterComponent : public BaseComponent
     uint32_t field_20;
 };
 
+struct TimelineSplitScreenPriorityComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTimelineSplitScreenPriority, "ecl::TimelineSplitScreenPriorityComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 100E24938) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(ecl, BasicGOVisualFadeActiveView0Component, ClientBasicGOVisualFadeActiveView0)
 DEFINE_TAG_COMPONENT(ecl, BasicGOVisualFadeActiveView1Component, ClientBasicGOVisualFadeActiveView1)
 DEFINE_TAG_COMPONENT(ecl, CharacterAttachToSceneFadeActiveView0Component, ClientCharacterAttachToSceneFadeActiveView0)
@@ -668,7 +688,6 @@ DEFINE_TAG_COMPONENT(ecl, CrowdFadeActiveView1Component, ClientCrowdFadeActiveVi
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, DeathDetachEffectRequestOneFrameComponent, ClientDeathDetachEffectRequest)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, DeathForgetEffectRequestOneFrameComponent, ClientDeathForgetEffectRequest)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, IconChangedEventOneFrameComponent, ClientIconChangedEvent)
-DEFINE_TAG_COMPONENT(ecl, InvisibilityAttachmentComponent, ClientInvisibilityAttachment)
 DEFINE_TAG_COMPONENT(ecl, InvisibilityFadeActiveView0Component, ClientInvisibilityFadeActiveView0)
 DEFINE_TAG_COMPONENT(ecl, InvisibilityFadeActiveView1Component, ClientInvisibilityFadeActiveView1)
 DEFINE_TAG_COMPONENT(ecl, ItemPreviewFadeActiveView0Component, ClientItemPreviewFadeActiveView0)
@@ -690,7 +709,6 @@ DEFINE_TAG_COMPONENT(ecl, TimelineFadeActiveView0Component, ClientTimelineFadeAc
 DEFINE_TAG_COMPONENT(ecl, TimelineFadeActiveView1Component, ClientTimelineFadeActiveView1)
 DEFINE_TAG_COMPONENT(ecl, TimelinePlaceholderDummyComponent, ClientTimelinePlaceholderDummy)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TimelineShowVisualEventOneFrameComponent, ClientTimelineShowVisualEvent)
-DEFINE_TAG_COMPONENT(ecl, TimelineSplitScreenPriorityComponent, ClientTimelineSplitScreenPriority)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TimelineSwitchLocationEventOneFrameComponent, ClientTimelineSwitchLocationEvent)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TimelineSwitchStageEventOneFrameComponent, ClientTimelineSwitchStageEvent)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl, TurnActionsDoneOneFrameComponent, ClientTurnActionsDone)
@@ -792,13 +810,29 @@ END_NS()
 
 BEGIN_NS(ecl::lariannet)
 
-DEFINE_TAG_COMPONENT(ecl::lariannet, TrackingLobbyDeletedSingletonComponent, ClientLariannetTrackingLobbyDeletedSingleton)
+struct TrackingLobbyDeletedSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientLariannetTrackingLobbyDeletedSingleton, "ecl::lariannet::TrackingLobbyDeletedSingletonComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 100D70998) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
 BEGIN_NS(ecl::lightbar_haptics)
 
-DEFINE_TAG_COMPONENT(ecl::lightbar_haptics, LightbarSoundStateComponent, ClientLightbarHapticsLightbarSoundState)
+struct LightbarSoundStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientLightbarHapticsLightbarSoundState, "ecl::lightbar_haptics::LightbarSoundStateComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 100D785C0) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
@@ -874,6 +908,16 @@ END_NS()
 
 BEGIN_NS(ecl::sound)
 
+struct SneakStateSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSoundSneakStateSingleton, "ecl::sound::SneakStateSingletonComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 100DA5D78) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 struct TimelinePlayerSoundState
 {
     // inferred: bg3.exe+0x1D99430 fills the 16 bytes from the value of
@@ -913,7 +957,6 @@ struct TimelineStateSingletonComponent : public BaseComponent
 
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::sound, ListenerSpatializationConfigChangedOneFrameComponent, ClientSoundListenerSpatializationConfigChanged)
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::sound, ModuleSoundLoadedRequestOneFrameComponent, ClientSoundModuleSoundLoadedRequest)
-DEFINE_TAG_COMPONENT(ecl::sound, SneakStateSingletonComponent, ClientSoundSneakStateSingleton)
 
 END_NS()
 
@@ -925,7 +968,16 @@ END_NS()
 
 BEGIN_NS(ecl::splitscreen)
 
-DEFINE_TAG_COMPONENT(ecl::splitscreen, HeightSplitReasonsSingletonComponent, ClientSplitscreenHeightSplitReasonsSingleton)
+struct HeightSplitReasonsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientSplitscreenHeightSplitReasonsSingleton, "ecl::splitscreen::HeightSplitReasonsSingletonComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103313360) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(ecl::splitscreen, PlayerCharacterChangedOneFrameComponent, ClientSplitscreenPlayerCharacterChanged)
 
 END_NS()
@@ -1119,7 +1171,16 @@ END_NS()
 
 BEGIN_NS(ecl::trigger)
 
-DEFINE_TAG_COMPONENT(ecl::trigger, SightHelperComponent, ClientTriggerSightHelper)
+// Tag.
+struct SightHelperComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ClientTriggerSightHelper, "ecl::trigger::SightHelperComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 100D81340) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
@@ -1209,8 +1270,17 @@ END_NS()
 
 BEGIN_NS(eoc::ai::swarm)
 
+struct ExecutingActionComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AiSwarmExecutingAction, "eoc::ai::swarm::ExecutingActionComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101EB3814) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(eoc::ai::swarm, ActiveComponent, AiSwarmActive)
-DEFINE_TAG_COMPONENT(eoc::ai::swarm, ExecutingActionComponent, AiSwarmExecutingAction)
 
 END_NS()
 
@@ -1228,7 +1298,15 @@ END_NS()
 
 BEGIN_NS(eoc::animation)
 
-DEFINE_TAG_COMPONENT(eoc::animation, BlueprintRefreshedEventOneFrameComponent, AnimationBlueprintRefreshedEvent)
+struct BlueprintRefreshedEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnimationBlueprintRefreshedEvent, "eoc::animation::BlueprintRefreshedEventOneFrameComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101DF3B78) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
@@ -1252,7 +1330,17 @@ END_NS()
 
 BEGIN_NS(eoc::crowds)
 
-DEFINE_TAG_COMPONENT(eoc::crowds, BehaviourComponent, CrowdsBehaviour)
+struct BehaviourComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(CrowdsBehaviour, "eoc::crowds::BehaviourComponent")
+
+    // the game's own member name: m_State in the macOS symbols
+    // (ls::FieldMeta<eoc::crowds::EProxyBehaviour eoc::crowds::BehaviourComponent::*,
+    // &...::m_State>): an eoc::crowds::EProxyBehaviour value in one byte; the default constructor
+    // stores zero.
+    uint8_t State;
+};
+
 DEFINE_TAG_COMPONENT(eoc::crowds, IsFadingComponent, CrowdsIsFading)
 
 END_NS()
@@ -1395,15 +1483,49 @@ END_NS()
 
 BEGIN_NS(eoc::legacy::entity)
 
-DEFINE_TAG_COMPONENT(eoc::legacy::entity, InUseByActionStateComponent, LegacyEntityInUseByActionState)
+struct InUseByActionStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(LegacyEntityInUseByActionState, "eoc::legacy::entity::InUseByActionStateComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101EE5A80) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
 BEGIN_NS(eoc::notification)
 
-DEFINE_TAG_COMPONENT(eoc::notification, EnterPhotoModeFailedNotificationComponent, NotificationEnterPhotoModeFailedNotification)
-DEFINE_TAG_COMPONENT(eoc::notification, PerformFailedComponent, NotificationPerformFailed)
-DEFINE_TAG_COMPONENT(eoc::notification, ReposeResultComponent, NotificationReposeResult)
+struct EnterPhotoModeFailedNotificationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationEnterPhotoModeFailedNotification, "eoc::notification::EnterPhotoModeFailedNotificationComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101BEBC5C) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
+struct PerformFailedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationPerformFailed, "eoc::notification::PerformFailedComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101BE210C) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
+struct ReposeResultComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(NotificationReposeResult, "eoc::notification::ReposeResultComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101BDBDE0) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
@@ -1427,7 +1549,10 @@ struct PortalComponent : public BaseComponent
 {
     DEFINE_COMPONENT(RoomPortal, "eoc::room_portal::PortalComponent")
 
-    // inferred: Type is certain: the game has the replication type
+    // the game's own member name: m_ConnectedRooms in the macOS symbols:
+    // ls::FieldMeta<ls::StaticArray<EntityHandle, 2> eoc::room_portal::PortalComponent::*,
+    // &...::m_ConnectedRooms>; the Windows build has the same FieldMeta at offset 0. Earlier
+    // evidence: Type is certain: the game has the replication type
     // ls::FieldMeta<ls::StaticArray<ls::ID<ecs::EntityHandleTraits>,2>
     // eoc::room_portal::PortalComponent::*,0> (symbols.py types, bg3.exe+0xE9E10; used at
     // bg3.exe+0x2F1FC50 to mark field 0 dirty) - the member at offset 0 is a static array of 2
@@ -1437,7 +1562,7 @@ struct PortalComponent : public BaseComponent
     // feature (esv::room_portal::RoomPortalSystem::RebuildRoomConnections;
     // eoc::room_portal::RoomStateComponent holds a DynamicArray<eoc::room_portal::Connection>); no
     // code was read that proves the two handles are the rooms on either side of the portal.
-    std::array<EntityHandle, 2> Rooms;
+    std::array<EntityHandle, 2> ConnectedRooms;
     // inferred: 1 byte: bg3.exe+0x92E120 (stream reader) copies exactly 1 byte into +0x10 and
     // defaults it to 0; the savegame loader bg3.exe+0x25769C0
     // (ls::model::game::room_portal::v0::PortalComponent -> component) writes '+0x10 = (savedByte
@@ -1467,9 +1592,27 @@ END_NS()
 
 BEGIN_NS(eoc::spell)
 
+struct LastUsedLimbComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(SpellLastUsedLimb, "eoc::spell::LastUsedLimbComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101F69170) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
+struct SpellInvalidationLockedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(SpellInvalidationLocked, "eoc::spell::SpellInvalidationLockedComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 101F65780) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(eoc::spell, AttackSpellOverrideChangedEventOneFrameComponent, SpellAttackSpellOverrideChangedEvent)
-DEFINE_TAG_COMPONENT(eoc::spell, LastUsedLimbComponent, SpellLastUsedLimb)
-DEFINE_TAG_COMPONENT(eoc::spell, SpellInvalidationLockedComponent, SpellInvalidationLocked)
 
 END_NS()
 
@@ -1603,7 +1746,16 @@ END_NS()
 
 BEGIN_NS(eoc::trap)
 
-DEFINE_TAG_COMPONENT(eoc::trap, DisarmingAnimationStateComponent, TrapDisarmingAnimationState)
+struct DisarmingAnimationStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(TrapDisarmingAnimationState, "eoc::trap::DisarmingAnimationStateComponent")
+
+    // the game's own member name: m_AnimationRequest in the macOS symbols
+    // (ls::FieldMeta<eoc::trap::ETrapDisarmAnimationRequest
+    // eoc::trap::DisarmingAnimationStateComponent::*, &...::m_AnimationRequest>): an
+    // eoc::trap::ETrapDisarmAnimationRequest value in one byte.
+    uint8_t AnimationRequest;
+};
 
 END_NS()
 
@@ -1754,10 +1906,19 @@ END_NS()
 
 BEGIN_NS(esv::camp)
 
+struct EndTheDayResultEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCampEndTheDayResultEvent, "esv::camp::EndTheDayResultEventOneFrameComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103B18928) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, CampWaypointStateEventOneFrameComponent, ServerCampWaypointStateEvent)
 DEFINE_TAG_COMPONENT(esv::camp, CharacterInTriggerChangedComponent, ServerCampCharacterInTriggerChanged)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, EndTheDayLoadForceChangeStateEventOneFrameComponent, ServerCampEndTheDayLoadForceChangeStateEvent)
-DEFINE_TAG_COMPONENT(esv::camp, EndTheDayResultEventOneFrameComponent, ServerCampEndTheDayResultEvent)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, GatherAtCampCheckEventOneFrameComponent, ServerCampGatherAtCampCheckEvent)
 DEFINE_TAG_COMPONENT(esv::camp, InitializeQualityComponent, ServerCampInitializeQuality)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::camp, SendToCampStateEventOneFrameComponent, ServerCampSendToCampStateEvent)
@@ -1768,7 +1929,16 @@ END_NS()
 
 BEGIN_NS(esv::character)
 
-DEFINE_TAG_COMPONENT(esv::character, CanOpenDoorsOverrideComponent, ServerCharacterCanOpenDoorsOverride)
+struct CanOpenDoorsOverrideComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCharacterCanOpenDoorsOverride, "esv::character::CanOpenDoorsOverrideComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103B87CD0) stores it (strb w0, [x23]; default a value computed in the
+    // constructor). What the byte means is not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(esv::character, EntityMovingComponent, ServerCharacterEntityMoving)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::character, TemplateChangedEventOneFrameComponent, ServerCharacterTemplateChangedEvent)
 
@@ -1790,7 +1960,15 @@ END_NS()
 
 BEGIN_NS(esv::combat_log)
 
-DEFINE_TAG_COMPONENT(esv::combat_log, CombatLogStateComponent, ServerCombatLogState)
+struct CombatLogStateComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerCombatLogState, "esv::combat_log::CombatLogStateComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103B1F9A4) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
@@ -1818,12 +1996,21 @@ END_NS()
 
 BEGIN_NS(esv::death)
 
+struct DyingWaitingForDeactivationComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerDeathDyingWaitingForDeactivation, "esv::death::DyingWaitingForDeactivationComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103AC6AB0) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(esv::death, AnimFallbackTimerFinishedEventOneFrameComponent, ServerDeathAnimFallbackTimerFinishedEvent)
 DEFINE_TAG_COMPONENT(esv::death, AnimFinishedEventOneFrameComponent, ServerDeathAnimFinishedEvent)
 DEFINE_TAG_COMPONENT(esv::death, CharacterDeathInitiatedEventOneFrameComponent, ServerDeathCharacterDeathInitiatedEvent)
 DEFINE_TAG_COMPONENT(esv::death, DeathAnimationRequestOneFrameComponent, ServerDeathAnimationRequest)
 DEFINE_TAG_COMPONENT(esv::death, DelayedAnimationTriggerComponent, ServerDeathDelayedAnimationTrigger)
-DEFINE_TAG_COMPONENT(esv::death, DyingWaitingForDeactivationComponent, ServerDeathDyingWaitingForDeactivation)
 DEFINE_TAG_COMPONENT(esv::death, ExecuteDieLogicEventOneFrameComponent, ServerDeathExecuteDieLogicEvent)
 DEFINE_TAG_COMPONENT(esv::death, ExecuteDieLogicRequestOneFrameComponent, ServerDeathExecuteDieLogicRequest)
 
@@ -1956,9 +2143,18 @@ END_NS()
 
 BEGIN_NS(esv::multiplayer)
 
+struct UserSettingsComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerMultiplayerUserSettings, "esv::multiplayer::UserSettingsComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103B61BA4) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(esv::multiplayer, DropInCCInProgressSingletonComponent, ServerMultiplayerDropInCCInProgressSingleton)
 DEFINE_TAG_COMPONENT(esv::multiplayer, UserLoadedLevelComponent, ServerMultiplayerUserLoadedLevel)
-DEFINE_TAG_COMPONENT(esv::multiplayer, UserSettingsComponent, ServerMultiplayerUserSettings)
 
 END_NS()
 
@@ -1985,14 +2181,31 @@ END_NS()
 
 BEGIN_NS(esv::photo_mode)
 
-DEFINE_TAG_COMPONENT(esv::photo_mode, SessionFailedEventSingletonComponent, ServerPhotoModeSessionFailedEventSingleton)
+struct SessionFailedEventSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPhotoModeSessionFailedEventSingleton, "esv::photo_mode::SessionFailedEventSingletonComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103A26530) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
 BEGIN_NS(esv::pickup)
 
+struct PickUpFinishedComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPickupPickUpFinished, "esv::pickup::PickUpFinishedComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103B706AC) stores it (strb w0, [x23]; default a value computed in the
+    // constructor). What the byte means is not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(esv::pickup, OriginalPickUpTargetComponent, ServerPickupOriginalPickUpTarget)
-DEFINE_TAG_COMPONENT(esv::pickup, PickUpFinishedComponent, ServerPickupPickUpFinished)
 DEFINE_TAG_COMPONENT(esv::pickup, PickUpPermissionGrantedComponent, ServerPickupPickUpPermissionGranted)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::pickup, PickUpProcessSplitFinishedOneFrameComponent, ServerPickupPickUpProcessSplitFinished)
 
@@ -2026,8 +2239,17 @@ END_NS()
 
 BEGIN_NS(esv::repose)
 
+struct ReposeResultEventOneFrameComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerReposeResultEvent, "esv::repose::ReposeResultEventOneFrameComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 103B0BFE4) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(esv::repose, EndReposeRequestOneFrameComponent, ServerReposeEndReposeRequest)
-DEFINE_TAG_COMPONENT(esv::repose, ReposeResultEventOneFrameComponent, ServerReposeResultEvent)
 
 END_NS()
 
@@ -2326,7 +2548,15 @@ END_NS()
 
 BEGIN_NS(gui::lariannet)
 
-DEFINE_TAG_COMPONENT(gui::lariannet, PendingPlatformComponent, GuiLariannetPendingPlatform)
+struct PendingPlatformComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(GuiLariannetPendingPlatform, "gui::lariannet::PendingPlatformComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 1025D5190) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
 
 END_NS()
 
@@ -2449,6 +2679,16 @@ END_NS()
 
 BEGIN_NS(ls::anubis)
 
+struct GameIntermediateSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(AnubisGameIntermediateSingleton, "ls::anubis::GameIntermediateSingletonComponent")
+
+    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
+    // build (address 1058EFB3C) stores it (strb wzr, [x23]; default zero). What the byte means is
+    // not established.
+    uint8_t field_0;
+};
+
 DEFINE_TAG_COMPONENT(ls::anubis, ActiveComponent, AnubisActive)
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, ConstellationActivatedOneFrameComponent, AnubisConstellationActivated)
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, CreateEditorPreviewVisualRequestOneFrameComponent, AnubisCreateEditorPreviewVisualRequest)
@@ -2457,7 +2697,6 @@ DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, EditorChangeOneFrameComponent, AnubisE
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, FrameworkReloadRequestOneFrameComponent, AnubisFrameworkReloadRequest)
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, FrameworkReloadedOneFrameComponent, AnubisFrameworkReloaded)
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, FrameworkUnloadRequestOneFrameComponent, AnubisFrameworkUnloadRequest)
-DEFINE_TAG_COMPONENT(ls::anubis, GameIntermediateSingletonComponent, AnubisGameIntermediateSingleton)
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::anubis, LoadCompleteOneFrameComponent, AnubisLoadComplete)
 DEFINE_TAG_COMPONENT(ls::anubis, NonPersistentComponent, AnubisNonPersistent)
 DEFINE_TAG_COMPONENT(ls::anubis, PausedComponent, AnubisPaused)
@@ -2545,6 +2784,7 @@ static_assert(sizeof(bg3se::ecl::CombatTimelineShot) == 120);
 static_assert(sizeof(bg3se::ecl::EquipmentVisualsUpdatedEventOneFrameComponent) == 16);
 static_assert(sizeof(bg3se::ecl::EquipmentVisualsVFXTargetComponent) == 16);
 static_assert(sizeof(bg3se::ecl::GroundMaterialComponent) == 2);
+static_assert(sizeof(bg3se::ecl::InvisibilityAttachmentComponent) == 1);
 static_assert(sizeof(bg3se::ecl::InvisibilityVisualComponent) == 12);
 static_assert(sizeof(bg3se::ecl::PlayersInTimelineGlobalComponent) == 64);
 static_assert(sizeof(bg3se::ecl::SurfaceLightComponent) == 64);
@@ -2563,9 +2803,14 @@ static_assert(sizeof(bg3se::ecl::TimelineQuestionHoldAutomationComponent) == 28)
 static_assert(sizeof(bg3se::ecl::TimelineShapeShiftComponent) == 4);
 static_assert(sizeof(bg3se::ecl::TimelineSplatterComponent) == 36);
 static_assert(sizeof(bg3se::ecl::TimelineSplatterState) == 16);
+static_assert(sizeof(bg3se::ecl::TimelineSplitScreenPriorityComponent) == 1);
 static_assert(sizeof(bg3se::ecl::item::animation::StateComponent) == 6);
+static_assert(sizeof(bg3se::ecl::lariannet::TrackingLobbyDeletedSingletonComponent) == 1);
+static_assert(sizeof(bg3se::ecl::lightbar_haptics::LightbarSoundStateComponent) == 1);
+static_assert(sizeof(bg3se::ecl::sound::SneakStateSingletonComponent) == 1);
 static_assert(sizeof(bg3se::ecl::sound::TimelineStateSingletonComponent) == 72);
 static_assert(sizeof(bg3se::ecl::sound::TimelinePlayerSoundState) == 40);
+static_assert(sizeof(bg3se::ecl::splitscreen::HeightSplitReasonsSingletonComponent) == 1);
 static_assert(sizeof(bg3se::ecl::timeline::ActorParticipationSingletonComponent) == 64);
 static_assert(sizeof(bg3se::ecl::timeline::ArenaProcessedRollsForSpell) == 4);
 static_assert(sizeof(bg3se::ecl::timeline::GlobalRunThothComponent) == 56);
@@ -2575,19 +2820,38 @@ static_assert(sizeof(bg3se::ecl::timeline::GlobalThothComponent) == 128);
 static_assert(sizeof(bg3se::ecl::timeline::TimelineThothCondition) == 104);
 static_assert(sizeof(bg3se::ecl::timeline::RenderFrameVisibilityRequestsComponent) == 16);
 static_assert(sizeof(bg3se::ecl::timeline::TimelineRenderFrameVisibilityRequest) == 16);
+static_assert(sizeof(bg3se::ecl::trigger::SightHelperComponent) == 1);
 static_assert(sizeof(bg3se::ecl::unsheath::VisualStateComponent) == 8);
 static_assert(sizeof(bg3se::eoc::WeaponSetChangedEventOneFrameComponent) == 2);
 static_assert(sizeof(bg3se::eoc::MusicalInstrumentComponent) == 1);
+static_assert(sizeof(bg3se::eoc::ai::swarm::ExecutingActionComponent) == 1);
+static_assert(sizeof(bg3se::eoc::animation::BlueprintRefreshedEventOneFrameComponent) == 1);
+static_assert(sizeof(bg3se::eoc::crowds::BehaviourComponent) == 1);
 static_assert(sizeof(bg3se::eoc::item::ISDoorClosedComponent) == 8);
 static_assert(sizeof(bg3se::eoc::item::ISDoorOpenedComponent) == 8);
+static_assert(sizeof(bg3se::eoc::legacy::entity::InUseByActionStateComponent) == 1);
+static_assert(sizeof(bg3se::eoc::notification::EnterPhotoModeFailedNotificationComponent) == 1);
+static_assert(sizeof(bg3se::eoc::notification::PerformFailedComponent) == 1);
+static_assert(sizeof(bg3se::eoc::notification::ReposeResultComponent) == 1);
 static_assert(sizeof(bg3se::eoc::room_portal::PortalComponent) == 24);
+static_assert(sizeof(bg3se::eoc::spell::LastUsedLimbComponent) == 1);
+static_assert(sizeof(bg3se::eoc::spell::SpellInvalidationLockedComponent) == 1);
 static_assert(sizeof(bg3se::eoc::timeline::ActorVisualDataComponent) == 8);
 static_assert(sizeof(bg3se::eoc::timeline::steering::TimelineSteeringComponent) == 120);
+static_assert(sizeof(bg3se::eoc::trap::DisarmingAnimationStateComponent) == 1);
 static_assert(sizeof(bg3se::esv::ServerTimelineActorDataComponent) == 40);
 static_assert(sizeof(bg3se::esv::ServerTimelineCreationConfirmationComponent) == 88);
 static_assert(sizeof(bg3se::esv::TimelineCreationActor) == 16);
 static_assert(sizeof(bg3se::esv::ServerTimelineDataComponent) == 24);
+static_assert(sizeof(bg3se::esv::camp::EndTheDayResultEventOneFrameComponent) == 1);
+static_assert(sizeof(bg3se::esv::character::CanOpenDoorsOverrideComponent) == 1);
+static_assert(sizeof(bg3se::esv::combat_log::CombatLogStateComponent) == 1);
+static_assert(sizeof(bg3se::esv::death::DyingWaitingForDeactivationComponent) == 1);
 static_assert(sizeof(bg3se::esv::inventory::DeferredEquipmentSetRequestOneFrameComponent) == 40);
+static_assert(sizeof(bg3se::esv::multiplayer::UserSettingsComponent) == 1);
+static_assert(sizeof(bg3se::esv::photo_mode::SessionFailedEventSingletonComponent) == 1);
+static_assert(sizeof(bg3se::esv::pickup::PickUpFinishedComponent) == 1);
+static_assert(sizeof(bg3se::esv::repose::ReposeResultEventOneFrameComponent) == 1);
 static_assert(sizeof(bg3se::esv::sound::DistantSoundStateProxyComponent) == 24);
 static_assert(sizeof(bg3se::esv::timeline::TimelineFadeClearRequestOneFrameComponent) == 8);
 static_assert(sizeof(bg3se::esv::unsheath::CombatJoiningComponent) == 4);
@@ -2598,9 +2862,11 @@ static_assert(sizeof(bg3se::esv::unsheath::EquipmentChangedOneFrameComponent) ==
 static_assert(sizeof(bg3se::esv::unsheath::ResurrectComponent) == 4);
 static_assert(sizeof(bg3se::esv::unsheath::SpellAnimationConcludedComponent) == 64);
 static_assert(sizeof(bg3se::esv::unsheath::StateChangedEventOneFrameComponent) == 8);
+static_assert(sizeof(bg3se::gui::lariannet::PendingPlatformComponent) == 1);
 static_assert(sizeof(bg3se::ls::ClusterContentComponent) == 48);
 static_assert(sizeof(bg3se::ls::CopyParentVisibilityComponent) == 8);
 static_assert(sizeof(bg3se::ls::LightFlickerComponent) == 12);
 static_assert(sizeof(bg3se::ls::LightMovementComponent) == 12);
 static_assert(sizeof(bg3se::ls::ParentEntityComponent) == 8);
 static_assert(sizeof(bg3se::ls::SaveWithComponent) == 8);
+static_assert(sizeof(bg3se::ls::anubis::GameIntermediateSingletonComponent) == 1);
