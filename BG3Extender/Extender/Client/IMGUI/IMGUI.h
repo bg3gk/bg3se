@@ -85,6 +85,10 @@ public:
     std::optional<TextureLoadResult> RegisterTexture(FixedString const& textureGuid);
     void UnregisterTexture(TextureOpaqueHandle id, FixedString const& textureGuid);
     std::optional<ImTextureID> BindTexture(TextureOpaqueHandle opaqueHandle);
+    // Textures from image files (png, jpg, tga, bmp) in the game's data, a mod's pak included.
+    // Counted by use; an unused one is kept for a while before its texture is released.
+    std::optional<TextureLoadResult> RegisterFileTexture(FixedString const& path);
+    void UnregisterFileTexture(FixedString const& path);
     bool LoadFont(FixedString const& name, char const* path, float size,
         char const* mergePath = nullptr, uint32_t mergeFirst = 0, uint32_t mergeLast = 0);
     FontData* GetFont(FixedString const& name);
@@ -118,6 +122,20 @@ private:
     unsigned frameNo_{ 0 };
 
     bool LoadFont(FontData& request);
+
+    struct FileTexture
+    {
+        TextureLoadResult LoadResult;
+        uint32_t RefCount{ 0 };
+        // Frames left until release once nothing uses the texture
+        uint32_t ReleaseCountdown{ 0 };
+    };
+
+    // Long enough for "ask its size, then show it" not to decode the file twice, and for
+    // frames already handed to the renderer to finish
+    static constexpr uint32_t FileTextureReleaseFrames = 120;
+    HashMap<FixedString, FileTexture> fileTextures_;
+    void UpdateFileTextures();
     void OnViewportUpdated();
     void UpdateStyle();
 };

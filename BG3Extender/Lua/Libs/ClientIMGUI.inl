@@ -43,6 +43,18 @@ bool LoadFont(FixedString const& name, char const* path, float size,
         mergePath ? mergePath->c_str() : nullptr, mergeFirst ? *mergeFirst : 0, mergeLast ? *mergeLast : 0);
 }
 
+// Ext.IMGUI.GetImageSize(name) -> { width, height } in pixels, or nil if there is no such image.
+// `name` is what AddImage() takes: an atlas icon, a texture resource GUID, or the path of an image
+// file in the game's data ("Public/MyMod/GUI/logo.png").
+std::optional<glm::vec2> GetImageSize(FixedString name)
+{
+    if (!gExtender->IMGUI().WasUIInitialized()) return {};
+
+    extui::ImageReference image;
+    if (!image.Bind(name)) return {};
+    return image.Size;
+}
+
 // Names of the fonts that can be assigned to an element's Font
 Array<FixedString> GetFontNames()
 {
@@ -153,6 +165,7 @@ void RegisterIMGUILib()
     MODULE_FUNCTION(ToggleDebugTools)
     MODULE_FUNCTION(LoadFont)
     MODULE_FUNCTION(GetFontNames)
+    MODULE_FUNCTION(GetImageSize)
     MODULE_FUNCTION(SetScale)
     MODULE_FUNCTION(SetUIScaleMultiplier)
     MODULE_FUNCTION(SetFontScaleMultiplier)

@@ -1,4 +1,14 @@
 #include <stdafx.h>
+// Decoder for the image files mods bring (see IMGUIManager::RegisterFileTexture)
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_STDIO
+#define STBI_ONLY_PNG
+#define STBI_ONLY_JPEG
+#define STBI_ONLY_TGA
+#define STBI_ONLY_BMP
+#pragma warning(push, 0)
+#include <stb_image.h>
+#pragma warning(pop)
 
 #include <Extender/Client/IMGUI/IMGUI.h>
 #include <Extender/Client/IMGUI/Objects.h>
@@ -31,12 +41,51 @@ void DrawingContext::PopScaling()
 ImageReference::~ImageReference()
 {
     if (TextureHandle) {
-        gExtender->IMGUI().UnregisterTexture(TextureHandle, TextureResource);
+        if (isFile_) {
+            gExtender->IMGUI().UnregisterFileTexture(TextureResource);
+        } else {
+            gExtender->IMGUI().UnregisterTexture(TextureHandle, TextureResource);
+        }
     }
+}
+
+// A name with a directory separator and an image extension is a file; icon names and texture GUIDs have neither
+bool ImageReference::IsFilePath(FixedString const& name)
+{
+    auto path = name.GetStringView();
+    if (path.find('/') == StringView::npos && path.find('\\') == StringView::npos) return false;
+
+    auto dot = path.rfind('.');
+    if (dot == StringView::npos) return false;
+
+    STDString ext(path.substr(dot + 1));
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+    return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "tga" || ext == "bmp";
+}
+
+bool ImageReference::BindFile(FixedString const& path)
+{
+    auto result = gExtender->IMGUI().RegisterFileTexture(path);
+    if (!result) return false;
+
+    TextureResource = path;
+    TextureHandle = result->OpaqueHandle;
+    Size = glm::vec2((float)result->Width, (float)result->Height);
+    isFile_ = true;
+    return true;
 }
 
 bool ImageReference::Bind(FixedString const& iconOrTexture)
 {
+    if (IsFilePath(iconOrTexture)) {
+        if (!BindFile(iconOrTexture)) {
+            WARN("Unable to load image file '%s'", iconOrTexture.GetString());
+            return false;
+        }
+
+        return true;
+    }
+
     if (!BindIcon(iconOrTexture) && !BindTexture(iconOrTexture)) {
         WARN("Unable to load icon or texture resource '%s'", iconOrTexture.GetString());
         return false;
@@ -101,7 +150,11 @@ ImTextureID ImageReference::PrepareRender()
         TextureId = *tex;
     } else {
         // Failed to create render texture, remove binding
-        gExtender->IMGUI().UnregisterTexture(TextureHandle, TextureResource);
+        if (isFile_) {
+            gExtender->IMGUI().UnregisterFileTexture(TextureResource);
+        } else {
+            gExtender->IMGUI().UnregisterTexture(TextureHandle, TextureResource);
+        }
         TextureHandle = 0;
     }
 
@@ -2712,6 +2765,72 @@ bool IMGUIManager::LoadFont(FontData& request)
     return true;
 }
 
+std::optional<TextureLoadResult> IMGUIManager::RegisterFileTexture(FixedString const& path)
+{
+    auto loaded = fileTextures_.try_get(path);
+    if (loaded) {
+        loaded->RefCount++;
+        loaded->ReleaseCountdown = 0;
+        return loaded->LoadResult;
+    }
+
+    if (!initialized_ || !renderer_) return {};
+
+    auto blob = script::LoadExternalFile(path.GetStringView(), PathRootType::Data);
+    if (!blob) {
+        OsiError("Failed to open image file: " << path.GetString());
+        return {};
+    }
+
+    int width{ 0 }, height{ 0 }, channels{ 0 };
+    auto pixels = stbi_load_from_memory((stbi_uc const*)blob->data(), (int)blob->size(), &width, &height, &channels, 4);
+    if (pixels == nullptr) {
+        OsiError("Failed to decode image file (png, jpg, tga and bmp are supported): " << path.GetString());
+        return {};
+    }
+
+    std::optional<TextureOpaqueHandle> handle;
+    if (width > 0 && height > 0 && width <= 8192 && height <= 8192) {
+        handle = renderer_->CreateTexture(pixels, (uint32_t)width, (uint32_t)height);
+    }
+    stbi_image_free(pixels);
+
+    if (!handle) {
+        OsiError("Failed to create a texture for image file (too large, or not supported by this renderer): " << path.GetString());
+        return {};
+    }
+
+    FileTexture texture;
+    texture.LoadResult = TextureLoadResult{ *handle, (uint32_t)width, (uint32_t)height };
+    texture.RefCount = 1;
+    fileTextures_.set(path, texture);
+    return texture.LoadResult;
+}
+
+void IMGUIManager::UnregisterFileTexture(FixedString const& path)
+{
+    auto loaded = fileTextures_.try_get(path);
+    if (loaded && loaded->RefCount > 0 && --loaded->RefCount == 0) {
+        loaded->ReleaseCountdown = FileTextureReleaseFrames;
+    }
+}
+
+void IMGUIManager::UpdateFileTextures()
+{
+    Array<FixedString> released;
+    for (auto const& it : fileTextures_) {
+        auto& texture = it.Value();
+        if (texture.RefCount == 0 && texture.ReleaseCountdown > 0 && --texture.ReleaseCountdown == 0) {
+            renderer_->DestroyTexture(texture.LoadResult.OpaqueHandle);
+            released.push_back(it.Key());
+        }
+    }
+
+    for (auto const& path : released) {
+        fileTextures_.remove(path);
+    }
+}
+
 Array<FixedString> IMGUIManager::GetFontNames()
 {
     Array<FixedString> names;
@@ -2928,6 +3047,7 @@ void IMGUIManager::Update()
     frameNo_++;
 
     textureLoader_.Update();
+    UpdateFileTextures();
     renderer_->NewFrame();
     ImGui::NewFrame();
 

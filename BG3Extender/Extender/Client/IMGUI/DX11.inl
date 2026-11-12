@@ -209,6 +209,47 @@ public:
         return info_;
     }
 
+    std::optional<TextureOpaqueHandle> CreateTexture(uint8_t const* rgba, uint32_t width, uint32_t height) override
+    {
+        if (device_ == nullptr) return {};
+
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width = width;
+        desc.Height = height;
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_IMMUTABLE;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+        D3D11_SUBRESOURCE_DATA data{};
+        data.pSysMem = rgba;
+        data.SysMemPitch = width * 4;
+
+        ID3D11Texture2D* texture{ nullptr };
+        if (FAILED(device_->CreateTexture2D(&desc, &data, &texture)) || texture == nullptr) {
+            return {};
+        }
+
+        ID3D11ShaderResourceView* view{ nullptr };
+        auto result = device_->CreateShaderResourceView(texture, nullptr, &view);
+        // The view keeps the texture alive
+        texture->Release();
+        if (FAILED(result) || view == nullptr) {
+            return {};
+        }
+
+        return reinterpret_cast<TextureOpaqueHandle>(view);
+    }
+
+    void DestroyTexture(TextureOpaqueHandle opaqueHandle) override
+    {
+        if (opaqueHandle != nullptr) {
+            reinterpret_cast<ID3D11ShaderResourceView*>(opaqueHandle)->Release();
+        }
+    }
+
     void SetPaperWhite(float nits) override
     {
         info_.PaperWhiteNits = std::clamp(nits, 10.0f, 10000.0f);

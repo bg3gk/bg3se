@@ -44,6 +44,10 @@ public:
     virtual bool IsInitialized() = 0;
     virtual glm::ivec2 GetViewportSize() = 0;
     virtual BackendInfo GetBackendInfo() = 0;
+    // A texture made from RGBA8 pixels (an image file a mod brings), and its release.
+    // A backend that cannot make one returns nothing.
+    virtual std::optional<TextureOpaqueHandle> CreateTexture(uint8_t const* rgba, uint32_t width, uint32_t height) { return {}; }
+    virtual void DestroyTexture(TextureOpaqueHandle opaqueHandle) {}
     // Brightness of sRGB white on an HDR display, in nits; no effect on SDR output
     virtual void SetPaperWhite(float nits) {}
 };

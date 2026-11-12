@@ -117,6 +117,9 @@ public:
     bool Bind(FixedString const& iconOrTexture);
     bool BindTexture(FixedString const& textureUuid);
     bool BindIcon(FixedString const& iconName);
+    // An image file by its path in the game's data, e.g. "Public/MyMod/GUI/logo.png"
+    bool BindFile(FixedString const& path);
+    static bool IsFilePath(FixedString const& name);
     ImTextureID PrepareRender();
 
     inline bool IsValid() const
@@ -133,6 +136,7 @@ public:
 private:
     TextureOpaqueHandle TextureHandle{ 0 };
     ImTextureID TextureId{ 0 };
+    bool isFile_{ false };
 };
 
 
