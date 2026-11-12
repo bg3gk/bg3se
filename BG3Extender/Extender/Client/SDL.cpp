@@ -84,17 +84,58 @@ void SDLManager::SDLCreateWindowHooked(const char* title,
 
 int SDLManager::SDLPollEventHooked(SDLPollEventProc* wrapped, SDL_Event* event)
 {
-    if (!injectedEvents_.empty()) {
-        std::lock_guard _(injectedEventMutex_);
-        *event = *injectedEvents_.begin();
-        injectedEvents_.ordered_remove_at(0);
-        return 1;
+    while (!injectedEvents_.empty()) {
+        {
+            std::lock_guard _(injectedEventMutex_);
+            if (injectedEvents_.empty()) break;
+            *event = *injectedEvents_.begin();
+            injectedEvents_.ordered_remove_at(0);
+        }
+
+        // An injected event the UI takes (typing into a text field, a click on a window)
+        // is not passed on to the game, the same as a real one
+        if (!InjectedEventConsumedByUI(event)) {
+            return 1;
+        }
     }
 
     int result = wrapped(event);
     result = SDLPollEventSEH(event, result);
 
     return result;
+}
+
+// Shows an injected event to the extender UI. Lua input events are not raised for it:
+// the event came from Lua in the first place.
+bool SDLManager::InjectedEventConsumedByUI(SDL_Event* event)
+{
+    if (!enableUI_) return false;
+
+    bool keyboard = event->type == SDL_KEYDOWN || event->type == SDL_KEYUP || event->type == SDL_TEXTINPUT;
+    bool mouse = event->type == SDL_MOUSEMOTION || event->type == SDL_MOUSEBUTTONDOWN
+        || event->type == SDL_MOUSEBUTTONUP || event->type == SDL_MOUSEWHEEL;
+    if (!keyboard && !mouse) return false;
+
+    // The backend ignores events that do not name its window; injected ones may carry no window
+    SDL_Event uiEvent = *event;
+    auto windowId = SDL_GetWindowID(window_);
+    switch (uiEvent.type) {
+    case SDL_KEYDOWN:
+    case SDL_KEYUP: uiEvent.key.windowID = windowId; break;
+    case SDL_TEXTINPUT: uiEvent.text.windowID = windowId; break;
+    case SDL_MOUSEMOTION: uiEvent.motion.windowID = windowId; break;
+    case SDL_MOUSEBUTTONDOWN:
+    case SDL_MOUSEBUTTONUP: uiEvent.button.windowID = windowId; break;
+    case SDL_MOUSEWHEEL: uiEvent.wheel.windowID = windowId; break;
+    }
+
+    {
+        std::lock_guard _(mutex_);
+        ImGui_ImplSDL2_ProcessEvent(&uiEvent);
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+    return (keyboard && io.WantTextInput) || (mouse && io.WantCaptureMouse);
 }
 
 int SDLManager::SDLPollEventSEH(SDL_Event* event, int result)

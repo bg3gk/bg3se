@@ -47,6 +47,7 @@ private:
     int SDLPollEventHooked(SDLPollEventProc* wrapped, SDL_Event* event);
     int SDLPollEventInternal(SDL_Event* event, int result);
     int SDLPollEventSEH(SDL_Event* event, int result);
+    bool InjectedEventConsumedByUI(SDL_Event* event);
     void SDLIsTextInputActiveHooked(SDL_bool active);
     void SDLStartTextInputHooked(SDLStartTextInputProc* wrapped);
     void SDLStopTextInputHooked(SDLStartTextInputProc* wrapped);
