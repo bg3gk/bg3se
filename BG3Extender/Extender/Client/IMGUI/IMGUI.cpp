@@ -171,9 +171,42 @@ void StyledRenderable::Render(DrawingContext& context)
     PushStyleChanges(context);
     PushWindowStyleChanges(context, font);
 
+    bool isWindow = GetType() == IMGUIObjectType::Window;
+    // Kept alive locally: the decoration may be cleared while the element is drawn
+    auto decoration = (decoration_ && decoration_->Any() && CanDecorateItem()) ? decoration_ : nullptr;
+    ImDrawList* drawList{ nullptr };
+
+    if (!isWindow) {
+        auto avail = ImGui::GetContentRegionAvail();
+        LastAvail = glm::vec2(avail.x, avail.y);
+    }
+
+    if (decoration) {
+        // The element is drawn into the upper of two layers; once its rectangle is known,
+        // the decoration goes into the lower one
+        drawList = ImGui::GetWindowDrawList();
+        decoration->Splitter.Split(drawList, 2);
+        decoration->Splitter.SetCurrentChannel(drawList, 1);
+    }
+
     StyledRender(context);
     UpdateStatusFlags();
     FireEvents();
+
+    if (!isWindow) {
+        auto min = ImGui::GetItemRectMin();
+        auto max = ImGui::GetItemRectMax();
+        LastRect = glm::vec4(min.x, min.y, max.x, max.y);
+    }
+
+    if (decoration) {
+        decoration->Splitter.SetCurrentChannel(drawList, 0);
+        auto pad = context.Scale(decoration->Padding);
+        decoration->Draw(drawList,
+            ImVec2(LastRect.x - pad.x, LastRect.y - pad.y), ImVec2(LastRect.z + pad.x, LastRect.w + pad.y),
+            context.Scale(1.0f), true);
+        decoration->Splitter.Merge(drawList);
+    }
 
     PopWindowStyleChanges(font);
     PopStyleChanges();
@@ -420,6 +453,176 @@ void StyledRenderable::SetStyleColor(GuiColor color, glm::vec4 value)
     }
 
     StyleColors.push_back(StyleColor{ color, value });
+}
+
+
+void StyledRenderable::ClearStyleVar(GuiStyleVar var)
+{
+    for (uint32_t i = 0; i < StyleVars.size(); i++) {
+        if (StyleVars[i].Key == var) {
+            StyleVars.ordered_remove_at(i);
+            return;
+        }
+    }
+}
+
+
+void StyledRenderable::ClearStyleColor(GuiColor color)
+{
+    for (uint32_t i = 0; i < StyleColors.size(); i++) {
+        if (StyleColors[i].Key == color) {
+            StyleColors.ordered_remove_at(i);
+            return;
+        }
+    }
+}
+
+
+Decoration& StyledRenderable::GetDecoration()
+{
+    if (!decoration_) {
+        decoration_ = std::make_shared<Decoration>();
+    }
+
+    return *decoration_;
+}
+
+
+// Elements that are not a single item of their parent window, or that switch draw channels
+// themselves (tables), cannot be wrapped in the two-layer split used for decorations
+bool StyledRenderable::CanDecorateItem()
+{
+    switch (GetType()) {
+    case IMGUIObjectType::Window:
+    case IMGUIObjectType::Table:
+    case IMGUIObjectType::TableRow:
+    case IMGUIObjectType::TableCell:
+    case IMGUIObjectType::Tooltip:
+    case IMGUIObjectType::Popup:
+    case IMGUIObjectType::MenuBar:
+    case IMGUIObjectType::Menu:
+    case IMGUIObjectType::MenuItem:
+        return false;
+
+    default:
+        return true;
+    }
+}
+
+
+void StyledRenderable::SetBackground(std::optional<glm::vec4> color)
+{
+    GetDecoration().Fill = color;
+}
+
+
+void StyledRenderable::SetBackgroundGradient(std::optional<glm::vec4> from, std::optional<glm::vec4> to, std::optional<float> angle)
+{
+    auto& decoration = GetDecoration();
+    decoration.GradientFrom = from;
+    decoration.GradientTo = to;
+    decoration.GradientAngle = angle ? *angle : 180.0f;
+}
+
+
+void StyledRenderable::SetBackgroundRounding(float rounding)
+{
+    GetDecoration().Rounding = rounding;
+}
+
+
+void StyledRenderable::SetBackgroundPadding(float x, std::optional<float> y)
+{
+    GetDecoration().Padding = glm::vec2(x, y ? *y : x);
+}
+
+
+void StyledRenderable::SetBorder(std::optional<glm::vec4> color, std::optional<float> size)
+{
+    auto& decoration = GetDecoration();
+    decoration.BorderColor = color;
+    decoration.BorderSize = size ? *size : 1.0f;
+}
+
+
+void StyledRenderable::SetShadow(std::optional<glm::vec4> color, std::optional<float> size, std::optional<float> offsetX, std::optional<float> offsetY)
+{
+    auto& decoration = GetDecoration();
+    decoration.ShadowColor = color;
+    decoration.ShadowSize = size ? *size : 8.0f;
+    decoration.ShadowOffset = glm::vec2(offsetX ? *offsetX : 0.0f, offsetY ? *offsetY : 0.0f);
+}
+
+
+void StyledRenderable::ClearDecoration()
+{
+    decoration_.reset();
+}
+
+
+// Fills a rounded rectangle with a linear gradient: the rectangle is emitted in one colour and
+// its vertices are recoloured by their position along the gradient axis. The alpha ImGui gave
+// each vertex (the anti-aliasing fringe) is kept as a factor.
+static void AddRectFilledGradient(ImDrawList* drawList, ImVec2 min, ImVec2 max, glm::vec4 const& from, glm::vec4 const& to,
+    float angleDegrees, float rounding)
+{
+    if (max.x <= min.x || max.y <= min.y) return;
+
+    auto radians = angleDegrees * 3.14159265f / 180.0f;
+    ImVec2 dir(sinf(radians), -cosf(radians));
+    ImVec2 center((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
+    auto halfLength = fabsf((max.x - min.x) * 0.5f * dir.x) + fabsf((max.y - min.y) * 0.5f * dir.y);
+    if (halfLength <= 0.0f) return;
+
+    int vtxStart = drawList->VtxBuffer.Size;
+    drawList->AddRectFilled(min, max, IM_COL32_WHITE, rounding);
+    int vtxEnd = drawList->VtxBuffer.Size;
+
+    for (int i = vtxStart; i < vtxEnd; i++) {
+        auto& vtx = drawList->VtxBuffer.Data[i];
+        auto t = ((vtx.pos.x - center.x) * dir.x + (vtx.pos.y - center.y) * dir.y) / (2.0f * halfLength) + 0.5f;
+        t = std::clamp(t, 0.0f, 1.0f);
+        auto color = from + (to - from) * t;
+        color.a *= (float)((vtx.col >> IM_COL32_A_SHIFT) & 0xFF) / 255.0f;
+        vtx.col = ImGui::ColorConvertFloat4ToU32(ToImVec(color));
+    }
+}
+
+
+void Decoration::Draw(ImDrawList* drawList, ImVec2 min, ImVec2 max, float scale, bool shadow) const
+{
+    if (max.x <= min.x || max.y <= min.y) return;
+
+    auto rounding = Rounding * scale;
+
+    if (shadow && ShadowColor && ShadowSize > 0.0f) {
+        // A soft edge from a stack of translucent rectangles that grow outwards
+        auto size = ShadowSize * scale;
+        auto layers = std::clamp((int)ceilf(size / 2.0f), 1, 12);
+        auto color = *ShadowColor;
+        color.a /= (float)layers;
+        auto col = ImGui::ColorConvertFloat4ToU32(ToImVec(color));
+        ImVec2 offset(ShadowOffset.x * scale, ShadowOffset.y * scale);
+        for (int i = layers; i >= 1; i--) {
+            auto grow = size * (float)i / (float)layers;
+            drawList->AddRectFilled(
+                ImVec2(min.x + offset.x - grow, min.y + offset.y - grow),
+                ImVec2(max.x + offset.x + grow, max.y + offset.y + grow),
+                col, rounding + grow);
+        }
+    }
+
+    if (Fill) {
+        drawList->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ToImVec(*Fill)), rounding);
+    }
+
+    if (GradientFrom && GradientTo) {
+        AddRectFilledGradient(drawList, min, max, *GradientFrom, *GradientTo, GradientAngle, rounding);
+    }
+
+    if (BorderColor && BorderSize > 0.0f) {
+        drawList->AddRect(min, max, ImGui::ColorConvertFloat4ToU32(ToImVec(*BorderColor)), rounding, BorderSize * scale);
+    }
 }
 
 
@@ -755,6 +958,13 @@ lua::ImguiHandle TreeParent::AddProgressBar()
     return AddChild<ProgressBar>();
 }
 
+lua::ImguiHandle TreeParent::AddCanvas(float width, float height)
+{
+    auto canvas = AddChild<Canvas>();
+    canvas->Size = glm::vec2(width, height);
+    return canvas;
+}
+
 
 bool TreeParent::RemoveChild(lua::ImguiHandle child)
 {
@@ -887,6 +1097,9 @@ void WindowBase::EndDrawingWindow()
     LastSize = glm::vec2(size.x, size.y);
     auto pos = ImGui::GetWindowPos();
     LastPosition = glm::vec2(pos.x, pos.y);
+    if (GetType() == IMGUIObjectType::Window) {
+        LastRect = glm::vec4(pos.x, pos.y, pos.x + size.x, pos.y + size.y);
+    }
     LastScroll = glm::vec2(ImGui::GetScrollX(), ImGui::GetScrollY());
     LastScrollMax = glm::vec2(ImGui::GetScrollMaxX(), ImGui::GetScrollMaxY());
     Focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
@@ -906,10 +1119,12 @@ void WindowBase::ProcessRenderSettings(DrawingContext& context)
     }
 
     if (req_.SizeConstraints) {
-        ImGui::SetNextWindowSizeConstraints(
-            context.Scale(req_.SizeConstraints->SizeMin), 
-            context.Scale(req_.SizeConstraints->SizeMax));
-        req_.SizeConstraints = {};
+        // Not reset: ImGui takes constraints for the next Begin() only, so they are given every frame.
+        // A side without a maximum is unlimited (it used to be 0, which collapsed the window).
+        auto sizeMax = context.Scale(req_.SizeConstraints->SizeMax);
+        if (req_.SizeConstraints->SizeMax.x <= 0.0f) sizeMax.x = FLT_MAX;
+        if (req_.SizeConstraints->SizeMax.y <= 0.0f) sizeMax.y = FLT_MAX;
+        ImGui::SetNextWindowSizeConstraints(context.Scale(req_.SizeConstraints->SizeMin), sizeMax);
     }
 
     if (req_.ContentSize) {
@@ -954,6 +1169,18 @@ bool Window::BeginRender(DrawingContext& context)
     }
 
     BeginDrawingWindow();
+
+    if (renderChildren && decoration_ && decoration_->Any()) {
+        // Behind the contents, over the window's own background; the title and menu bars stay as they are
+        auto window = ImGui::GetCurrentWindow();
+        auto min = window->Pos;
+        auto max = ImVec2(window->Pos.x + window->Size.x, window->Pos.y + window->Size.y);
+        min.y += window->TitleBarHeight + window->MenuBarHeight;
+        auto drawList = ImGui::GetWindowDrawList();
+        drawList->PushClipRect(min, max, false);
+        decoration_->Draw(drawList, min, max, context.Scale(1.0f), false);
+        drawList->PopClipRect();
+    }
 
     return renderChildren;
 }
@@ -1764,6 +1991,192 @@ void ProgressBar::StyledRender(DrawingContext& context)
 }
 
 
+void Canvas::StyledRender(DrawingContext& context)
+{
+    auto size = context.Scale(Size);
+    auto origin = ImGui::GetCursorScreenPos();
+    // Reserves the area and makes the canvas an item (clicks, hover, LastRect)
+    ImGui::InvisibleButton("##canvas", ImVec2(std::max(size.x, 1.0f), std::max(size.y, 1.0f)));
+
+    if (commands_.empty() || !ImGui::IsItemVisible()) return;
+
+    auto drawList = ImGui::GetWindowDrawList();
+    auto scale = context.Scale(1.0f);
+    auto at = [&](glm::vec2 const& p) { return ImVec2(origin.x + p.x * scale, origin.y + p.y * scale); };
+    auto col = [](glm::vec4 const& c) { return ImGui::ColorConvertFloat4ToU32(ToImVec(c)); };
+
+    drawList->PushClipRect(origin, ImVec2(origin.x + size.x, origin.y + size.y), true);
+
+    for (auto const& cmd : commands_) {
+        auto const& p = cmd.Points;
+        switch (cmd.Type) {
+        case CommandType::Line:
+            drawList->AddLine(at(p[0]), at(p[1]), col(cmd.Color), cmd.A * scale);
+            break;
+        case CommandType::Rect:
+            drawList->AddRect(at(p[0]), at(p[1]), col(cmd.Color), cmd.B * scale, cmd.A * scale);
+            break;
+        case CommandType::RectFilled:
+            drawList->AddRectFilled(at(p[0]), at(p[1]), col(cmd.Color), cmd.B * scale);
+            break;
+        case CommandType::RectGradient:
+            AddRectFilledGradient(drawList, at(p[0]), at(p[1]), cmd.Color, cmd.Color2, cmd.A, cmd.B * scale);
+            break;
+        case CommandType::Circle:
+            drawList->AddCircle(at(p[0]), cmd.B * scale, col(cmd.Color), 0, cmd.A * scale);
+            break;
+        case CommandType::CircleFilled:
+            drawList->AddCircleFilled(at(p[0]), cmd.B * scale, col(cmd.Color));
+            break;
+        case CommandType::Triangle:
+            drawList->AddTriangle(at(p[0]), at(p[1]), at(p[2]), col(cmd.Color), cmd.A * scale);
+            break;
+        case CommandType::TriangleFilled:
+            drawList->AddTriangleFilled(at(p[0]), at(p[1]), at(p[2]), col(cmd.Color));
+            break;
+        case CommandType::Bezier:
+            drawList->AddBezierCubic(at(p[0]), at(p[1]), at(p[2]), at(p[3]), col(cmd.Color), cmd.A * scale);
+            break;
+        case CommandType::Polyline:
+            for (auto const& point : cmd.Path) {
+                drawList->PathLineTo(at(point));
+            }
+            drawList->PathStroke(col(cmd.Color), cmd.A * scale, cmd.Closed ? ImDrawFlags_Closed : 0);
+            break;
+        case CommandType::Text:
+            drawList->AddText(at(p[0]), col(cmd.Color), cmd.Text.data(), cmd.Text.data() + cmd.Text.size());
+            break;
+        }
+    }
+
+    drawList->PopClipRect();
+}
+
+void Canvas::Clear()
+{
+    commands_.clear();
+}
+
+void Canvas::AddLine(glm::vec2 from, glm::vec2 to, glm::vec4 color, std::optional<float> thickness)
+{
+    Command cmd;
+    cmd.Type = CommandType::Line;
+    cmd.Points = { from, to };
+    cmd.Color = color;
+    cmd.A = thickness ? *thickness : 1.0f;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddRect(glm::vec2 min, glm::vec2 max, glm::vec4 color, std::optional<float> rounding, std::optional<float> thickness)
+{
+    Command cmd;
+    cmd.Type = CommandType::Rect;
+    cmd.Points = { min, max };
+    cmd.Color = color;
+    cmd.A = thickness ? *thickness : 1.0f;
+    cmd.B = rounding ? *rounding : 0.0f;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddRectFilled(glm::vec2 min, glm::vec2 max, glm::vec4 color, std::optional<float> rounding)
+{
+    Command cmd;
+    cmd.Type = CommandType::RectFilled;
+    cmd.Points = { min, max };
+    cmd.Color = color;
+    cmd.B = rounding ? *rounding : 0.0f;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddRectGradient(glm::vec2 min, glm::vec2 max, glm::vec4 from, glm::vec4 to, std::optional<float> angle, std::optional<float> rounding)
+{
+    Command cmd;
+    cmd.Type = CommandType::RectGradient;
+    cmd.Points = { min, max };
+    cmd.Color = from;
+    cmd.Color2 = to;
+    cmd.A = angle ? *angle : 180.0f;
+    cmd.B = rounding ? *rounding : 0.0f;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddCircle(glm::vec2 center, float radius, glm::vec4 color, std::optional<float> thickness)
+{
+    Command cmd;
+    cmd.Type = CommandType::Circle;
+    cmd.Points = { center };
+    cmd.Color = color;
+    cmd.A = thickness ? *thickness : 1.0f;
+    cmd.B = radius;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddCircleFilled(glm::vec2 center, float radius, glm::vec4 color)
+{
+    Command cmd;
+    cmd.Type = CommandType::CircleFilled;
+    cmd.Points = { center };
+    cmd.Color = color;
+    cmd.B = radius;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddTriangle(glm::vec2 a, glm::vec2 b, glm::vec2 c, glm::vec4 color, std::optional<float> thickness)
+{
+    Command cmd;
+    cmd.Type = CommandType::Triangle;
+    cmd.Points = { a, b, c };
+    cmd.Color = color;
+    cmd.A = thickness ? *thickness : 1.0f;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddTriangleFilled(glm::vec2 a, glm::vec2 b, glm::vec2 c, glm::vec4 color)
+{
+    Command cmd;
+    cmd.Type = CommandType::TriangleFilled;
+    cmd.Points = { a, b, c };
+    cmd.Color = color;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddBezier(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4, glm::vec4 color, std::optional<float> thickness)
+{
+    Command cmd;
+    cmd.Type = CommandType::Bezier;
+    cmd.Points = { p1, p2, p3, p4 };
+    cmd.Color = color;
+    cmd.A = thickness ? *thickness : 1.0f;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddPolyline(Array<glm::vec2> points, glm::vec4 color, std::optional<bool> closed, std::optional<float> thickness)
+{
+    Command cmd;
+    cmd.Type = CommandType::Polyline;
+    cmd.Color = color;
+    cmd.A = thickness ? *thickness : 1.0f;
+    cmd.Closed = closed && *closed;
+    cmd.Path = points;
+    commands_.push_back(cmd);
+}
+
+void Canvas::AddText(glm::vec2 pos, glm::vec4 color, STDString text)
+{
+    Command cmd;
+    cmd.Type = CommandType::Text;
+    cmd.Points = { pos };
+    cmd.Color = color;
+    cmd.Text = text;
+    commands_.push_back(cmd);
+}
+
+uint32_t Canvas::GetCommandCount() const
+{
+    return commands_.size();
+}
+
+
 IMGUIObjectPoolInterface::~IMGUIObjectPoolInterface() {}
 
 IMGUIObjectManager::IMGUIObjectManager(lua::State& state)
@@ -1817,6 +2230,7 @@ IMGUIObjectManager::IMGUIObjectManager(lua::State& state)
     pools_[(unsigned)IMGUIObjectType::ColorPicker] = std::make_unique<IMGUIObjectPool<ColorPicker>>();
 
     pools_[(unsigned)IMGUIObjectType::ProgressBar] = std::make_unique<IMGUIObjectPool<ProgressBar>>();
+    pools_[(unsigned)IMGUIObjectType::Canvas] = std::make_unique<IMGUIObjectPool<Canvas>>();
 }
 
 IMGUIObjectManager::~IMGUIObjectManager()

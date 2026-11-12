@@ -68,7 +68,8 @@ enum class IMGUIObjectType : uint8_t
     ColorEdit,
     ColorPicker,
     ProgressBar,
-    Max = ProgressBar
+    Canvas,
+    Max = Canvas
 };
 
 struct DrawingContext
@@ -167,6 +168,33 @@ struct StyleVar
 };
 
 
+// What is drawn behind an element (see StyledRenderable::SetBackground() and friends)
+struct Decoration
+{
+    std::optional<glm::vec4> Fill;
+    std::optional<glm::vec4> GradientFrom;
+    std::optional<glm::vec4> GradientTo;
+    // Direction of the gradient in degrees, as in CSS: 0 = upwards, 90 = to the right, 180 = downwards
+    float GradientAngle{ 180.0f };
+    float Rounding{ 0.0f };
+    std::optional<glm::vec4> BorderColor;
+    float BorderSize{ 1.0f };
+    std::optional<glm::vec4> ShadowColor;
+    float ShadowSize{ 0.0f };
+    glm::vec2 ShadowOffset{ 0.0f };
+    // How far the decoration extends beyond the element's rectangle
+    glm::vec2 Padding{ 0.0f };
+    // Lets the decoration be drawn after the element (its size is only known then) yet appear behind it
+    ImDrawListSplitter Splitter;
+
+    inline bool Any() const
+    {
+        return Fill || (GradientFrom && GradientTo) || BorderColor || (ShadowColor && ShadowSize > 0.0f);
+    }
+
+    void Draw(ImDrawList* drawList, ImVec2 min, ImVec2 max, float scale, bool shadow) const;
+};
+
 struct StyledRenderable : public Renderable
 {
 public:
@@ -184,6 +212,21 @@ public:
     void SetStyleColor(GuiColor color, glm::vec4 value);
     lua::ImguiHandle Tooltip();
     void Activate();
+    void ClearStyleVar(GuiStyleVar var);
+    void ClearStyleColor(GuiColor color);
+
+    void SetBackground(std::optional<glm::vec4> color);
+    void SetBackgroundGradient(std::optional<glm::vec4> from, std::optional<glm::vec4> to, std::optional<float> angle);
+    void SetBackgroundRounding(float rounding);
+    void SetBackgroundPadding(float x, std::optional<float> y);
+    void SetBorder(std::optional<glm::vec4> color, std::optional<float> size);
+    void SetShadow(std::optional<glm::vec4> color, std::optional<float> size, std::optional<float> offsetX, std::optional<float> offsetY);
+    void ClearDecoration();
+
+    // Screen rectangle of the element as of the last frame it was drawn: x1, y1, x2, y2
+    glm::vec4 LastRect{ 0.0f };
+    // Space that was left in the parent when the element was about to be drawn: width, height
+    glm::vec2 LastAvail{ 0.0f };
 
     Array<StyleVar> StyleVars;
     Array<StyleColor> StyleColors;
@@ -207,6 +250,13 @@ public:
     GuiItemStatusFlags StatusFlags{ 0 };
     GuiDragFlags DragFlags{ 0 };
     GuiDropFlags DropFlags{ 0 };
+
+protected:
+    std::shared_ptr<Decoration> decoration_;
+    Decoration& GetDecoration();
+    bool CanDecorateItem();
+
+public:
 
     lua::LuaDelegate<void(lua::ImguiHandle)> OnClick;
     lua::LuaDelegate<void(lua::ImguiHandle)> OnRightClick;
@@ -285,6 +335,7 @@ public:
     lua::ImguiHandle AddColorPicker(char const* label, std::optional<glm::vec3> value);
 
     lua::ImguiHandle AddProgressBar();
+    lua::ImguiHandle AddCanvas(float width, float height);
 
     bool RemoveChild(lua::ImguiHandle child);
     bool DetachChild(lua::ImguiHandle child);
@@ -984,6 +1035,56 @@ public:
     float Value{ 0.0f };
     glm::vec2 Size{ 0.0f };
     STDString Overlay;
+};
+
+
+// An area with a list of drawing commands that is kept and redrawn every frame.
+// Coordinates are relative to the top left corner of the canvas.
+struct Canvas : public StyledRenderable
+{
+public:
+    DECL_UI_TYPE(Canvas)
+
+    enum class CommandType : uint8_t
+    {
+        Line, Rect, RectFilled, RectGradient, Circle, CircleFilled, Triangle, TriangleFilled, Bezier, Polyline, Text
+    };
+
+    struct Command
+    {
+        CommandType Type;
+        // Up to four points; what they mean depends on the type
+        std::array<glm::vec2, 4> Points{};
+        glm::vec4 Color{ 1.0f };
+        glm::vec4 Color2{ 1.0f };
+        // Thickness, radius, rounding or angle, depending on the type
+        float A{ 0.0f };
+        float B{ 0.0f };
+        bool Closed{ false };
+        STDString Text;
+        Array<glm::vec2> Path;
+    };
+
+    void StyledRender(DrawingContext& context) override;
+
+    void Clear();
+    void AddLine(glm::vec2 from, glm::vec2 to, glm::vec4 color, std::optional<float> thickness);
+    void AddRect(glm::vec2 min, glm::vec2 max, glm::vec4 color, std::optional<float> rounding, std::optional<float> thickness);
+    void AddRectFilled(glm::vec2 min, glm::vec2 max, glm::vec4 color, std::optional<float> rounding);
+    void AddRectGradient(glm::vec2 min, glm::vec2 max, glm::vec4 from, glm::vec4 to, std::optional<float> angle, std::optional<float> rounding);
+    void AddCircle(glm::vec2 center, float radius, glm::vec4 color, std::optional<float> thickness);
+    void AddCircleFilled(glm::vec2 center, float radius, glm::vec4 color);
+    void AddTriangle(glm::vec2 a, glm::vec2 b, glm::vec2 c, glm::vec4 color, std::optional<float> thickness);
+    void AddTriangleFilled(glm::vec2 a, glm::vec2 b, glm::vec2 c, glm::vec4 color);
+    void AddBezier(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4, glm::vec4 color, std::optional<float> thickness);
+    void AddPolyline(Array<glm::vec2> points, glm::vec4 color, std::optional<bool> closed, std::optional<float> thickness);
+    void AddText(glm::vec2 pos, glm::vec4 color, STDString text);
+    uint32_t GetCommandCount() const;
+
+    glm::vec2 Size{ 0.0f };
+
+private:
+    Array<Command> commands_;
 };
 
 
