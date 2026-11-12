@@ -803,12 +803,28 @@ public:
 
     STDString GetText() const;
     void SetText(STDString text);
+    int GetCursorPos() const;
+    void SetCursorPos(int pos);
+    void SetSelection(int start, int end);
 
     STDString Text;
     std::optional<STDString> Hint;
     std::optional<glm::vec2> SizeHint;
     GuiInputTextFlags Flags{ 0 };
     lua::LuaDelegate<void (lua::ImguiHandle, STDString)> OnChange;
+    // Up/Down pressed in a single-line field; the argument is -1 (up) or 1 (down)
+    lua::LuaDelegate<void (lua::ImguiHandle, int)> OnHistory;
+    // Tab pressed; the argument is the cursor position
+    lua::LuaDelegate<void (lua::ImguiHandle, int)> OnCompletion;
+
+    // Cursor and selection as of the last frame the field was being edited (byte offsets into Text)
+    int CursorPos{ 0 };
+    int SelectionStart{ 0 };
+    int SelectionEnd{ 0 };
+
+    // Requests from Lua; ImGui only lets the cursor be moved from inside the edit callback
+    std::optional<int> PendingCursorPos;
+    std::optional<std::pair<int, int>> PendingSelection;
 
 private:
     bool reloadText_{ false };

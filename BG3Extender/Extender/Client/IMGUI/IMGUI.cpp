@@ -1509,10 +1509,44 @@ InputText::InputText()
 int InputTextCallback(ImGuiInputTextCallbackData* data)
 {
     auto input = static_cast<InputText*>(data->UserData);
-    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+    switch (data->EventFlag) {
+    case ImGuiInputTextFlags_CallbackResize:
         input->Text.resize(std::min(data->BufTextLen, (int)InputText::MaxSize));
         data->Buf = input->Text.data();
         data->BufSize = input->Text.capacity() + 1;
+        break;
+
+    case ImGuiInputTextFlags_CallbackHistory:
+        if (input->OnHistory) {
+            input->Manager->GetEventQueue().Call(input->OnHistory, lua::ImguiHandle(input->Handle),
+                data->EventKey == ImGuiKey_UpArrow ? -1 : 1);
+        }
+        break;
+
+    case ImGuiInputTextFlags_CallbackCompletion:
+        if (input->OnCompletion) {
+            input->Manager->GetEventQueue().Call(input->OnCompletion, lua::ImguiHandle(input->Handle), data->CursorPos);
+        }
+        break;
+
+    case ImGuiInputTextFlags_CallbackAlways:
+        if (input->PendingCursorPos) {
+            data->CursorPos = std::clamp(*input->PendingCursorPos, 0, data->BufTextLen);
+            data->ClearSelection();
+            input->PendingCursorPos = {};
+        }
+
+        if (input->PendingSelection) {
+            data->SelectionStart = std::clamp(input->PendingSelection->first, 0, data->BufTextLen);
+            data->SelectionEnd = std::clamp(input->PendingSelection->second, 0, data->BufTextLen);
+            data->CursorPos = data->SelectionEnd;
+            input->PendingSelection = {};
+        }
+
+        input->CursorPos = data->CursorPos;
+        input->SelectionStart = data->SelectionStart;
+        input->SelectionEnd = data->SelectionEnd;
+        break;
     }
 
     return 0;
@@ -1529,7 +1563,11 @@ void InputText::StyledRender(DrawingContext& context)
         reloadText_ = false;
     }
 
-    auto flags = (ImGuiInputTextFlags)Flags | ImGuiInputTextFlags_CallbackResize;
+    auto flags = (ImGuiInputTextFlags)Flags | ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways;
+    // The history and completion callbacks take the Up/Down and Tab keys away from the field,
+    // so they are only requested when a handler wants them
+    if (OnHistory) flags |= ImGuiInputTextFlags_CallbackHistory;
+    if (OnCompletion) flags |= ImGuiInputTextFlags_CallbackCompletion;
     if (ImGui::InputTextEx(Label.c_str(), Hint ? Hint->c_str() : nullptr, Text.data(), Text.capacity()+1, context.Scale(ToImVec(SizeHint)), 
         flags, &InputTextCallback, this)) {
 
@@ -1548,6 +1586,23 @@ void InputText::SetText(STDString text)
 {
     Text = text;
     reloadText_ = true;
+}
+
+int InputText::GetCursorPos() const
+{
+    return CursorPos;
+}
+
+void InputText::SetCursorPos(int pos)
+{
+    PendingCursorPos = pos;
+    PendingSelection = {};
+}
+
+void InputText::SetSelection(int start, int end)
+{
+    PendingSelection = std::make_pair(start, end);
+    PendingCursorPos = {};
 }
 
 
