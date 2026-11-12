@@ -58,6 +58,57 @@ glm::ivec2 GetViewportSize()
     return gExtender->IMGUI().GetViewportSize();
 }
 
+// The clipboard is read and written through Win32 directly instead of ImGui::GetClipboardText():
+// Lua does not run on the thread that owns the ImGui context.
+std::optional<STDString> GetClipboardText()
+{
+    if (!IsClipboardFormatAvailable(CF_UNICODETEXT) || !OpenClipboard(NULL)) {
+        return {};
+    }
+
+    std::optional<STDString> text;
+    auto handle = GetClipboardData(CF_UNICODETEXT);
+    if (handle != NULL) {
+        auto data = (wchar_t const*)GlobalLock(handle);
+        if (data != nullptr) {
+            text.emplace(ToUTF8(WStringView(data)));
+            GlobalUnlock(handle);
+        }
+    }
+
+    CloseClipboard();
+    return text;
+}
+
+bool SetClipboardText(StringView text)
+{
+    auto wide = FromUTF8(text);
+    auto bytes = (wide.size() + 1) * sizeof(wchar_t);
+    auto handle = GlobalAlloc(GMEM_MOVEABLE, bytes);
+    if (handle == NULL) {
+        return false;
+    }
+
+    auto data = (wchar_t*)GlobalLock(handle);
+    memcpy(data, wide.c_str(), bytes);
+    GlobalUnlock(handle);
+
+    if (!OpenClipboard(NULL)) {
+        GlobalFree(handle);
+        return false;
+    }
+
+    EmptyClipboard();
+    // On success the clipboard owns the memory
+    bool ok = SetClipboardData(CF_UNICODETEXT, handle) != NULL;
+    if (!ok) {
+        GlobalFree(handle);
+    }
+
+    CloseClipboard();
+    return ok;
+}
+
 void RegisterIMGUILib()
 {
     DECLARE_MODULE(IMGUI, Client)
@@ -70,6 +121,8 @@ void RegisterIMGUILib()
     MODULE_FUNCTION(SetUIScaleMultiplier)
     MODULE_FUNCTION(SetFontScaleMultiplier)
     MODULE_FUNCTION(GetViewportSize)
+    MODULE_FUNCTION(GetClipboardText)
+    MODULE_FUNCTION(SetClipboardText)
     END_MODULE()
 }
 
