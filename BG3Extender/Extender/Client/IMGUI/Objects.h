@@ -168,6 +168,29 @@ struct StyleVar
 };
 
 
+// How an image fills a rectangle
+enum class ImageMode : uint8_t
+{
+    // Scaled to the rectangle
+    Stretch,
+    // Repeated at its own size from the top left corner
+    Tile,
+    // Nine slices: corners keep their size, edges stretch along one axis, the centre along both
+    Slice
+};
+
+// A value that moves from one setting to another over a time span (see StyledRenderable::AnimateStyle())
+struct StyleAnimation
+{
+    bool IsColor{ false };
+    GuiStyleVar Var{};
+    GuiColor Color{};
+    glm::vec4 From{ 0.0f };
+    glm::vec4 To{ 0.0f };
+    double StartTime{ -1.0 };
+    float Duration{ 0.0f };
+};
+
 // What is drawn behind an element (see StyledRenderable::SetBackground() and friends)
 struct Decoration
 {
@@ -184,12 +207,19 @@ struct Decoration
     glm::vec2 ShadowOffset{ 0.0f };
     // How far the decoration extends beyond the element's rectangle
     glm::vec2 Padding{ 0.0f };
+    // A texture or atlas icon over the fill and gradient, under the border
+    std::shared_ptr<ImageReference> Image;
+    ImageMode ImageDrawMode{ ImageMode::Stretch };
+    glm::vec4 ImageTint{ 1.0f };
+    // Slice mode: width of the fixed border of the image, in texture pixels
+    float ImageBorder{ 0.0f };
     // Lets the decoration be drawn after the element (its size is only known then) yet appear behind it
     ImDrawListSplitter Splitter;
 
     inline bool Any() const
     {
-        return Fill || (GradientFrom && GradientTo) || BorderColor || (ShadowColor && ShadowSize > 0.0f);
+        return Fill || (GradientFrom && GradientTo) || BorderColor || (ShadowColor && ShadowSize > 0.0f)
+            || (Image && Image->IsValid());
     }
 
     void Draw(ImDrawList* drawList, ImVec2 min, ImVec2 max, float scale, bool shadow) const;
@@ -221,7 +251,14 @@ public:
     void SetBackgroundPadding(float x, std::optional<float> y);
     void SetBorder(std::optional<glm::vec4> color, std::optional<float> size);
     void SetShadow(std::optional<glm::vec4> color, std::optional<float> size, std::optional<float> offsetX, std::optional<float> offsetY);
+    void SetBackgroundImage(std::optional<FixedString> iconOrTexture, std::optional<FixedString> mode,
+        std::optional<glm::vec4> tint, std::optional<float> border);
     void ClearDecoration();
+
+    // Moves a style variable / colour to a new value over `seconds`; the element keeps the end value
+    void AnimateStyle(GuiStyleVar var, float from, float to, float seconds);
+    void AnimateColor(GuiColor color, glm::vec4 from, glm::vec4 to, float seconds);
+    bool IsAnimating() const;
 
     // Screen rectangle of the element as of the last frame it was drawn: x1, y1, x2, y2
     glm::vec4 LastRect{ 0.0f };
@@ -253,6 +290,8 @@ public:
 
 protected:
     std::shared_ptr<Decoration> decoration_;
+    Array<StyleAnimation> animations_;
+    void UpdateAnimations();
     Decoration& GetDecoration();
     bool CanDecorateItem();
 
@@ -1047,7 +1086,7 @@ public:
 
     enum class CommandType : uint8_t
     {
-        Line, Rect, RectFilled, RectGradient, Circle, CircleFilled, Triangle, TriangleFilled, Bezier, Polyline, Text
+        Line, Rect, RectFilled, RectGradient, Circle, CircleFilled, Triangle, TriangleFilled, Bezier, Polyline, Text, Image
     };
 
     struct Command
@@ -1063,6 +1102,7 @@ public:
         bool Closed{ false };
         STDString Text;
         Array<glm::vec2> Path;
+        std::shared_ptr<ImageReference> Image;
     };
 
     void StyledRender(DrawingContext& context) override;
@@ -1079,6 +1119,8 @@ public:
     void AddBezier(glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, glm::vec2 p4, glm::vec4 color, std::optional<float> thickness);
     void AddPolyline(Array<glm::vec2> points, glm::vec4 color, std::optional<bool> closed, std::optional<float> thickness);
     void AddText(glm::vec2 pos, glm::vec4 color, STDString text);
+    bool AddImage(FixedString iconOrTexture, glm::vec2 min, glm::vec2 max, std::optional<glm::vec4> tint,
+        std::optional<glm::vec2> uv0, std::optional<glm::vec2> uv1);
     uint32_t GetCommandCount() const;
 
     glm::vec2 Size{ 0.0f };

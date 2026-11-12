@@ -310,8 +310,77 @@ void StyledRenderable::UpdateStatusFlags()
 }
 
 
+void StyledRenderable::AnimateStyle(GuiStyleVar var, float from, float to, float seconds)
+{
+    for (uint32_t i = 0; i < animations_.size(); i++) {
+        if (!animations_[i].IsColor && animations_[i].Var == var) {
+            animations_.ordered_remove_at(i);
+            break;
+        }
+    }
+
+    SetStyleVar(var, from, {});
+    animations_.push_back(StyleAnimation{ .IsColor = false, .Var = var,
+        .From = glm::vec4(from), .To = glm::vec4(to), .Duration = seconds });
+}
+
+
+void StyledRenderable::AnimateColor(GuiColor color, glm::vec4 from, glm::vec4 to, float seconds)
+{
+    for (uint32_t i = 0; i < animations_.size(); i++) {
+        if (animations_[i].IsColor && animations_[i].Color == color) {
+            animations_.ordered_remove_at(i);
+            break;
+        }
+    }
+
+    SetStyleColor(color, from);
+    animations_.push_back(StyleAnimation{ .IsColor = true, .Color = color, .From = from, .To = to, .Duration = seconds });
+}
+
+
+bool StyledRenderable::IsAnimating() const
+{
+    return !animations_.empty();
+}
+
+
+// Writes the current value of each running animation into the element's style, so the rest of
+// the rendering (and GetStyle / GetColor) sees an ordinary style value. The clock starts on the
+// first frame the element is drawn after the animation was requested.
+void StyledRenderable::UpdateAnimations()
+{
+    auto now = ImGui::GetTime();
+    for (uint32_t i = 0; i < animations_.size(); ) {
+        auto& anim = animations_[i];
+        if (anim.StartTime < 0.0) anim.StartTime = now;
+
+        auto t = anim.Duration > 0.0f ? (float)((now - anim.StartTime) / anim.Duration) : 1.0f;
+        bool done = t >= 1.0f;
+        t = std::clamp(t, 0.0f, 1.0f);
+        // Smoothstep: eases in and out
+        t = t * t * (3.0f - 2.0f * t);
+        auto value = anim.From + (anim.To - anim.From) * t;
+
+        if (anim.IsColor) {
+            SetStyleColor(anim.Color, value);
+        } else {
+            SetStyleVar(anim.Var, value.x, {});
+        }
+
+        if (done) {
+            animations_.ordered_remove_at(i);
+        } else {
+            i++;
+        }
+    }
+}
+
+
 void StyledRenderable::PushStyleChanges(DrawingContext& context)
 {
+    if (!animations_.empty()) UpdateAnimations();
+
     for (auto const& var : StyleVars) {
         auto varInfo = ImGui::GetStyleVarInfo((ImGuiStyleVar)var.Key);
         if (varInfo->Count == 2) {
@@ -554,9 +623,78 @@ void StyledRenderable::SetShadow(std::optional<glm::vec4> color, std::optional<f
 }
 
 
+void StyledRenderable::SetBackgroundImage(std::optional<FixedString> iconOrTexture, std::optional<FixedString> mode,
+    std::optional<glm::vec4> tint, std::optional<float> border)
+{
+    auto& decoration = GetDecoration();
+    decoration.Image.reset();
+    if (!iconOrTexture || !*iconOrTexture) return;
+
+    auto image = std::make_shared<ImageReference>();
+    if (!image->Bind(*iconOrTexture)) return;
+
+    decoration.Image = image;
+    decoration.ImageTint = tint ? *tint : glm::vec4(1.0f);
+    decoration.ImageBorder = border ? *border : 0.0f;
+    decoration.ImageDrawMode = ImageMode::Stretch;
+    if (mode) {
+        auto name = mode->GetStringView();
+        if (name == "Tile") decoration.ImageDrawMode = ImageMode::Tile;
+        else if (name == "Slice") decoration.ImageDrawMode = ImageMode::Slice;
+    }
+}
+
+
 void StyledRenderable::ClearDecoration()
 {
     decoration_.reset();
+}
+
+
+// Draws an image into a rectangle in one of the ImageMode ways. `scale` converts the image's own
+// pixels to screen pixels for the Tile and Slice modes.
+static void DrawImageInRect(ImDrawList* drawList, ImageReference& image, ImageMode mode, ImVec2 min, ImVec2 max,
+    glm::vec4 const& tintColor, float border, float rounding, float scale)
+{
+    auto texture = image.PrepareRender();
+    if (!texture || image.Size.x <= 0.0f || image.Size.y <= 0.0f) return;
+
+    auto tint = ImGui::ColorConvertFloat4ToU32(ToImVec(tintColor));
+    auto uv0 = ToImVec(image.UV0);
+    auto uv1 = ToImVec(image.UV1);
+
+    if (mode == ImageMode::Tile) {
+        auto tile = ImVec2(image.Size.x * scale, image.Size.y * scale);
+        // A sanity limit: a tiny texture over a large area would otherwise emit a huge mesh
+        if (tile.x < 1.0f || tile.y < 1.0f || ((max.x - min.x) / tile.x) * ((max.y - min.y) / tile.y) > 4096.0f) return;
+
+        drawList->PushClipRect(min, max, true);
+        for (auto y = min.y; y < max.y; y += tile.y) {
+            for (auto x = min.x; x < max.x; x += tile.x) {
+                drawList->AddImage(texture, ImVec2(x, y), ImVec2(x + tile.x, y + tile.y), uv0, uv1, tint);
+            }
+        }
+        drawList->PopClipRect();
+    } else if (mode == ImageMode::Slice && border > 0.0f) {
+        // Screen and texture coordinates of the four cuts along each axis
+        auto bx = std::min(border * scale, (max.x - min.x) * 0.5f);
+        auto by = std::min(border * scale, (max.y - min.y) * 0.5f);
+        auto ux = (uv1.x - uv0.x) * std::min(border / image.Size.x, 0.5f);
+        auto uy = (uv1.y - uv0.y) * std::min(border / image.Size.y, 0.5f);
+        float xs[4] = { min.x, min.x + bx, max.x - bx, max.x };
+        float ys[4] = { min.y, min.y + by, max.y - by, max.y };
+        float us[4] = { uv0.x, uv0.x + ux, uv1.x - ux, uv1.x };
+        float vs[4] = { uv0.y, uv0.y + uy, uv1.y - uy, uv1.y };
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                if (xs[col + 1] <= xs[col] || ys[row + 1] <= ys[row]) continue;
+                drawList->AddImage(texture, ImVec2(xs[col], ys[row]), ImVec2(xs[col + 1], ys[row + 1]),
+                    ImVec2(us[col], vs[row]), ImVec2(us[col + 1], vs[row + 1]), tint);
+            }
+        }
+    } else {
+        drawList->AddImageRounded(texture, min, max, uv0, uv1, tint, rounding);
+    }
 }
 
 
@@ -618,6 +756,10 @@ void Decoration::Draw(ImDrawList* drawList, ImVec2 min, ImVec2 max, float scale,
 
     if (GradientFrom && GradientTo) {
         AddRectFilledGradient(drawList, min, max, *GradientFrom, *GradientTo, GradientAngle, rounding);
+    }
+
+    if (Image && Image->IsValid()) {
+        DrawImageInRect(drawList, *Image, ImageDrawMode, min, max, ImageTint, ImageBorder, rounding, scale);
     }
 
     if (BorderColor && BorderSize > 0.0f) {
@@ -2046,6 +2188,14 @@ void Canvas::StyledRender(DrawingContext& context)
         case CommandType::Text:
             drawList->AddText(at(p[0]), col(cmd.Color), cmd.Text.data(), cmd.Text.data() + cmd.Text.size());
             break;
+        case CommandType::Image:
+            if (cmd.Image && cmd.Image->IsValid()) {
+                auto texture = cmd.Image->PrepareRender();
+                if (texture) {
+                    drawList->AddImage(texture, at(p[0]), at(p[1]), ToImVec(p[2]), ToImVec(p[3]), col(cmd.Color));
+                }
+            }
+            break;
         }
     }
 
@@ -2169,6 +2319,26 @@ void Canvas::AddText(glm::vec2 pos, glm::vec4 color, STDString text)
     cmd.Color = color;
     cmd.Text = text;
     commands_.push_back(cmd);
+}
+
+// Draws a texture or atlas icon into a rectangle of the canvas. Returns false if it cannot be found.
+bool Canvas::AddImage(FixedString iconOrTexture, glm::vec2 min, glm::vec2 max, std::optional<glm::vec4> tint,
+    std::optional<glm::vec2> uv0, std::optional<glm::vec2> uv1)
+{
+    auto image = std::make_shared<ImageReference>();
+    if (!image->Bind(iconOrTexture)) return false;
+
+    Command cmd;
+    cmd.Type = CommandType::Image;
+    // uv0 / uv1 select a part of the image itself (0..1), whether it is a whole texture or an atlas icon
+    auto span = image->UV1 - image->UV0;
+    cmd.Points = { min, max,
+        image->UV0 + (uv0 ? *uv0 : glm::vec2(0.0f)) * span,
+        image->UV0 + (uv1 ? *uv1 : glm::vec2(1.0f)) * span };
+    cmd.Color = tint ? *tint : glm::vec4(1.0f);
+    cmd.Image = image;
+    commands_.push_back(cmd);
+    return true;
 }
 
 uint32_t Canvas::GetCommandCount() const
@@ -2437,19 +2607,27 @@ void IMGUIManager::SetObjects(IMGUIObjectManager* objects)
     IMGUI_DEBUG("IMGUIManager::SetObjects() - Binding object manager");
 }
 
-bool IMGUIManager::LoadFont(FixedString const& name, char const* path, float size)
+bool IMGUIManager::LoadFont(FixedString const& name, char const* path, float size,
+    char const* mergePath, uint32_t mergeFirst, uint32_t mergeLast)
 {
+    STDString merge = mergePath ? mergePath : "";
     auto curFont = fonts_.find(name);
     if (curFont != fonts_.end()
         && curFont->Value().Path == path
-        && curFont->Value().SizePixels == size) {
+        && curFont->Value().SizePixels == size
+        && curFont->Value().MergePath == merge
+        && curFont->Value().MergeFirst == mergeFirst
+        && curFont->Value().MergeLast == mergeLast) {
         return true;
     }
 
     FontData font{
         .Key = name,
         .Path = path,
-        .SizePixels = size
+        .SizePixels = size,
+        .MergePath = merge,
+        .MergeFirst = mergeFirst,
+        .MergeLast = mergeLast
     };
     if (LoadFont(font)) {
         fonts_.set(name, font);
@@ -2463,15 +2641,18 @@ bool IMGUIManager::LoadFont(FontData& request)
 {
     // Fonts are sized dynamically, so all sizes of the same font file can share one ImFont
     for (auto const& font : fonts_) {
-        if (font.Value().Path == request.Path && font.Value().Font != nullptr) {
+        if (font.Value().Path == request.Path && font.Value().Font != nullptr
+            && font.Value().MergePath == request.MergePath
+            && font.Value().MergeFirst == request.MergeFirst
+            && font.Value().MergeLast == request.MergeLast) {
             request.Font = font.Value().Font;
             return true;
         }
     }
 
     auto path = request.Path;
+    auto const& language = GetStaticSymbols().GetGlobalSwitches()->Language;
     if (path.empty()) {
-        auto const& language = GetStaticSymbols().GetGlobalSwitches()->Language;
         if (language == "Korean") {
             path = "Public/Game/GUI/Assets/Fonts/NotoSerifKR-Regular.otf";
         } else if (language == "Japanese") {
@@ -2505,7 +2686,40 @@ bool IMGUIManager::LoadFont(FontData& request)
         return false;
     }
 
+    if (!request.MergePath.empty() && request.MergeLast >= request.MergeFirst && request.MergeLast <= 0xFFFF) {
+        // A second file (an icon font, typically) whose glyphs in the given range join the font just added.
+        // ImGui keeps the pointer to the range for as long as the font lives.
+        static std::deque<std::array<ImWchar, 3>> mergeRanges;
+        mergeRanges.push_back({ (ImWchar)request.MergeFirst, (ImWchar)request.MergeLast, 0 });
+
+        auto mergeBlob = script::LoadExternalFile(request.MergePath, PathRootType::Data);
+        if (!mergeBlob) {
+            OsiError("Failed to open font file to merge: " << request.MergePath);
+        } else {
+            auto mergeData = IM_ALLOC(mergeBlob->size());
+            memcpy(mergeData, mergeBlob->data(), mergeBlob->size());
+
+            ImFontConfig mergeCfg;
+            mergeCfg.SizePixels = request.SizePixels;
+            mergeCfg.GlyphRanges = mergeRanges.back().data();
+            mergeCfg.MergeMode = true;
+            if (!io.Fonts->AddFontFromMemoryTTF(mergeData, (int)mergeBlob->size(), 0.0f, &mergeCfg)) {
+                OsiError("Failed to merge font file (not a valid TTF font?): " << request.MergePath);
+            }
+        }
+    }
+
     return true;
+}
+
+Array<FixedString> IMGUIManager::GetFontNames()
+{
+    Array<FixedString> names;
+    for (auto const& font : fonts_) {
+        names.push_back(font.Key());
+    }
+
+    return names;
 }
 
 IMGUIManager::FontData* IMGUIManager::GetFont(FixedString const& name)

@@ -61,6 +61,10 @@ public:
         STDString Path;
         float SizePixels{ .0 };
         ImFont* Font{ nullptr };
+        // A second font file whose glyphs in [MergeFirst, MergeLast] are added to this font
+        STDString MergePath;
+        uint32_t MergeFirst{ 0 };
+        uint32_t MergeLast{ 0 };
     };
 
     IMGUIManager(SDLManager& sdl);
@@ -81,8 +85,10 @@ public:
     std::optional<TextureLoadResult> RegisterTexture(FixedString const& textureGuid);
     void UnregisterTexture(TextureOpaqueHandle id, FixedString const& textureGuid);
     std::optional<ImTextureID> BindTexture(TextureOpaqueHandle opaqueHandle);
-    bool LoadFont(FixedString const& name, char const* path, float size);
+    bool LoadFont(FixedString const& name, char const* path, float size,
+        char const* mergePath = nullptr, uint32_t mergeFirst = 0, uint32_t mergeLast = 0);
     FontData* GetFont(FixedString const& name);
+    Array<FixedString> GetFontNames();
     void SetScale(float scale);
     void SetUIScaleMultiplier(float scale);
     void SetFontScaleMultiplier(float scale);

@@ -27,7 +27,11 @@ void ToggleDebugTools(lua_State* L, GuiDebugToolFlags flags)
     ClientState::FromLua(L)->IMGUI().ToggleDebugTools(flags);
 }
 
-bool LoadFont(FixedString const& name, char const* path, float size)
+// LoadFont(name, path, size[, mergePath, mergeFirst, mergeLast])
+// The optional part adds the glyphs with code points mergeFirst..mergeLast of a second font file
+// (an icon font, for instance) to the font being loaded.
+bool LoadFont(FixedString const& name, char const* path, float size,
+    std::optional<STDString> mergePath, std::optional<uint32_t> mergeFirst, std::optional<uint32_t> mergeLast)
 {
     if (!gExtender->IMGUI().WasUIInitialized()) {
         ERR("LoadFont() called before IMGUI was initialized!");
@@ -35,7 +39,14 @@ bool LoadFont(FixedString const& name, char const* path, float size)
     }
 
     OPTICK_EVENT();
-    return gExtender->IMGUI().LoadFont(name, path, size);
+    return gExtender->IMGUI().LoadFont(name, path, size,
+        mergePath ? mergePath->c_str() : nullptr, mergeFirst ? *mergeFirst : 0, mergeLast ? *mergeLast : 0);
+}
+
+// Names of the fonts that can be assigned to an element's Font
+Array<FixedString> GetFontNames()
+{
+    return gExtender->IMGUI().GetFontNames();
 }
 
 void SetScale(float scale)
@@ -141,6 +152,7 @@ void RegisterIMGUILib()
     MODULE_FUNCTION(EnableDemo)
     MODULE_FUNCTION(ToggleDebugTools)
     MODULE_FUNCTION(LoadFont)
+    MODULE_FUNCTION(GetFontNames)
     MODULE_FUNCTION(SetScale)
     MODULE_FUNCTION(SetUIScaleMultiplier)
     MODULE_FUNCTION(SetFontScaleMultiplier)
