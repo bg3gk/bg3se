@@ -57,11 +57,74 @@ namespace bg3se::esv::lua
         return 1;
     }
 
+    // Ext.Osiris.GetFunctions(): every symbol the loaded story defines, one entry per name and arity:
+    //   { Name = "DB_Players", Type = "Database", Arity = 1,
+    //     Params = { { Type = "CHARACTER", BaseType = "guidstring", Out = false } } }
+    // `Osi` resolves names on demand and cannot be iterated; this is the list behind it.
+    int GetOsirisFunctions(lua_State* L)
+    {
+        static constexpr char const* functionTypes[] = {
+            "Unknown", "Event", "Query", "Call", "Database", "Proc", "SysQuery", "SysCall", "UserQuery"
+        };
+        static constexpr char const* baseTypes[] = {
+            "none", "integer", "integer64", "real", "string", "guidstring"
+        };
+
+        lua_newtable(L); // stack: list
+
+        auto const& globals = gExtender->GetServer().Osiris().GetGlobals();
+        if (globals.Functions == nullptr || *globals.Functions == nullptr
+            || globals.Types == nullptr || *globals.Types == nullptr) {
+            return 1;
+        }
+
+        auto types = *globals.Types;
+        std::unordered_map<uint16_t, char const*> typeNames;
+        types->Iterate([&](OsiString const& name, OsirisTypeInfo const& info) {
+            typeNames.insert(std::make_pair(info.TypeId, name.c_str()));
+        });
+
+        int index = 1;
+        (*globals.Functions)->Iterate([&](OsiString const&, OsiFunctionDef* func) {
+            if (func == nullptr || func->Signature == nullptr || func->Signature->Params == nullptr) return;
+
+            auto const& signature = *func->Signature;
+            auto arity = (uint32_t)signature.Params->Params.Size;
+            auto type = (uint32_t)func->Type;
+
+            lua_newtable(L); // stack: list, fun
+            settable(L, "Name", signature.Name);
+            settable(L, "Type", type < std::size(functionTypes) ? functionTypes[type] : functionTypes[0]);
+            settable(L, "Arity", arity);
+
+            lua_newtable(L); // stack: list, fun, params
+            auto param = signature.Params->Params.Head;
+            for (uint32_t i = 0; i < arity; i++) {
+                param = param->Next;
+                auto typeId = param->Item.Type;
+                auto baseType = (uint32_t)types->ResolveAlias(typeId);
+                auto typeName = typeNames.find(typeId);
+
+                lua_newtable(L); // stack: list, fun, params, param
+                settable(L, "Type", typeName != typeNames.end() ? typeName->second : "UNKNOWN");
+                settable(L, "BaseType", baseType < std::size(baseTypes) ? baseTypes[baseType] : "unknown");
+                settable(L, "Out", i < signature.OutParamList.Count * 8 && signature.OutParamList.isOutParam(i));
+                lua_rawseti(L, -2, i + 1); // stack: list, fun, params
+            }
+
+            lua_setfield(L, -2, "Params"); // stack: list, fun
+            lua_rawseti(L, -2, index++); // stack: list
+        });
+
+        return 1;
+    }
+
     void RegisterOsirisLibrary(lua_State* L)
     {
         static const luaL_Reg extLib[] = {
             {"RegisterListener", RegisterOsirisListener},
             {"UnregisterListener", UnregisterOsirisListener},
+            {"GetFunctions", GetOsirisFunctions},
             {0,0}
         };
 
