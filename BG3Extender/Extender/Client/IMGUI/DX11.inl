@@ -9,6 +9,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_dx11.h>
 #include <imgui_internal.h>
+#include <dxgi1_6.h>
 #include <dxgi1_2.h>
 #include <d3d11.h>
 
@@ -203,6 +204,41 @@ public:
         return glm::ivec2(width_, height_);
     }
 
+    BackendInfo GetBackendInfo() override
+    {
+        return info_;
+    }
+
+    void SetPaperWhite(float nits) override
+    {
+        info_.PaperWhiteNits = std::clamp(nits, 10.0f, 10000.0f);
+    }
+
+    // The game presents HDR10 when the display is in HDR mode: a 10-bit swap chain whose values
+    // are PQ-encoded. sRGB values written there as they are come out far too bright (0.5 is
+    // already paper white), so the UI's colours have to be converted.
+    void UpdateHDRState(IDXGISwapChain* swapChain)
+    {
+        bool hdr = false;
+        if (info_.SwapChainFormat == (int32_t)DXGI_FORMAT_R10G10B10A2_UNORM) {
+            IDXGIOutput* output{ nullptr };
+            if (SUCCEEDED(swapChain->GetContainingOutput(&output)) && output != nullptr) {
+                IDXGIOutput6* output6{ nullptr };
+                if (SUCCEEDED(output->QueryInterface(__uuidof(IDXGIOutput6), (void**)&output6)) && output6 != nullptr) {
+                    DXGI_OUTPUT_DESC1 desc;
+                    if (SUCCEEDED(output6->GetDesc1(&desc))) {
+                        hdr = desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+                    }
+                    output6->Release();
+                }
+                output->Release();
+            }
+        }
+
+        info_.HDR10 = hdr;
+        ImGui_ImplDX11_SetHDR10Output(hdr, info_.PaperWhiteNits);
+    }
+
     std::optional<TextureLoadResult> RegisterTexture(TextureDescriptor* descriptor) override
     {
         if (descriptor->DX11.Views.size() != 1 || !descriptor->DX11.Views[0].View) {
@@ -294,6 +330,7 @@ private:
         swapChain_ = *ppSwapChain;
         width_ = pDesc->Width;
         height_ = pDesc->Height;
+        info_.SwapChainFormat = (int32_t)pDesc->Format;
 
         if (DXGISwapChainPresentHook_.IsWrapped()) return;
 
@@ -330,6 +367,37 @@ private:
         if (!vp.DrawDataP.Valid) return;
 
         mirroredTextures_.BeginRender();
+        // Looking up the display is not free; twice a second is enough to follow an HDR toggle
+        if ((hdrCheckCountdown_--) <= 0) {
+            hdrCheckCountdown_ = 30;
+            UpdateHDRState(pSwapChain);
+        } else {
+            ImGui_ImplDX11_SetHDR10Output(info_.HDR10, info_.PaperWhiteNits);
+        }
+
+        // The UI is drawn into whatever target the game left bound; note what that is
+        ID3D11RenderTargetView* target{ nullptr };
+        context_->OMGetRenderTargets(1, &target, nullptr);
+        if (target != nullptr) {
+            D3D11_RENDER_TARGET_VIEW_DESC viewDesc;
+            target->GetDesc(&viewDesc);
+            info_.RenderTargetViewFormat = (int32_t)viewDesc.Format;
+
+            ID3D11Resource* resource{ nullptr };
+            target->GetResource(&resource);
+            if (resource != nullptr) {
+                D3D11_RESOURCE_DIMENSION dimension;
+                resource->GetType(&dimension);
+                if (dimension == D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
+                    D3D11_TEXTURE2D_DESC textureDesc;
+                    static_cast<ID3D11Texture2D*>(resource)->GetDesc(&textureDesc);
+                    info_.RenderTargetFormat = (int32_t)textureDesc.Format;
+                }
+                resource->Release();
+            }
+            target->Release();
+        }
+
         ImGui_ImplDX11_RenderDrawData(&vp.DrawDataP);
     }
 
@@ -348,6 +416,9 @@ private:
         IMGUI_DEBUG("DXGISwapChainResizeBuffers -> (%d, %d)", Width, Height);
         width_ = Width;
         height_ = Height;
+        if (NewFormat != DXGI_FORMAT_UNKNOWN) {
+            info_.SwapChainFormat = (int32_t)NewFormat;
+        }
     }
 
 
@@ -369,6 +440,8 @@ private:
     std::mutex globalResourceLock_;
     uint32_t width_{ 0 };
     uint32_t height_{ 0 };
+    BackendInfo info_{ .Renderer = "DX11", .PaperWhiteNits = 200.0f };
+    int32_t hdrCheckCountdown_{ 0 };
 
     D3D11CreateDeviceHookType CreateDeviceHook_;
     CreateDXGIFactory1HookType CreateDxgiFactoryHook_;

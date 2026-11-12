@@ -13,6 +13,20 @@ struct TextureLoadResult
     uint32_t Height;
 };
 
+// What the extender UI is drawn with and into; the formats are DXGI_FORMAT (DX11) or VkFormat (Vulkan) values
+struct BackendInfo
+{
+    char const* Renderer{ "" };
+    int32_t SwapChainFormat{ 0 };
+    // DX11 only: the target bound when the UI is drawn (the format of its view and of the texture behind it)
+    int32_t RenderTargetViewFormat{ 0 };
+    int32_t RenderTargetFormat{ 0 };
+    // The swap chain is HDR10 (10 bit, ST.2084 on an HDR display) and the UI's colours are converted for it
+    bool HDR10{ false };
+    // Brightness sRGB white is shown at in that case
+    float PaperWhiteNits{ 0.0f };
+};
+
 class RenderingBackend
 {
 public:
@@ -29,6 +43,9 @@ public:
     virtual std::optional<ImTextureID> BindTexture(TextureOpaqueHandle opaqueHandle) = 0;
     virtual bool IsInitialized() = 0;
     virtual glm::ivec2 GetViewportSize() = 0;
+    virtual BackendInfo GetBackendInfo() = 0;
+    // Brightness of sRGB white on an HDR display, in nits; no effect on SDR output
+    virtual void SetPaperWhite(float nits) {}
 };
 
 END_NS()

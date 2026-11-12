@@ -58,6 +58,30 @@ glm::ivec2 GetViewportSize()
     return gExtender->IMGUI().GetViewportSize();
 }
 
+// What the UI is drawn with and into: { Renderer = "DX11" | "Vulkan", SwapChainFormat = n,
+// RenderTargetViewFormat = n, RenderTargetFormat = n } (formats as DXGI_FORMAT / VkFormat numbers;
+// the render target entries are DX11 only and 0 until a frame was drawn).
+// Colours given to IMGUI are written to that target as they are, so how they end up on screen
+// depends on its format and on what the game does with it afterwards.
+UserReturn GetBackendInfo(lua_State* L)
+{
+    auto info = gExtender->IMGUI().GetBackendInfo();
+    lua_newtable(L);
+    settable(L, "Renderer", info.Renderer);
+    settable(L, "SwapChainFormat", info.SwapChainFormat);
+    settable(L, "RenderTargetViewFormat", info.RenderTargetViewFormat);
+    settable(L, "RenderTargetFormat", info.RenderTargetFormat);
+    settable(L, "HDR10", info.HDR10);
+    settable(L, "PaperWhiteNits", info.PaperWhiteNits);
+    return 1;
+}
+
+// How bright sRGB white is drawn when the game outputs HDR10 (default 200 nits)
+void SetPaperWhite(float nits)
+{
+    gExtender->IMGUI().SetPaperWhite(nits);
+}
+
 // The clipboard is read and written through Win32 directly instead of ImGui::GetClipboardText():
 // Lua does not run on the thread that owns the ImGui context.
 std::optional<STDString> GetClipboardText()
@@ -121,6 +145,8 @@ void RegisterIMGUILib()
     MODULE_FUNCTION(SetUIScaleMultiplier)
     MODULE_FUNCTION(SetFontScaleMultiplier)
     MODULE_FUNCTION(GetViewportSize)
+    MODULE_FUNCTION(GetBackendInfo)
+    MODULE_FUNCTION(SetPaperWhite)
     MODULE_FUNCTION(GetClipboardText)
     MODULE_FUNCTION(SetClipboardText)
     END_MODULE()

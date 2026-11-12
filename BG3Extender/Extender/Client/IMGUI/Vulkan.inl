@@ -295,6 +295,11 @@ public:
         return glm::ivec2(swapchain_.width_, swapchain_.height_);
     }
 
+    BackendInfo GetBackendInfo() override
+    {
+        return BackendInfo{ .Renderer = "Vulkan", .SwapChainFormat = swapchain_.format_ };
+    }
+
 private:
     struct SwapchainImageInfo
     {
@@ -313,6 +318,7 @@ private:
         Array<SwapchainImageInfo> images_;
         uint32_t width_{ 0 };
         uint32_t height_{ 0 };
+        int32_t format_{ 0 };
     };
 
     struct ViewportInfo
@@ -519,6 +525,7 @@ private:
 
         swapInfo.width_ = pCreateInfo->imageExtent.width;
         swapInfo.height_ = pCreateInfo->imageExtent.height;
+        swapInfo.format_ = (int32_t)pCreateInfo->imageFormat;
         IMGUI_DEBUG("Swap chain size: %d x %d", swapInfo.width_, swapInfo.height_);
 
         {

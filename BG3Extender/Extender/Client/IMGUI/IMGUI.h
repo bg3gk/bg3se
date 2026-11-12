@@ -87,6 +87,8 @@ public:
     void SetUIScaleMultiplier(float scale);
     void SetFontScaleMultiplier(float scale);
     glm::ivec2 GetViewportSize();
+    BackendInfo GetBackendInfo();
+    void SetPaperWhite(float nits);
 
     void OnRenderBackendInitialized();
     void Update();

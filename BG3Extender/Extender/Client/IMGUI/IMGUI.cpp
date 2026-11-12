@@ -2533,6 +2533,16 @@ glm::ivec2 IMGUIManager::GetViewportSize()
     return renderer_->GetViewportSize();
 }
 
+BackendInfo IMGUIManager::GetBackendInfo()
+{
+    return renderer_->GetBackendInfo();
+}
+
+void IMGUIManager::SetPaperWhite(float nits)
+{
+    renderer_->SetPaperWhite(nits);
+}
+
 void IMGUIManager::OnRenderBackendInitialized()
 {
     IMGUI_DEBUG("IMGUIManager::OnRenderBackendInitialized()");
