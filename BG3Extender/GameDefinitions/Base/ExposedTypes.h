@@ -11,8 +11,15 @@ struct GameTime
 {
     double Time{ 0 };
     float DeltaTime{ 0 };
-    int32_t Ticks{ 0 };
-    double Unknown{ 0 };
+    // Live, 2026-11-13 (Ext.Events.Tick on both sides): a float equal to DeltaTime in every tick
+    // read - a second frame delta whose difference from the first was not seen. It was declared
+    // `int32_t Ticks` and read as numbers like 1023969408 (the bits of 0.0333).
+    float field_C{ 0 };
+    // The frame counter: grows by exactly 1 per tick on both sides (live, 2026-11-13). The Toolkit
+    // constructor ls::GameTime(double, float, unsigned int) stores its third argument here, and
+    // the game reads it as 32 bits (ecl::activation). It was declared `double Unknown` at this offset.
+    uint32_t Ticks{ 0 };
+    uint32_t field_14{ 0 };
 };
 
 struct ActionOriginator

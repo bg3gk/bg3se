@@ -24,17 +24,24 @@ struct DeathData
     bool InstantKill;
     CauseType CauseType;
     int StoryActionId;
-    bool Chasm;
+    // The game's name (savegame model death::v4::DeathData). Live, 2026-11-13: follows the
+    // "immediate" argument of Osi.Die and is false for a death by damage; no chasm involved.
+    [[bg3::legacy(Chasm)]] bool InstantDeath;
     glm::vec3 ImpactPosition;
     glm::vec3 ImpactDirection;
     uint8_t field_48;
     float ImpactForce;
     Guid Combat;
-    uint8_t field_60;
-    uint8_t field_61;
-    uint8_t field_62;
+    // The game's names (savegame model death::v4::DeathData). Live, 2026-11-13: GenerateTreasure
+    // follows the "generate treasure" argument of Osi.Die; WasRequest and WasForced are 1 for a
+    // death asked for by Osi.Die and 0 for a death by damage (the two were not told apart).
+    [[bg3::legacy(field_60)]] bool GenerateTreasure;
+    [[bg3::legacy(field_61)]] bool WasRequest;
+    [[bg3::legacy(field_62)]] bool WasForced;
     bool LeaveTrace;
-    std::optional<glm::vec3> ChasmPosition;
+    // The game's name (savegame model). Live, 2026-11-13: set for a death asked for by Osi.Die
+    // on flat ground, absent for a death by damage - not a chasm's position.
+    [[bg3::legacy(ChasmPosition)]] std::optional<glm::vec3> SourcePos;
 };
 
 struct DeathRequestData : public DeathData
