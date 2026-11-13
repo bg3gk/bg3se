@@ -346,10 +346,12 @@ struct InteractionRequestSystem : public BaseSystem
     Array<ContainerInteractionRequestData> ContainerInteractions;
     Array<MemberInteractionRequestData> MemberInteraction;
     Array<NotifyInteractionRequestData> NotifyInteraction;
-    // Editor only?
-    // HashMap<EntityHandle, uint8_t> DeferredRequests;
-    [[bg3::hidden]] void* qword80;
-    [[bg3::hidden]] void* qword88;
+    // GateKit, confirmed live 2026-11-13: not editor-only. The game's helper bg3.exe+0x239C5D0
+    // allocates the object at 0x90 bytes and builds this map; the Toolkit's destructor asserts
+    // IndexedStorage<unsigned char> on its values. Live: 389 buckets, capacity 256.
+    HashMap<EntityHandle, uint8_t> DeferredRequests;
+    [[bg3::hidden]] void* LevelManager;  // esv::LevelManager (was qword80; the same pointer as InteractionSystem.LevelManager)
+    [[bg3::hidden]] void* Helper;        // UniquePtr<IInteractionRequestSystemHelper const> (was qword88)
 };
 
 struct MemberData
@@ -375,6 +377,9 @@ struct InteractionSystem : public BaseSystem
     [[bg3::hidden]] void* RPGStats;
     [[bg3::hidden]] void* ClassDescriptions;
     [[bg3::hidden]] void* SpellPrototypeManager;
+    // GateKit, confirmed live 2026-11-13: the object is 0x200 bytes; the constructor
+    // bg3.exe+0x347B860 stores its last argument here (the Toolkit's 6th: LevelManager const&).
+    [[bg3::hidden]] void* LevelManager;
 };
 
 struct LockingSystem : public BaseSystem

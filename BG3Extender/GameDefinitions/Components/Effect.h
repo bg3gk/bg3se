@@ -275,10 +275,14 @@ struct EffectsManager : public BaseSystem
     [[bg3::hidden]] CRITICAL_SECTION NonConstructedEffectsCS;
     [[bg3::hidden]] HashSet<EntityHandle> NonConstructedEffects;
     [[bg3::hidden]] void* RenderBatchesGlobalVB;
-    [[bg3::hidden]] void* qword1E0;
+    [[bg3::hidden]] void* MeshRenderListGlobalVB; // the Toolkit accessor's name (was qword1E0)
     [[bg3::hidden]] void* RibbonGlobalVB;
     [[bg3::hidden]] void* VisualSystem;
     [[bg3::hidden]] void* VisualChangedSystem;
+    // GateKit, confirmed live 2026-11-13: the object is 0x218 bytes (factory bg3.exe+0x3AE3A60,
+    // constructor bg3.exe+0x3B18D50 zeroes +0x1E8..+0x217 as a HashSet); the Toolkit's destructor
+    // frees it as IndexedStorage<ls::Scene*>. Empty in every read.
+    [[bg3::hidden]] HashSet<void*> Scenes;
 
     //# P_FUN(Invoke, EffectsManager::Invoke)
     //# P_FUN(AddMaterial, EffectsManager::AddMaterial)

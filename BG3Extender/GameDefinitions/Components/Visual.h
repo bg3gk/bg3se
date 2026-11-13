@@ -358,7 +358,8 @@ struct VisualChangedSystem : public BaseSystem
     DEFINE_SYSTEM(VisualChanged, "ls::VisualChangedSystem")
 
     HashSet<EntityHandle> VisualChanges;
-    uint32_t FrameNo;
+    // GateKit, confirmed live 2026-11-13: the object is 0x40 bytes (factory bg3.exe+0x3AE1680);
+    // FrameNo is the Toolkit's only - read here it was 4 bytes past the object.
 };
 
 struct VisualLoadComponent : public BaseComponent
@@ -740,8 +741,9 @@ struct ConstructionSystem : public bg3se::ConstructionSystem
 {
     DEFINE_SYSTEM(ClientConstruction, "ecl::ConstructionSystem")
 
-    bool RequestSetSeeThrough;
-    bool EnableSeeThrough;
+    // GateKit, confirmed live 2026-11-13: the object is 0x30 bytes (factory bg3.exe+0x734E60):
+    // only the four system pointers of the base. RequestSetSeeThrough / EnableSeeThrough do not
+    // exist in the game build; read here they came from the next heap block.
 };
 
 END_NS()

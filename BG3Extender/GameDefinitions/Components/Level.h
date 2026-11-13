@@ -152,7 +152,9 @@ struct LevelInstanceLoadSystem : public BaseSystem
 {
     DEFINE_SYSTEM(LevelInstanceLoad, "ls::level::LevelInstanceLoadSystem")
 
-    [[bg3::hidden]] UnknownSignal field_10;
+    // GateKit, confirmed live 2026-11-13: 0x58 bytes in the game (factory bg3.exe+0x722450,
+    // constructor bg3.exe+0x3C1CC40); the Toolkit's Signal at +0x10 does not exist in the game
+    // build, so every member sat 0x18 bytes high.
     [[bg3::hidden]] LevelManager* LevelManager;
     [[bg3::hidden]] Queue<EntityHandle> LoadRequests;
     [[bg3::hidden]] CRITICAL_SECTION LoadRequestsCS;
