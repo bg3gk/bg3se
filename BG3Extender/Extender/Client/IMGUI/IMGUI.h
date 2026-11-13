@@ -103,6 +103,10 @@ public:
     // player's profile once the next frame has been shown (see ScreenshotWriter)
     bool RequestScreenshot(StringView path);
     bool ScreenshotPending();
+    // Every finished frame copied into a texture another program can open on the graphics card
+    // (see FrameShare.inl), and what that mirror is doing
+    bool EnableFrameMirror(bool enabled);
+    std::optional<FrameMirrorInfo> FrameMirrorStatus();
 
     void OnRenderBackendInitialized();
     void Update();

@@ -2897,6 +2897,16 @@ bool IMGUIManager::ScreenshotPending()
     return renderer_ ? renderer_->ScreenshotPending() : false;
 }
 
+bool IMGUIManager::EnableFrameMirror(bool enabled)
+{
+    return renderer_ ? renderer_->EnableFrameMirror(enabled) : false;
+}
+
+std::optional<FrameMirrorInfo> IMGUIManager::FrameMirrorStatus()
+{
+    return renderer_ ? renderer_->FrameMirrorStatus() : std::optional<FrameMirrorInfo>{};
+}
+
 void IMGUIManager::OnRenderBackendInitialized()
 {
     IMGUI_DEBUG("IMGUIManager::OnRenderBackendInitialized()");

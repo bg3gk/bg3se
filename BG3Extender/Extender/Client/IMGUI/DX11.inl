@@ -4,6 +4,7 @@
 #include <Extender/Client/IMGUI/Backends.h>
 #include <Extender/Client/IMGUI/TextureMirror.inl>
 #include <Extender/Client/IMGUI/Screenshot.inl>
+#include <Extender/Client/IMGUI/FrameShare.inl>
 #include <Extender/ScriptExtender.h>
 #include <CoreLib/Wrappers.h>
 #include <vulkan/vulkan.h>
@@ -78,6 +79,7 @@ public:
     ~DX11Backend() override
     {
         IMGUI_DEBUG("Destroying DX backend");
+        frameShare_.Reset();
         DestroyUI();
         DisableHooks();
     }
@@ -402,6 +404,9 @@ private:
         // The game's frame is finished and nothing of the extender's has been drawn into it yet,
         // so this is the only moment at which a picture of the game alone can be taken
         TakeScreenshotIfRequested();
+        // The same frame, handed to another program on the card instead of brought back into
+        // memory: one CopyResource and nothing else on this thread
+        frameShare_.OnPresent(device_, context_, pSwapChain, info_.HDR10);
 
         if (!initialized_
             || initializationFailed_
@@ -458,6 +463,20 @@ private:
     bool ScreenshotPending() override
     {
         return screenshots_.Pending();
+    }
+
+    bool EnableFrameMirror(bool enabled) override
+    {
+        std::lock_guard _(globalResourceLock_);
+        // Without a swap chain no frame would ever reach the shared texture
+        if (enabled && (swapChain_ == nullptr || device_ == nullptr || context_ == nullptr)) return false;
+        return frameShare_.Enable(enabled);
+    }
+
+    std::optional<FrameMirrorInfo> FrameMirrorStatus() override
+    {
+        std::lock_guard _(globalResourceLock_);
+        return frameShare_.Status();
     }
 
     // The rendering thread, inside the present hook: fills a screenshot request, if there is one,
@@ -694,6 +713,7 @@ private:
     int32_t curViewport_{ 0 };
     TextureMirrorSet mirroredTextures_;
     ScreenshotWriter screenshots_;
+    FrameShare frameShare_;
 
     IDXGIAdapter* adapter_{ nullptr };
     ID3D11DeviceContext* context_{ nullptr };

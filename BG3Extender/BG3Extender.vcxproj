@@ -487,6 +487,7 @@ $(SolutionDir)x64\Release\ResourceBundler.exe "$(ProjectDir)LuaScripts" "$(Proje
     <None Include="cpp.hint" />
     <None Include="Exports.def" />
     <None Include="Extender\Client\IMGUI\DX11.inl" />
+    <None Include="Extender\Client\IMGUI\FrameShare.inl" />
     <None Include="Extender\Client\IMGUI\Screenshot.inl" />
     <None Include="Extender\Client\IMGUI\TextureMirror.inl" />
     <ClCompile Include="Extender\Client\SDL.cpp" />
