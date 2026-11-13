@@ -1,5 +1,6 @@
 #include <Extender/ScriptExtender.h>
 #include <Extender/Client/FrameCap.inl>
+#include <Extender/Client/WindowFocus.h>
 
 /// <lua_module>Render</lua_module>
 BEGIN_NS(ecl::lua::render)
@@ -153,6 +154,65 @@ bool SetLostFocusFrameCap(uint32_t fps)
     return true;
 }
 
+// Ext.ClientRender.KeepInBackground(enabled)
+//
+// Whether this copy may bring its own window to the front. With it on, every attempt - the game's
+// own and SDL_RaiseWindow's, which calls SetForegroundWindow with no condition at all - is
+// refused and written down instead of being passed on, so a copy started by a tool cannot take
+// the keyboard from whoever is using the machine.
+//
+// Nothing is hidden, moved or disabled by this: a person who clicks the window still gets it. It
+// starts from the KeepWindowInBackground setting and can be turned off here once a copy is meant
+// to be played in. Returns whether it is on afterwards.
+bool KeepInBackground(bool enabled)
+{
+    windowfocus::KeepInBackground(enabled);
+    return windowfocus::KeepingInBackground();
+}
+
+// Ext.ClientRender.KeepOffScreen(enabled)
+//
+// Puts this copy's window where no screen reaches, or brings it back. Meant for a copy something
+// else draws - a deck's tile - and set from KeepWindowOffScreen at startup, which is the only
+// moment early enough for the window never to be seen at all. The window stays a shown window, so
+// pictures, keys and the list of copies all still find it.
+bool KeepOffScreen(bool enabled)
+{
+    windowfocus::KeepOffScreen(enabled);
+    return enabled;
+}
+
+// Ext.ClientRender.ForegroundLog()
+//
+// Every attempt to bring this copy's window to the front since the game started, oldest first:
+//
+//   Seconds    when, from the moment the hooks went in
+//   Window     the window asked for
+//   Caller     module+offset of the code that asked, innermost first - this is the answer to
+//              "who raises this window", with the game's own modules named
+//   Function   SetForegroundWindow or SetActiveWindow
+//   Refused    whether it was refused (KeepInBackground was on at that moment)
+//
+// It is kept whether or not anything is being refused, because the question "does this copy ever
+// ask" is worth answering on its own.
+UserReturn ForegroundLog(lua_State* L)
+{
+    auto attempts = windowfocus::Attempts();
+    lua_newtable(L);
+    int index = 1;
+    for (auto const& attempt : attempts) {
+        push(L, index++);
+        lua_newtable(L);
+        settable(L, "Seconds", attempt.Seconds);
+        settable(L, "Window", attempt.Window);
+        settable(L, "Caller", attempt.Caller);
+        settable(L, "Function", attempt.Function);
+        settable(L, "Refused", attempt.Refused);
+        lua_settable(L, -3);
+    }
+    return 1;
+}
+
 void RegisterRenderLib()
 {
     DECLARE_MODULE(Render, Client)
@@ -164,6 +224,9 @@ void RegisterRenderLib()
     MODULE_FUNCTION(FrameCap)
     MODULE_FUNCTION(SetFrameCap)
     MODULE_FUNCTION(SetLostFocusFrameCap)
+    MODULE_FUNCTION(KeepInBackground)
+    MODULE_FUNCTION(KeepOffScreen)
+    MODULE_FUNCTION(ForegroundLog)
     END_MODULE()
 }
 

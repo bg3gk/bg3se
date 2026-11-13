@@ -44,6 +44,17 @@ struct ExtenderConfig
     bool Optick{ false };
     bool MergeVirtualTextures{ false };
 
+    // A copy started by a tool must not take the keyboard from whoever is using the machine.
+    // With this on, the game's attempts to bring its own window to the front are refused and
+    // recorded instead of passed on (Extender/Client/WindowFocus.h). Off by default: a game
+    // somebody started to play should raise itself when it wants to.
+    bool KeepWindowInBackground{ false };
+
+    // The window is put where no screen reaches, the moment it is created - for a copy something
+    // else is about to draw (a deck's tile). Off by default: a copy started to be looked at
+    // directly should be on a screen.
+    bool KeepWindowOffScreen{ false };
+
 #if defined(OSI_EXTENSION_BUILD)
 #if defined(_DEBUG)
     bool DeveloperMode{ true };

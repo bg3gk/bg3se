@@ -142,6 +142,7 @@ $(SolutionDir)x64\Release\ResourceBundler.exe "$(ProjectDir)LuaScripts" "$(Proje
     <ClInclude Include="Extender\Client\IMGUI\Objects.h" />
     <ClInclude Include="Extender\Client\ScriptExtenderClient.h" />
     <ClInclude Include="Extender\Client\SDLManager.h" />
+    <ClInclude Include="Extender\Client\WindowFocus.h" />
     <ClInclude Include="Extender\Client\VisualHelpers.h" />
     <ClInclude Include="Extender\ScriptExtender.h" />
     <ClInclude Include="Extender\Server\ExtensionStateServer.h" />
@@ -488,6 +489,7 @@ $(SolutionDir)x64\Release\ResourceBundler.exe "$(ProjectDir)LuaScripts" "$(Proje
     <None Include="Exports.def" />
     <None Include="Extender\Client\IMGUI\DX11.inl" />
     <None Include="Extender\Client\FrameCap.inl" />
+    <None Include="Extender\Client\WindowFocus.inl" />
     <None Include="Extender\Client\IMGUI\FrameShare.inl" />
     <None Include="Extender\Client\IMGUI\Screenshot.inl" />
     <None Include="Extender\Client\IMGUI\TextureMirror.inl" />

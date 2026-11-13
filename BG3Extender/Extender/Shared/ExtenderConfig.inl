@@ -32,6 +32,8 @@ void ApplyConfig(ExtenderConfig& config, Document& root)
     ConfigGet(root, "LocalMessagePassing", config.LocalMessagePassing);
     ConfigGet(root, "Optick", config.Optick);
     ConfigGet(root, "MergeVirtualTextures", config.MergeVirtualTextures);
+    ConfigGet(root, "KeepWindowInBackground", config.KeepWindowInBackground);
+    ConfigGet(root, "KeepWindowOffScreen", config.KeepWindowOffScreen);
 
     ConfigGet(root, "DebuggerPort", config.DebuggerPort);
     ConfigGet(root, "LuaDebuggerPort", config.LuaDebuggerPort);
