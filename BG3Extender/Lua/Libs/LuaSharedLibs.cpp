@@ -32,6 +32,7 @@
 #include <Lua/Libs/ClientInput.inl>
 #include <Lua/Libs/ClientUI/Module.inl>
 #include <Lua/Libs/ClientIMGUI.inl>
+#include <Lua/Libs/ClientRender.inl>
 
 BEGIN_NS(ecl::lua)
 
@@ -44,6 +45,7 @@ void RegisterClientLibraries()
     input::RegisterInputLib();
     ui::RegisterUILib();
     imgui::RegisterIMGUILib();
+    render::RegisterRenderLib();
 }
 
 END_NS()

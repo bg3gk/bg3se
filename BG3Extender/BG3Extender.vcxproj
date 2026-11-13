@@ -487,6 +487,7 @@ $(SolutionDir)x64\Release\ResourceBundler.exe "$(ProjectDir)LuaScripts" "$(Proje
     <None Include="cpp.hint" />
     <None Include="Exports.def" />
     <None Include="Extender\Client\IMGUI\DX11.inl" />
+    <None Include="Extender\Client\IMGUI\Screenshot.inl" />
     <None Include="Extender\Client\IMGUI\TextureMirror.inl" />
     <ClCompile Include="Extender\Client\SDL.cpp" />
     <None Include="Extender\Client\IMGUI\Vulkan.inl" />
@@ -562,6 +563,7 @@ $(SolutionDir)x64\Release\ResourceBundler.exe "$(ProjectDir)LuaScripts" "$(Proje
     <None Include="Lua\Libs\ClientAudio.inl" />
     <None Include="Lua\Libs\ClientIMGUI.inl" />
     <None Include="Lua\Libs\ClientInput.inl" />
+    <None Include="Lua\Libs\ClientRender.inl" />
     <None Include="Lua\Libs\ClientNet.inl" />
     <None Include="Lua\Libs\ClientTemplate.inl" />
     <None Include="Lua\Libs\ClientUI\Builtins.inl" />

@@ -99,6 +99,10 @@ public:
     glm::ivec2 GetViewportSize();
     BackendInfo GetBackendInfo();
     void SetPaperWhite(float nits);
+    // A picture of the game alone, written as a PNG below the Script Extender folder of the
+    // player's profile once the next frame has been shown (see ScreenshotWriter)
+    bool RequestScreenshot(StringView path);
+    bool ScreenshotPending();
 
     void OnRenderBackendInitialized();
     void Update();

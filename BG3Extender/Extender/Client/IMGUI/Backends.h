@@ -50,6 +50,13 @@ public:
     virtual void DestroyTexture(TextureOpaqueHandle opaqueHandle) {}
     // Brightness of sRGB white on an HDR display, in nits; no effect on SDR output
     virtual void SetPaperWhite(float nits) {}
+    // Asks for the next frame the game shows to be written as a PNG, before anything of the
+    // extender's is drawn over it. The path is below the Script Extender folder of the player's
+    // profile, as Ext.IO.SaveFile() takes it. False when one is already on its way, or from a
+    // backend that cannot read its frames.
+    virtual bool RequestScreenshot(StringView path) { return false; }
+    // Whether a requested screenshot has still to be taken or written
+    virtual bool ScreenshotPending() { return false; }
 };
 
 END_NS()

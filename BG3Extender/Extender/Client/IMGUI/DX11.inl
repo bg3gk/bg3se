@@ -3,6 +3,7 @@
 #include <GameDefinitions/Base/Base.h>
 #include <Extender/Client/IMGUI/Backends.h>
 #include <Extender/Client/IMGUI/TextureMirror.inl>
+#include <Extender/Client/IMGUI/Screenshot.inl>
 #include <Extender/ScriptExtender.h>
 #include <CoreLib/Wrappers.h>
 #include <vulkan/vulkan.h>
@@ -396,8 +397,13 @@ private:
         /* [in] */ UINT Flags)
     {
         std::lock_guard _(globalResourceLock_);
-        if (pSwapChain != swapChain_
-            || !initialized_
+        if (pSwapChain != swapChain_) return;
+
+        // The game's frame is finished and nothing of the extender's has been drawn into it yet,
+        // so this is the only moment at which a picture of the game alone can be taken
+        TakeScreenshotIfRequested();
+
+        if (!initialized_
             || initializationFailed_
             || !renderObjectsCreated_
             || drawViewport_ == -1) {
@@ -442,6 +448,225 @@ private:
         ImGui_ImplDX11_RenderDrawData(&vp.DrawDataP);
     }
 
+    bool RequestScreenshot(StringView path) override
+    {
+        // Without the swap chain nothing would ever fill the request
+        if (swapChain_ == nullptr || device_ == nullptr || context_ == nullptr) return false;
+        return screenshots_.Request(path);
+    }
+
+    bool ScreenshotPending() override
+    {
+        return screenshots_.Pending();
+    }
+
+    // The rendering thread, inside the present hook: fills a screenshot request, if there is one,
+    // from the frame the swap chain is about to show
+    void TakeScreenshotIfRequested()
+    {
+        auto path = screenshots_.Take();
+        if (!path) return;
+
+        uint32_t width{ 0 }, height{ 0 };
+        DXGI_FORMAT format{ DXGI_FORMAT_UNKNOWN };
+        std::vector<uint8_t> raw;
+        if (!ReadBackBuffer(width, height, format, raw)) {
+            // Nothing will be written; whoever asked stops waiting
+            screenshots_.Abandon();
+            return;
+        }
+
+        auto hdr10 = info_.HDR10;
+        auto paperWhite = info_.PaperWhiteNits;
+        screenshots_.Finish(*path, width, height, std::move(raw),
+            [width, height, format, hdr10, paperWhite](std::vector<uint8_t> const& in, std::vector<uint8_t>& out) {
+                return ToRGBA8(format, width, height, hdr10, paperWhite, in, out);
+            });
+    }
+
+    // The back buffer copied into main memory, rows top to bottom and tightly packed, in the
+    // format the swap chain holds (four bytes a pixel in every format that can be read here)
+    bool ReadBackBuffer(uint32_t& width, uint32_t& height, DXGI_FORMAT& format, std::vector<uint8_t>& raw)
+    {
+        if (device_ == nullptr || context_ == nullptr || swapChain_ == nullptr) return false;
+
+        ID3D11Texture2D* back{ nullptr };
+        auto hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&back));
+        if (FAILED(hr) || back == nullptr) {
+            ERR("Could not reach the back buffer for a screenshot (%x)", hr);
+            return false;
+        }
+
+        D3D11_TEXTURE2D_DESC desc;
+        back->GetDesc(&desc);
+
+        if (desc.SampleDesc.Count > 1) {
+            ERR("Screenshots of a multisampled swap chain are not supported");
+            back->Release();
+            return false;
+        }
+
+        auto stagingDesc = desc;
+        stagingDesc.Usage = D3D11_USAGE_STAGING;
+        stagingDesc.BindFlags = 0;
+        stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        stagingDesc.MiscFlags = 0;
+        stagingDesc.MipLevels = 1;
+        stagingDesc.ArraySize = 1;
+
+        ID3D11Texture2D* staging{ nullptr };
+        hr = device_->CreateTexture2D(&stagingDesc, nullptr, &staging);
+        if (FAILED(hr) || staging == nullptr) {
+            ERR("Could not make a staging texture for a screenshot (%x)", hr);
+            back->Release();
+            return false;
+        }
+
+        context_->CopyResource(staging, back);
+        back->Release();
+
+        D3D11_MAPPED_SUBRESOURCE mapped;
+        hr = context_->Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
+        if (FAILED(hr)) {
+            ERR("Could not read the copied frame of a screenshot (%x)", hr);
+            staging->Release();
+            return false;
+        }
+
+        if (!CanRead(desc.Format)) {
+            ERR("Screenshots of a swap chain in format %d are not supported", (int)desc.Format);
+            context_->Unmap(staging, 0);
+            staging->Release();
+            return false;
+        }
+
+        raw.resize((std::size_t)desc.Width * desc.Height * 4);
+        for (uint32_t y = 0; y < desc.Height; y++) {
+            memcpy(raw.data() + (std::size_t)y * desc.Width * 4,
+                (uint8_t const*)mapped.pData + (std::size_t)y * mapped.RowPitch,
+                (std::size_t)desc.Width * 4);
+        }
+
+        context_->Unmap(staging, 0);
+        staging->Release();
+
+        width = desc.Width;
+        height = desc.Height;
+        format = desc.Format;
+        return true;
+    }
+
+    static bool CanRead(DXGI_FORMAT format)
+    {
+        switch (format) {
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+        case DXGI_FORMAT_R10G10B10A2_UNORM:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    // Perceptual quantizer (SMPTE ST 2084), the transfer function of an HDR10 swap chain:
+    // a stored value back to the luminance it stands for, in nits
+    static float FromPQ(float stored)
+    {
+        constexpr float m1 = 2610.0f / 16384.0f;
+        constexpr float m2 = 2523.0f / 4096.0f * 128.0f;
+        constexpr float c1 = 3424.0f / 4096.0f;
+        constexpr float c2 = 2413.0f / 4096.0f * 32.0f;
+        constexpr float c3 = 2392.0f / 4096.0f * 32.0f;
+
+        auto e = powf(std::max(stored, 0.0f), 1.0f / m2);
+        auto numerator = std::max(e - c1, 0.0f);
+        auto denominator = c2 - c3 * e;
+        if (denominator <= 0.0f) return 0.0f;
+        return 10000.0f * powf(numerator / denominator, 1.0f / m1);
+    }
+
+    // A linear channel as sRGB stores it
+    static uint8_t ToSRGB(float linear)
+    {
+        auto v = std::clamp(linear, 0.0f, 1.0f);
+        auto encoded = v <= 0.0031308f ? 12.92f * v : 1.055f * powf(v, 1.0f / 2.4f) - 0.055f;
+        return (uint8_t)std::lround(std::clamp(encoded, 0.0f, 1.0f) * 255.0f);
+    }
+
+    // An HDR10 pixel (PQ, Rec. 2020 primaries) as an ordinary sRGB one: the brightness range the
+    // display would have shown is folded down around the white the UI is drawn at, and the wider
+    // primaries are converted, so the file looks like what is on the screen rather than washed out
+    static void HDR10ToSRGB(uint32_t pixel, float paperWhite, uint8_t* out)
+    {
+        auto r = FromPQ((float)(pixel & 0x3FF) / 1023.0f) / paperWhite;
+        auto g = FromPQ((float)((pixel >> 10) & 0x3FF) / 1023.0f) / paperWhite;
+        auto b = FromPQ((float)((pixel >> 20) & 0x3FF) / 1023.0f) / paperWhite;
+
+        out[0] = ToSRGB( 1.6605f * r - 0.5876f * g - 0.0728f * b);
+        out[1] = ToSRGB(-0.1246f * r + 1.1329f * g - 0.0083f * b);
+        out[2] = ToSRGB(-0.0182f * r - 0.1006f * g + 1.1187f * b);
+        out[3] = 255;
+    }
+
+    // The frame as it was copied out of the swap chain, turned into RGBA8. Runs on the writing
+    // thread, not on the one the game renders with: an HDR frame costs arithmetic per pixel that
+    // a frame of the game may not be held up for.
+    static bool ToRGBA8(DXGI_FORMAT format, uint32_t width, uint32_t height, bool hdr10, float paperWhiteNits,
+        std::vector<uint8_t> const& in, std::vector<uint8_t>& rgba)
+    {
+        rgba.resize((std::size_t)width * height * 4);
+        auto paperWhite = paperWhiteNits > 0.0f ? paperWhiteNits : 200.0f;
+
+        for (uint32_t y = 0; y < height; y++) {
+            auto src = in.data() + (std::size_t)y * width * 4;
+            auto dst = rgba.data() + (std::size_t)y * width * 4;
+
+            switch (format) {
+            case DXGI_FORMAT_R8G8B8A8_UNORM:
+            case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+                for (uint32_t x = 0; x < width; x++) {
+                    dst[x * 4 + 0] = src[x * 4 + 0];
+                    dst[x * 4 + 1] = src[x * 4 + 1];
+                    dst[x * 4 + 2] = src[x * 4 + 2];
+                    dst[x * 4 + 3] = 255;
+                }
+                break;
+
+            case DXGI_FORMAT_B8G8R8A8_UNORM:
+            case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+                for (uint32_t x = 0; x < width; x++) {
+                    dst[x * 4 + 0] = src[x * 4 + 2];
+                    dst[x * 4 + 1] = src[x * 4 + 1];
+                    dst[x * 4 + 2] = src[x * 4 + 0];
+                    dst[x * 4 + 3] = 255;
+                }
+                break;
+
+            case DXGI_FORMAT_R10G10B10A2_UNORM:
+                for (uint32_t x = 0; x < width; x++) {
+                    auto pixel = *(uint32_t const*)(src + x * 4);
+                    if (hdr10) {
+                        HDR10ToSRGB(pixel, paperWhite, dst + x * 4);
+                    } else {
+                        dst[x * 4 + 0] = (uint8_t)((pixel >> 2) & 0xFF);
+                        dst[x * 4 + 1] = (uint8_t)((pixel >> 12) & 0xFF);
+                        dst[x * 4 + 2] = (uint8_t)((pixel >> 22) & 0xFF);
+                        dst[x * 4 + 3] = 255;
+                    }
+                }
+                break;
+
+            default:
+                ERR("Screenshots of a swap chain in format %d are not supported", (int)format);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     void STDMETHODCALLTYPE DXGISwapChainResizeBuffersHooked(
         IDXGISwapChain* pSwapChain,
         /* [in] */ UINT BufferCount,
@@ -468,6 +693,7 @@ private:
     int32_t drawViewport_{ -1 };
     int32_t curViewport_{ 0 };
     TextureMirrorSet mirroredTextures_;
+    ScreenshotWriter screenshots_;
 
     IDXGIAdapter* adapter_{ nullptr };
     ID3D11DeviceContext* context_{ nullptr };

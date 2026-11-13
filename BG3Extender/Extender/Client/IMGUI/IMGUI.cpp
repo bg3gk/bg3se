@@ -6,8 +6,12 @@
 #define STBI_ONLY_JPEG
 #define STBI_ONLY_TGA
 #define STBI_ONLY_BMP
+// Encoder for the screenshots the rendering backend takes (see ScreenshotWriter)
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_WRITE_NO_STDIO
 #pragma warning(push, 0)
 #include <stb_image.h>
+#include <stb_image_write.h>
 #pragma warning(pop)
 
 #include <Extender/Client/IMGUI/IMGUI.h>
@@ -2881,6 +2885,16 @@ BackendInfo IMGUIManager::GetBackendInfo()
 void IMGUIManager::SetPaperWhite(float nits)
 {
     renderer_->SetPaperWhite(nits);
+}
+
+bool IMGUIManager::RequestScreenshot(StringView path)
+{
+    return renderer_ ? renderer_->RequestScreenshot(path) : false;
+}
+
+bool IMGUIManager::ScreenshotPending()
+{
+    return renderer_ ? renderer_->ScreenshotPending() : false;
 }
 
 void IMGUIManager::OnRenderBackendInitialized()
