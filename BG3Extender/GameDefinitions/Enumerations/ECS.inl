@@ -76,6 +76,7 @@ BEGIN_ENUM(ExtSystemType, uint32_t)
     E(ServerRollSave)
     E(ServerCombatLog)
     E(ServerLockpicking)
+    E(ServerTrapDisarm)
     E(ServerHotbar)
 
     E(ClientEquipmentVisuals)

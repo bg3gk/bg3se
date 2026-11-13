@@ -686,22 +686,65 @@ struct ScriptPermissionResponse
     bool Response;
 };
 
+// One player request (the server's network handler for NETMSG_CHARACTER_LOCKPICK pushes it,
+// bg3.exe+0x306B930 case 0x118). Appending one is what the player's "Pick lock" does: the system
+// walks the character to the item and runs the permission, roll and animation itself.
 struct PickLockRequest
 {
     EntityHandle Player;
     EntityHandle Target;
-    EntityHandle field_10;
+    // The lockpick ("objectUsed" in the Toolkit's log); kept as LockpickingState.Target2.
+    [[bg3::legacy(field_10)]] EntityHandle Tool;
 };
 
 struct LockpickingSystem : public BaseSystem
 {
     DEFINE_SYSTEM(ServerLockpicking, "esv::lock::LockpickingSystem")
 
+    // GateKit, confirmed live 2026-11-13: the object is 0x90 bytes (factory bg3.exe+0x236EF40
+    // allocates 0x90) and starts with UniquePtr<ILockpickingSystemHelper const> (the factory moves
+    // it in at +0x10; TryToStartLockpicking calls through it). Without this member every field
+    // below sat 8 bytes low: the live object holds the Function's self-pointer at +0x20 -> +0x28,
+    // and the request array at +0x60.
+    [[bg3::hidden]] void* Helper;
     [[bg3::hidden]] void* ImmutableDataHeadmaster;
     [[bg3::hidden]] UnknownFunction SignalCollection;
     Array<PickLockRequest> PickLockRequests;
     Array<ScriptPermissionResponse> ScriptPermissionResponses;
     [[bg3::hidden]] Array<void*> ActiveRollFinishedEvents;
+};
+
+END_NS()
+
+BEGIN_NS(esv::trap)
+
+// One player request to disarm a trap (NETMSG_CHARACTER_TRAPDISARM, bg3.exe+0x306B930 case
+// 0x119; Toolkit LEGACY_RequestDisarmAttempt). The game pushes it only for a trap that is armed
+// and discovered (Disarmable +0x10, +0x11) and has esv::trap::DisarmAttemptComponent; Force is
+// set when a key opens a trapped item (esv::Character::UseItemInternal).
+struct DisarmRequest
+{
+    EntityHandle Character;
+    EntityHandle Tool;
+    EntityHandle Trap;
+    bool Force;
+};
+
+// GateKit (2026-11-13): object 0x98 bytes (constructor bg3.exe+0x2392C40, factory +0x2357460,
+// update +0x2CF4C80; ProcessDisarmRequests bg3.exe+0x2CF5BC0 drains DisarmRequests).
+struct DisarmSystem : public BaseSystem
+{
+    DEFINE_SYSTEM(ServerTrapDisarm, "esv::trap::DisarmSystem")
+
+    [[bg3::hidden]] void* Helper;
+    [[bg3::hidden]] Array<void*> SetDisarmDC;
+    [[bg3::hidden]] Array<void*> field_28;
+    [[bg3::hidden]] Array<void*> field_38;
+    [[bg3::hidden]] Array<void*> field_48;
+    Array<DisarmRequest> DisarmRequests;
+    [[bg3::hidden]] Array<void*> ScriptPermissionResponses;
+    [[bg3::hidden]] Array<void*> SetDisarmState;
+    [[bg3::hidden]] Array<void*> SetDiscoveredState;
 };
 
 END_NS()
