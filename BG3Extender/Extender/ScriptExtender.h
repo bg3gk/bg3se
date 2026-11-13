@@ -30,6 +30,10 @@ public:
     ScriptExtender();
     ~ScriptExtender();
 
+    // GateKit experiment (2026-11-13): the frame delta every ECS world is updated with is
+    // multiplied by this (Ext.Debug.SetTimeScale). 1 = the game's own pace.
+    std::atomic<float> TimeScale{ 1.0f };
+
     void Initialize();
     void PostStartup();
     void Shutdown();
