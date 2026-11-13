@@ -495,22 +495,6 @@ void Crash(int type)
 #endif
 }
 
-// Ext.Debug.SetTimeScale(scale): GateKit experiment. Every ECS world (server and client) is
-// updated as if `scale` times more time had passed per frame; 1 restores the game's pace.
-// Allowed range 0.05 .. 50. Developer mode only.
-void SetTimeScale(lua_State* L, float scale)
-{
-    RequireDeveloperMode(L, "SetTimeScale");
-    if (scale < 0.05f) scale = 0.05f;
-    if (scale > 50.0f) scale = 50.0f;
-    gExtender->TimeScale.store(scale, std::memory_order_relaxed);
-}
-
-float GetTimeScale()
-{
-    return gExtender->TimeScale.load(std::memory_order_relaxed);
-}
-
 void SetEntityRuntimeCheckLevel(int level)
 {
 #if defined(_DEBUG)
@@ -563,8 +547,6 @@ void RegisterDebugLib()
     MODULE_FUNCTION(GetComponentHolders)
     MODULE_FUNCTION(GetComponentCounts)
     MODULE_FUNCTION(SetEntityRuntimeCheckLevel)
-    MODULE_FUNCTION(SetTimeScale)
-    MODULE_FUNCTION(GetTimeScale)
     MODULE_FUNCTION(Crash)
     MODULE_FUNCTION(Reset)
     END_MODULE()

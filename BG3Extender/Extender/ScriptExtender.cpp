@@ -305,17 +305,7 @@ void ScriptExtender::OnECSUpdateGuarded(ecs::EntityWorld__UpdateProc* wrapped, e
         
         {
             DisableCrashReporting _;
-            float scale = TimeScale.load(std::memory_order_relaxed);
-            if (scale != 1.0f) {
-                // Both frame deltas are stretched; the absolute time and the tick counter are left
-                // as the game counts them.
-                GameTime scaled = time;
-                scaled.DeltaTime *= scale;
-                scaled.field_C *= scale;
-                wrapped(entityWorld, scaled);
-            } else {
-                wrapped(entityWorld, time);
-            }
+            wrapped(entityWorld, time);
         }
 
         ecs->PostUpdate();
