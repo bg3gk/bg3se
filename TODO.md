@@ -1,22 +1,24 @@
+### Sound settings: mapped (2026-11-13)
 
-### Sound settings are declared but not reachable from Lua (found 2026-11-13)
+`ls::GlobalSwitches::SoundSettings[12]` is mapped, so
+`Ext.Utils.GetGlobalSwitches().SoundSettings` works and a mod can read the player's own sound
+settings. The twelve keys, in the array's order, are `MasterVolume` (Wwise RTPC MAIN),
+`FxVolume` (SFX), `AmbientVolume`, `UIVolume`, `MusicVolume`, `MusicFightVolume` (Music_Fight),
+`CutsceneVolume` (Cinematics), `VoiceVolume` (VO_Master), `VoiceVolumeDialog` (VO_Dialog),
+`VoiceVolumeNarrator` (VO_Narrator), `VoiceVolumeOverhead` (VO_Overhead) and `RumbleVolume` —
+the last one does have an RTPC after all, `RTPC_Rumble`. The options screen shows seven of them,
+and every `DisplayName` resolves to that row's label there.
 
-`ls::GlobalSwitches::SoundSettings[12]` is declared in `GameDefinitions/Misc.h` but is absent
-from the property map, so Lua gets "property does not exist" for it. The twelve keys were
-recovered from the game executable's own strings and checked live: `MasterVolume` (Wwise RTPC
-MAIN), `FxVolume` (SFX), `AmbientVolume`, `MusicVolume`, `MusicFightVolume` (Music_Fight),
-`CutsceneVolume` (Cinematics), `UIVolume`, `VoiceVolume` (VO_Master), `VoiceVolumeDialog`
-(VO_Dialog), `VoiceVolumeNarrator` (VO_Narrator), `VoiceVolumeOverhead` (VO_Overhead) and
-`RumbleVolume` (no RTPC; controller vibration). The options screen shows seven of them.
+`SoundSetting::ConfigValue[3]`: `[0]` is the configured value, `[1]` the value in effect (the
+only one `UpdateProc` sends to the RTPCs), `[2]` the built-in default. Seen live with the master
+at 37 and the music at 42 in the profile: `37 37 100` and `42 42 100`, everything else
+`100 100 100`. The evidence, the addresses and the two things that are still unaccounted for
+are in GateKit's `research/se-fork/upstream/sound-settings.md`.
 
-What is unknown: what the three floats of `SoundSetting::ConfigValue` mean. The one function
-that mentions `RTPC_Volume_MAIN` is a 196-byte FixedString initialiser and says nothing;
-answering it needs the decompiler on the code that reads the array.
+Still open: what the options screen writes when a slider moves (it does not draw these floats,
+and the settings writer serialises `[2]`, the default, which cannot be the whole story), and
+`field_40`, a byte that is 1 on `VoiceVolumeDialog` and 0 on the other eleven.
 
-GateKit does not depend on this — `Ext.Audio.SetRTPC` sets the same value a slider ends up
-setting, which is what `GK.Sound` uses. What the mapping would add is *reading the player's own
-settings*, which nothing can do today.
-
-**This is a good candidate for the first pull request to Norbyte**: small, self-contained,
-obviously correct, and useful to anyone. Offer it before arriving with a large branch — but only
-on the owner's word, like every other proposal upstream.
+**This is the first offer to Norbyte**, prepared as the branch `offer/sound-settings` cut from
+`base/v34-imgui_v1_93-2ea16d51`. Nothing is pushed; whether and when it is sent is the owner's
+decision.
