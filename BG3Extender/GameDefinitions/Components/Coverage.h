@@ -160,15 +160,27 @@ struct BasicGOVisualFadeView0Component : public BaseComponent
     // labels): +0 0, +4 4.0, +8/+9 0/0 or 1/0, +A 1, +C 0.0, +10 Active 0 or 1 (upper bytes
     // garbage).
     float TargetValue;
-    // unknown: bg3.exe+0x18F07E0 writes 4.0 (0x40800000). Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F07E0 writes 4.0 (0x40800000). Probably
+    // fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F07E0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h). Live 0.
     bool Immediate;
-    // unknown: bg3.exe+0x18F07E0 writes 0. Live 0 (one View1 sample 1).
-    bool field_9;
-    // unknown: bg3.exe+0x18F07E0 writes 1. Live 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F07E0 writes 0. Live 0 (one View1 sample 1).
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F07E0 writes 1. Live 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this
+    // byte into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out
+    // starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not
+    // established. Default 1.
     bool field_A;
     // inferred: bg3.exe+0x18F07E0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -218,15 +230,27 @@ struct CharacterAttachToSceneFadeView0Component : public BaseComponent
     // Creator bg3.exe+0x18F11F0 writes 0 here. Live: 2 live instances (dialogues DEN_DevilishOx,
     // DEN_HarpyMeal): +0 0, +4 4.0, +8 1, +9 0, +A 1, +C 0, +10 0 (garbage above).
     float TargetValue;
-    // unknown: bg3.exe+0x18F11F0 writes 4.0 (0x40800000). Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F11F0 writes 4.0 (0x40800000). Probably
+    // fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F11F0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h). Live 0.
     bool Immediate;
-    // unknown: bg3.exe+0x18F11F0 writes 0. Live 0 (one View1 sample 1).
-    bool field_9;
-    // unknown: bg3.exe+0x18F11F0 writes 1. Live 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F11F0 writes 0. Live 0 (one View1 sample 1).
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F11F0 writes 1. Live 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this
+    // byte into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out
+    // starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not
+    // established. Default 1.
     bool field_A;
     // inferred: bg3.exe+0x18F11F0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -244,15 +268,27 @@ struct CharacterAttachToSceneFadeView1Component : public BaseComponent
     // Creator bg3.exe+0x18F1690 writes 0 here. Live: 2 live instances (same dialogues): +0 0, +4
     // 4.0, +8 1, +9 0, +A 1, +C 0, +10 0.
     float TargetValue;
-    // unknown: bg3.exe+0x18F1690 writes 4.0 (0x40800000). Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F1690 writes 4.0 (0x40800000). Probably
+    // fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F1690 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h). Live 0.
     bool Immediate;
-    // unknown: bg3.exe+0x18F1690 writes 0. Live 0 (one View1 sample 1).
-    bool field_9;
-    // unknown: bg3.exe+0x18F1690 writes 1. Live 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F1690 writes 0. Live 0 (one View1 sample 1).
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F1690 writes 1. Live 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this
+    // byte into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out
+    // starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not
+    // established. Default 1.
     bool field_A;
     // inferred: bg3.exe+0x18F1690 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -270,15 +306,27 @@ struct CharacterCreationFadeView0Component : public BaseComponent
     // bg3.exe+0x18F1B30 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
     // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
     float TargetValue;
-    // unknown: bg3.exe+0x18F1B30 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F1B30 writes 4.0 (0x40800000); live 4.0.
+    // Probably fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F1B30 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h).
     bool Immediate;
-    // unknown: bg3.exe+0x18F1B30 writes 0.
-    bool field_9;
-    // unknown: bg3.exe+0x18F1B30 writes 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F1B30 writes 0.
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F1B30 writes 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this byte into
+    // byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out starts at
+    // {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not established. Default
+    // 1.
     bool field_A;
     // inferred: bg3.exe+0x18F1B30 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -296,15 +344,27 @@ struct CharacterCreationFadeView1Component : public BaseComponent
     // bg3.exe+0x18F1FD0 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
     // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
     float TargetValue;
-    // unknown: bg3.exe+0x18F1FD0 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F1FD0 writes 4.0 (0x40800000); live 4.0.
+    // Probably fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F1FD0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h).
     bool Immediate;
-    // unknown: bg3.exe+0x18F1FD0 writes 0.
-    bool field_9;
-    // unknown: bg3.exe+0x18F1FD0 writes 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F1FD0 writes 0.
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F1FD0 writes 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this byte into
+    // byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out starts at
+    // {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not established. Default
+    // 1.
     bool field_A;
     // inferred: bg3.exe+0x18F1FD0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -319,15 +379,27 @@ struct CharacterOutOfSightFadeView0Component : public BaseComponent
     // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h, see its comments).
     // Creator bg3.exe+0x18F2470 writes 0 here; live 0.5.
     float TargetValue;
-    // unknown: bg3.exe+0x18F2470 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F2470 writes 4.0 (0x40800000); live 4.0.
+    // Probably fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F2470 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h). Live 0.
     bool Immediate;
-    // unknown: bg3.exe+0x18F2470 writes 0. Live 0 (one View1 sample 1).
-    bool field_9;
-    // unknown: bg3.exe+0x18F2470 writes 1. Live 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F2470 writes 0. Live 0 (one View1 sample 1).
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F2470 writes 1. Live 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this
+    // byte into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out
+    // starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not
+    // established. Default 1.
     bool field_A;
     // inferred: bg3.exe+0x18F2470 writes 1.0 (0x3f800000); meaning from TimelineFadeView0. Live
     // 0.5 (= TargetValue, fade finished).
@@ -343,15 +415,27 @@ struct CharacterOutOfSightFadeView1Component : public BaseComponent
     // inferred: Same layout as ecl::TimelineFadeView0Component (Coverage.h, see its comments).
     // Creator bg3.exe+0x18F2470 writes 0 here; live 0.5.
     float TargetValue;
-    // unknown: bg3.exe+0x18F2470 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F2470 writes 4.0 (0x40800000); live 4.0.
+    // Probably fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F2470 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h). Live 0.
     bool Immediate;
-    // unknown: bg3.exe+0x18F2470 writes 0. Live 0 (one View1 sample 1).
-    bool field_9;
-    // unknown: bg3.exe+0x18F2470 writes 1. Live 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F2470 writes 0. Live 0 (one View1 sample 1).
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F2470 writes 1. Live 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this
+    // byte into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out
+    // starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not
+    // established. Default 1.
     bool field_A;
     // inferred: bg3.exe+0x18F2470 writes 1.0 (0x3f800000); meaning from TimelineFadeView0. Live
     // 0.5 (= TargetValue, fade finished).
@@ -566,15 +650,27 @@ struct CrowdFadeView0Component : public BaseComponent
     // bg3.exe+0x18F2DB0 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
     // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
     float TargetValue;
-    // unknown: bg3.exe+0x18F2DB0 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F2DB0 writes 4.0 (0x40800000); live 4.0.
+    // Probably fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F2DB0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h).
     bool Immediate;
-    // unknown: bg3.exe+0x18F2DB0 writes 0.
-    bool field_9;
-    // unknown: bg3.exe+0x18F2DB0 writes 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F2DB0 writes 0.
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F2DB0 writes 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this byte into
+    // byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out starts at
+    // {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not established. Default
+    // 1.
     bool field_A;
     // inferred: bg3.exe+0x18F2DB0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -592,15 +688,27 @@ struct CrowdFadeView1Component : public BaseComponent
     // bg3.exe+0x18F3250 (ComponentFrameStorageAllocRaw size 0x14) writes 0 here - byte-for-byte
     // the same stores as the confirmed CharacterOutOfSightFadeView0 creator bg3.exe+0x18F2470.
     float TargetValue;
-    // unknown: bg3.exe+0x18F3250 writes 4.0 (0x40800000); live 4.0. Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F3250 writes 4.0 (0x40800000); live 4.0.
+    // Probably fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F3250 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h).
     bool Immediate;
-    // unknown: bg3.exe+0x18F3250 writes 0.
-    bool field_9;
-    // unknown: bg3.exe+0x18F3250 writes 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F3250 writes 0.
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F3250 writes 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this byte into
+    // byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out starts at
+    // {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not established. Default
+    // 1.
     bool field_A;
     // inferred: bg3.exe+0x18F3250 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -756,15 +864,27 @@ struct InvisibilityFadeView0Component : public BaseComponent
     // Creator bg3.exe+0x18F36F0 writes 0 here. Live: 4 live instances (MOO_Jailbreak dialogue,
     // shadow enemies in TWN Morgue): +0 0, +4 4.0, +8..+A 0, +B garbage 0xF2, +C 0 or 1.0, +10 1.
     float TargetValue;
-    // unknown: bg3.exe+0x18F36F0 writes 4.0 (0x40800000). Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F36F0 writes 4.0 (0x40800000). Probably
+    // fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F36F0 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h). Live 0.
     bool Immediate;
-    // unknown: bg3.exe+0x18F36F0 writes 0. Live 0 (one View1 sample 1).
-    bool field_9;
-    // unknown: bg3.exe+0x18F36F0 writes 1. Live 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F36F0 writes 0. Live 0 (one View1 sample 1).
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F36F0 writes 1. Live 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this
+    // byte into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out
+    // starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not
+    // established. Default 1.
     bool field_A;
     // inferred: bg3.exe+0x18F36F0 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -782,15 +902,27 @@ struct InvisibilityFadeView1Component : public BaseComponent
     // Creator bg3.exe+0x18F3B90 writes 0 here. Live: 4 live instances (same situations): +0 0, +4
     // 4.0, +8..+B 0, +C 0 or 1.0, +10 1.
     float TargetValue;
-    // unknown: bg3.exe+0x18F3B90 writes 4.0 (0x40800000). Probably fade speed (as in
-    // TimelineFadeView0).
-    float field_4;
+    // inferred: bg3.exe+0x18DFEC0 (called from bg3.exe+0x18DD6F0, the per-frame update of
+    // ecl::FadeResolveSystem; handles every ecl::*FadeView0/1Component through the query
+    // bg3.exe+0x6331618): while the view is fading back in (byte +0x10 == 0) it does
+    // 'CurrentValue(+0xC) += deltaTime * view[+4]' up to 1.0; while active it does 'CurrentValue
+    // -= deltaTime * view[+4]' down to TargetValue(+0). So +4 is a rate per second (default 4.0 =
+    // a full fade in 0.25 s). | first pass: bg3.exe+0x18F3B90 writes 4.0 (0x40800000). Probably
+    // fade speed (as in TimelineFadeView0).
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x18F3B90 writes 0 (16-bit store with +9); meaning from TimelineFadeView0
     // (Coverage.h). Live 0.
     bool Immediate;
-    // unknown: bg3.exe+0x18F3B90 writes 0. Live 0 (one View1 sample 1).
-    bool field_9;
-    // unknown: bg3.exe+0x18F3B90 writes 1. Live 1.
+    // inferred: bg3.exe+0x18DFEC0: when the view is not active (+0x10 == 0) and byte +9 is set (or
+    // the system's global 'no fading' byte at system+0x18), CurrentValue is set to 1.0 at once
+    // instead of rising by FadeSpeed - the fade-in is immediate. Mirror of +8 (Immediate), which
+    // does the same for the fade-out (CurrentValue = TargetValue at once). | first pass:
+    // bg3.exe+0x18F3B90 writes 0. Live 0 (one View1 sample 1).
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x18F3B90 writes 1. Live 1. | names pass 2: bg3.exe+0x18DFEC0 ANDs this
+    // byte into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4) &= view[0xA]', out
+    // starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4) was not
+    // established. Default 1.
     bool field_A;
     // inferred: bg3.exe+0x18F3B90 writes 1.0 (0x3f800000); meaning from TimelineFadeView0.
     float CurrentValue;
@@ -1149,23 +1281,36 @@ struct Projectile : public BaseComponent
     // member at +0x170); same type as SE path::PathMover (ExposedTypes.h) - kept opaque because
     // only primitive types may be used here.
     std::array<uint8_t, 296> Path;
-    // unknown: copy ctor copies it with ls::FixedString::FixedString.
-    FixedString field_170;
+    // inferred: ecl::Projectile::TryExplode (EoCClient.dll+0x921AF0): 'LevelManager::GetLevel(this
+    // + 0x170)' and copies it as the level of temp sound events. | first pass: copy ctor copies it
+    // with ls::FixedString::FixedString.
+    [[bg3::legacy(field_170)]] FixedString LevelName;
     // Toolkit accessor: Toolkit accessor ref SpellID (eoc::spell::SpellId) at +0x178, 0x38 bytes
     // (next member +0x1B0).
     ClientProjectileSpellId SpellId;
-    // unknown: copy ctor copies it as FixedString. Live always empty (0xFFFFFFFF).
-    FixedString field_1B0;
+    // inferred: ecl::EntityConversionHelpers::CreateProjectile (EoCClient.dll+0x98AD00) assigns it
+    // from eoc::ProjectileDefinition +0x110 and the next byte (+0x114) into SpawnOverridesImpact;
+    // TryExplode plays it with ls::EffectsManager::PlayAndForgetEffect when != -1 and skips the
+    // impact effect when SpawnOverridesImpact is set. Server pair: Toolkit accessors SpawnEffect
+    // (+0x518) / SpawnOverridesImpact (+0x51C). | first pass: copy ctor copies it as FixedString.
+    // Live always empty (0xFFFFFFFF).
+    [[bg3::legacy(field_1B0)]] FixedString SpawnEffect;
     // Toolkit accessor: Toolkit accessor set Target at +0x1B8.
     EntityHandle Target;
     // Toolkit accessor: Toolkit accessor set Caster at +0x1C0.
     EntityHandle Caster;
     // Toolkit accessor: Toolkit accessor set Source at +0x1C8.
     EntityHandle Source;
-    // unknown: copied as 8 bytes; live entity handles or null.
-    EntityHandle field_1D0;
-    // unknown: copied as 8 bytes; live always null (0xFFC0000000000000).
-    EntityHandle field_1D8;
+    // inferred: ecl::Projectile::SetMovingObject(IGameObject*, bool) (EoCClient.dll+0x921200)
+    // works on +0x1D0; TryExplode (EoCClient.dll+0x921AF0) looks it up as Item / Character; Update
+    // waits for it to be activated. Name as esv::Projectile::MovingObject. | first pass: copied as
+    // 8 bytes; live entity handles or null.
+    [[bg3::legacy(field_1D0)]] EntityHandle MovingObject;
+    // the game's own member name: Toolkit accessors ecl::Projectile::GetTemporalMovingObject
+    // (EoCClient.dll+0x351E50: returns *(this+0x1D8)) and SetTemporalMovingObject
+    // (EoCClient.dll+0x418A20: writes +0x1D8). Update (EoCClient.dll+0x923540) clears it when the
+    // entity is dead. | first pass: copied as 8 bytes; live always null (0xFFC0000000000000).
+    [[bg3::legacy(field_1D8)]] EntityHandle TemporalMovingObject;
     // Toolkit accessor: Toolkit accessor ref MovingObjectTransform (ls::Transform, 40 bytes) at
     // +0x1E0. Live scale +0x200/+0x204 = 1.0.
     Transform MovingObjectTransform;
@@ -1180,9 +1325,13 @@ struct Projectile : public BaseComponent
     float ExplodeRadius;
     // Toolkit accessor: Toolkit accessor get/set InfluenceRadius at +0x228.
     float InfluenceRadius;
-    // unknown: copied as 4 bytes; live 14.11/15.0 (esv::Projectile has FallbackTimer 15.0 -
-    // possibly the same).
-    float field_22C;
+    // inferred: Constructor EoCClient.dll+0x9200F0 writes 15.0 (0x41700000);
+    // ecl::Projectile::Update (EoCClient.dll+0x923540) decrements it by the frame time and, below
+    // 0, logs 'Projectile aborted by fallback timer! Thrown entity has never been activated!' and
+    // requests deletion. Same name and default (15.0) as esv::Projectile::FallbackTimer in Script
+    // Extender. | first pass: copied as 4 bytes; live 14.11/15.0 (esv::Projectile has
+    // FallbackTimer 15.0 - possibly the same).
+    [[bg3::legacy(field_22C)]] float FallbackTimer;
     // unknown: copied as 4 bytes; live 0.
     uint32_t field_230;
     // Toolkit accessor: Toolkit accessor get IsRequestDeleted at +0x234.
@@ -1193,12 +1342,21 @@ struct Projectile : public BaseComponent
     bool field_236;
     // Toolkit accessor: Toolkit accessor get IsOnHold / set OnHold at +0x237.
     bool IsOnHold;
-    // unknown: copied as a byte.
-    bool field_238;
-    // unknown: copied as a byte.
-    bool field_239;
-    // unknown: copied as a byte (last member copied).
-    bool field_23A;
+    // inferred: SetMovingObject stores its bool argument here (EoCClient.dll+0x921200:
+    // 'this[0x238] = param_2'); the server's esv::Projectile::SetMovingObject
+    // (EoCServer.dll+0x80CF40) stores the same argument at +0x52C, which lies between the Toolkit
+    // accessors IsTrap (+0x52B) and MoveFromSource (+0x52D) = IsThrown in Script Extender's
+    // esv::Projectile. | first pass: copied as a byte.
+    [[bg3::legacy(field_238)]] bool IsThrown;
+    // inferred: ecl::Projectile::Update (EoCClient.dll+0x923540): on the first update it is 0 and
+    // is set to 1 without calling PathMover::Update; later updates advance Path. Constructor 0. |
+    // first pass: copied as a byte.
+    [[bg3::legacy(field_239)]] bool PathStarted;
+    // inferred: ecl::Projectile::Update (EoCClient.dll+0x923540): while 0 it is set to 1 once
+    // MovingObject is valid and passes FUN_1805f66e0; the path only advances when MovingObject is
+    // null or this is set (the fallback timer catches the case where it never happens). | first
+    // pass: copied as a byte (last member copied).
+    [[bg3::legacy(field_23A)]] bool MovingObjectActivated;
 };
 
 struct RoomTriggerCharacterFadeView0Component : public BaseComponent
@@ -1307,10 +1465,10 @@ struct ServerControlledEffectComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ClientServerControlledEffect, "ecl::ServerControlledEffectComponent")
 
-    // unknown: Creator bg3.exe+0x1FF8760 zeroes it; bg3.exe+0x1EA88B0 passes the component start
+    // inferred: Creator bg3.exe+0x1FF8760 zeroes it; bg3.exe+0x1EA88B0 passes the component start
     // as a position-like argument to a beam/effect update (FUN_14189e8e0). Live world-coordinate-
     // like floats (43.4, 17.0, -420.8) or 0.
-    glm::vec3 field_0;
+    [[bg3::legacy(field_0)]] glm::vec3 Position;
     // inferred: bg3.exe+0x1EA88B0 copies +0xC (8 bytes) and +0x14 (4) into the translation slot of
     // a transform it builds. Creator writes 0; live 0.
     glm::vec3 Translate;
@@ -1735,23 +1893,36 @@ struct TimelineEyeLookAtOverrideComponent : public BaseComponent
 
 struct TimelineFadeRequest
 {
-    // unknown: bg3.exe+0x1D6BA20 writes 0 when it inserts / overwrites the map value (value stride
-    // 0x10: 'values + index * 0x10').
-    float field_0;
-    // unknown: bg3.exe+0x1D6BA20 writes 0x40800000 = 4.0 (same pair '0, 4.0' that starts
-    // ecl::TimelineFadeView0Component in the probe) - probably the fade speed/duration.
-    float field_4;
+    // inferred: Copied 1:1 into the fade view: Toolkit ecl::FadeResolveSystem::ProcessFadeRequests
+    // (EoCClient.dll+0x891A00) does 'view[0..7] = request[0..7]; view[8..0xB] = request[8..0xB]'
+    // for each map value, so the request's +0 is the view's TargetValue. Game struct name
+    // ecl::StartFadeRequest (macOS HashMap<EntityHandle, ecl::StartFadeRequest>). | first pass:
+    // bg3.exe+0x1D6BA20 writes 0 when it inserts / overwrites the map value (value stride 0x10:
+    // 'values + index * 0x10').
+    [[bg3::legacy(field_0)]] float TargetValue;
+    // inferred: Copied into view +4 (EoCClient.dll+0x891A00); the blend step bg3.exe+0x18DFEC0
+    // uses view +4 as the fade rate per second. | first pass: bg3.exe+0x1D6BA20 writes 0x40800000
+    // = 4.0 (same pair '0, 4.0' that starts ecl::TimelineFadeView0Component in the probe) -
+    // probably the fade speed/duration.
+    [[bg3::legacy(field_4)]] float FadeSpeed;
     // inferred: bg3.exe+0x1D6BA20: set to '(systemValue == 0)' where systemValue is the bool of
     // ecl::TimelineSystem::FadeRequests[view] (HashMap<EntityHandle, bool> at system +0xA40,
     // Script Extender name) for the same entity.
     bool FadeIn;
-    // unknown: bg3.exe+0x1D6BA20 writes the same '(systemValue == 0)' value.
-    bool field_9;
-    // unknown: bg3.exe+0x1D6BA20 writes 0.
+    // inferred: Copied into view +9 (EoCClient.dll+0x891A00); bg3.exe+0x18DFEC0 then sets the
+    // current value to 1.0 at once when the view fades back in. | first pass: bg3.exe+0x1D6BA20
+    // writes the same '(systemValue == 0)' value.
+    [[bg3::legacy(field_9)]] bool ImmediateFadeIn;
+    // unknown: bg3.exe+0x1D6BA20 writes 0. | names pass 2: bg3.exe+0x18DFEC0 ANDs this byte
+    // (copied to view +0xA) into byte +4 of the resolved ls::FadingView0/1Component ('*(out + 4)
+    // &= view[0xA]', out starts at {1.0, 1}); the meaning of that output byte (FadingView.field_4)
+    // was not established. Default 1.
     bool field_A;
     [[bg3::hidden]] std::array<uint8_t, 1> _PadB;
     // unknown: bg3.exe+0x1D6BA20 writes 1 (low byte of the last dword; the other three bytes keep
-    // stack garbage).
+    // stack garbage). | names pass 2: Toolkit EoCClient.dll+0x891A00: 'if (request[8] &&
+    // request.TargetValue == 0 && request[0xC])' it records {1, request[0xA]} in the system map at
+    // +0x180 (the 'fully faded out at once' case); not copied into the view.
     bool field_C;
 };
 
@@ -3446,9 +3617,9 @@ struct SoundStationComponent : public BaseComponent
     // ecl::crowds::SoundStationSystem::FinalizeStations (EoCClient.dll+0xE9B950): *comp =
     // request[+0x20] (an entity of the new-station request). Live: entity handles.
     EntityHandle field_0;
-    // unknown: Creator writes -1. FinalizeStations writes the 4-byte key of the frame's new-
+    // inferred: Creator writes -1. FinalizeStations writes the 4-byte key of the frame's new-
     // station map (station id). Live 0..0x10.
-    int32_t field_8;
+    [[bg3::legacy(field_8)]] int32_t StationId;
     // unknown: Creator writes 0. FinalizeStations copies request +0xC. Live 3..14.
     uint32_t field_C;
 };
@@ -3597,8 +3768,13 @@ struct StateComponent : public BaseComponent
     // (macOS): ecl::timeline::ArenaDecisionSystem, gui::CapabilitiesSystem::Update; the Toolkit
     // ActiveEventSystemHelper::HasDeathSavingThrowEnded only tests its presence.
     uint32_t field_0;
-    // unknown: Windows creator bg3.exe+0x188F8C0 stores one byte 0 at +4. Live 0x0B / 0x03.
-    uint8_t field_4;
+    // inferred: macOS ecl::death::CharacterSystem::Update compares eoc::death::DeathTypeComponent
+    // with the byte at StateComponent+4 and issues
+    // ecl::death::SetVisualImmediateRequestOneFrameComponent when they differ (a cached copy of
+    // the death type); Windows creator bg3.exe+0x188F8C0 writes one byte at +4, live 0x0B / 0x03
+    // (DeathType values). Offset +4 from macOS is a hint, the Windows byte store agrees. | first
+    // pass: Windows creator bg3.exe+0x188F8C0 stores one byte 0 at +4. Live 0x0B / 0x03.
+    [[bg3::legacy(field_4)]] uint8_t DeathType;
     // unknown: Windows creator writes one 8-byte store of 0xFFFFFFFFFFFFFFFF at +8 (macOS: the
     // same with a vector register). Live -1.
     int32_t field_8;
@@ -5870,29 +6046,37 @@ struct ItemSwitchDataComponent : public BaseComponent
     FixedString ItemMaterial;
     // inferred: SetInventorySoundSwitches sets switch "Item_Weight" (strItem_Weight) from +4.
     FixedString ItemWeight;
-    // inferred: SetInventorySoundSwitches sets the switch named by global FixedString
-    // EoCClient.dll+0x1A3AE00 (name not resolved) from +8. Live: -1 or a valid index.
-    FixedString field_8;
-    // inferred: SetInventorySoundSwitches sets the switch named by global FixedString
-    // EoCClient.dll+0x1A3ADE8 (name not resolved) from +0xC.
-    FixedString field_c;
+    // inferred: Toolkit EoCClient.dll+0xE20520 /
+    // ecl::inventory::SoundSystem::SetInventorySoundSwitches (+0xE265A0) set the sound switch
+    // named by DAT_181a3ae00 from +8; that global is created from the string "Weapon_Type"
+    // (EoCClient.dll+0x16CBD0). | first pass: SetInventorySoundSwitches sets the switch named by
+    // global FixedString EoCClient.dll+0x1A3AE00 (name not resolved) from +8. Live: -1 or a valid
+    // index.
+    [[bg3::legacy(field_8)]] FixedString WeaponType;
+    // inferred: Same setters, switch DAT_181a3ade8 = "Weapon_Type_Unique"
+    // (EoCClient.dll+0x16CC00), value from +0xC. | first pass: SetInventorySoundSwitches sets the
+    // switch named by global FixedString EoCClient.dll+0x1A3ADE8 (name not resolved) from +0xC.
+    [[bg3::legacy(field_c)]] FixedString WeaponTypeUnique;
     // inferred: SetInventorySoundSwitches sets switch "Weapon_Weight" (strWeapon_Weight) from
     // +0x10.
     FixedString WeaponWeight;
-    // inferred: Live: -1 or a FixedString index like its neighbours; macOS default constructor
-    // fills 0x00-0x1F with one 16-byte pattern (all FixedStrings). Not used by
+    // inferred: Toolkit EoCClient.dll+0xE20E30 sets switch DAT_181a3adf8 = "Attack_Type" from
+    // +0x14. | first pass: Live: -1 or a FixedString index like its neighbours; macOS default
+    // constructor fills 0x00-0x1F with one 16-byte pattern (all FixedStrings). Not used by
     // SetInventorySoundSwitches.
-    FixedString field_14;
-    // inferred: As field_14 (FixedString-shaped live values, same default).
-    FixedString field_18;
+    [[bg3::legacy(field_14)]] FixedString AttackType;
+    // inferred: Toolkit EoCClient.dll+0xE20E30 sets switch DAT_181a3ade0 = "Weapon_DamageType"
+    // from +0x18. | first pass: As field_14 (FixedString-shaped live values, same default).
+    [[bg3::legacy(field_18)]] FixedString WeaponDamageType;
     // inferred: SetInventorySoundSwitches sets switch "Armor_Type" (strArmor_Type) from +0x1C.
     FixedString ArmorType;
     // inferred: SetInventorySoundSwitches sets switch "Item_Gold_Size" (strItem_Gold_Size) from
     // +0x20. Live: always -1 (no gold among the 48 samples).
     FixedString ItemGoldSize;
-    // inferred: Live: always the same FixedString index 0x2F200010 (a default value); macOS
-    // default stores x0 (non-zero pair) at +0x20.
-    FixedString field_24;
+    // inferred: Toolkit EoCClient.dll+0xE20520 sets switch strMaterial_Type ("Material_Type") from
+    // +0x24 when != -1. | first pass: Live: always the same FixedString index 0x2F200010 (a
+    // default value); macOS default stores x0 (non-zero pair) at +0x20.
+    [[bg3::legacy(field_24)]] FixedString MaterialType;
     // unknown: Default 0. Live: mostly 0, sometimes 0xFFFFFFFFFFFFFFFF or other values; not
     // decoded.
     uint64_t field_28;
@@ -11696,16 +11880,26 @@ struct SkillCheckNotificationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationSkillCheckNotification, "eoc::notification::SkillCheckNotificationComponent")
 
-    // unknown: write-all serializer bg3.exe+0x99E3F0: member 1, raw 16-byte write at +0; macOS
-    // default stp q0,q0 [x23] = 0
-    Guid field_0;
-    // unknown: write-all serializer bg3.exe+0x99E3F0: member 2, raw 1-byte write at +0x10
+    // inferred: Server: bg3.exe+0x2DF53B0 (notification dispatch, case '$') creates the component
+    // through bg3.exe+0x2DF3D50 and fills +0/+8 with the 16 bytes returned by
+    // FUN_14107e6f0(entity) (the ls::uuid of the notification's entity); client consumer
+    // bg3.exe+0x18A7E20 resolves the Guid back to an entity (FUN_141013470). Replication member 1
+    // (bg3.exe+0x99E3F0). | first pass: write-all serializer bg3.exe+0x99E3F0: member 1, raw
+    // 16-byte write at +0; macOS default stp q0,q0 [x23] = 0
+    [[bg3::legacy(field_0)]] Guid EntityUuid;
+    // unknown: write-all serializer bg3.exe+0x99E3F0: member 2, raw 1-byte write at +0x10 | names
+    // pass 2: Server: notification byte +8. Client bg3.exe+0x18A7E20 calls its listeners with
+    // event kind '(byte == 0) + 10' (10 when set, 11 when 0) - most likely success / failure of
+    // the skill check, direction not proven.
     uint8_t field_10;
-    // unknown: write-all serializer bg3.exe+0x99E3F0: member 3, raw 1-byte write at +0x11
+    // unknown: write-all serializer bg3.exe+0x99E3F0: member 3, raw 1-byte write at +0x11 | names
+    // pass 2: Server: notification byte +9; client bg3.exe+0x18A7E20 copies it into the listener
+    // payload.
     uint8_t field_11;
     // unknown: write-all serializer bg3.exe+0x99E3F0: member 4 is bg3.exe+0x4016480 (24-byte
     // STDString writer) on +0x18; macOS default zeroes +0x18..0x28 (str xzr [x23,#0x20] + q0) and
-    // calls 0x106536d10 (string init)
+    // calls 0x106536d10 (string init) | names pass 2: Server: STDString from notification +0x10;
+    // client copies it into the listener payload.
     STDString field_18;
 };
 
@@ -12429,10 +12623,10 @@ struct PlayAnimationComponent : public BaseComponent
     // ls::AnimationSequenceSimpleNameSet (game type name) to +0. macOS default zeroes all 64
     // bytes.
     AnimationSequenceSimpleNameSet Animations;
-    // unknown: write-all serializer bg3.exe+0x932FA0: last member, raw 16-byte write at +0x30; the
-    // same Toolkit function stores ls::Guid::Generate() there for every new request (a
+    // inferred: write-all serializer bg3.exe+0x932FA0: last member, raw 16-byte write at +0x30;
+    // the same Toolkit function stores ls::Guid::Generate() there for every new request (a
     // request/instance id)
-    Guid field_30;
+    [[bg3::legacy(field_30)]] Guid RequestId;
 };
 
 DEFINE_ONEFRAME_TAG_COMPONENT(eoc::script, AnimationStateRequestOneFrameComponent, ScriptAnimationStateRequest)
@@ -24481,10 +24675,10 @@ struct PlacementStartRequestOneFrameComponent : public BaseComponent
     // timeline content whose actor resolves to a character, inserts the character's entity handle
     // (8-byte key, bg3.exe+0x721030) and fills a value of stride 0x58 (grow bg3.exe+0x3316E20).
     HashMap<EntityHandle, TimelinePlacementActor> Actors;
-    // unknown: bg3.exe+0x33046D0 inserts 8-byte entity handles of other involved entities that
+    // inferred: bg3.exe+0x33046D0 inserts 8-byte entity handles of other involved entities that
     // pass bg3.exe+0xAB4D90 (bg3.exe+0x721030 on component + 0x40). Constructor zeroes 0x40..0x70
     // as a set.
-    HashSet<EntityHandle> field_40;
+    [[bg3::legacy(field_40)]] HashSet<EntityHandle> InvolvedEntities;
     // inferred: bg3.exe+0x33046D0 stores the first 4 bytes of its request argument, the same value
     // it uses as key of the system's placement maps and later passes to
     // StopBehaviorTimelinePlacement.
