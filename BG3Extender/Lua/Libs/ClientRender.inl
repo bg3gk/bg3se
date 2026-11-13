@@ -1,4 +1,5 @@
 #include <Extender/ScriptExtender.h>
+#include <Extender/Client/FrameCap.inl>
 
 /// <lua_module>Render</lua_module>
 BEGIN_NS(ecl::lua::render)
@@ -80,6 +81,78 @@ UserReturn MirrorInfo(lua_State* L)
     return 1;
 }
 
+// Ext.ClientRender.FrameCap()
+//
+// How fast the game is allowed to draw, or nil when the engine's layout is not the one this build
+// knows (see Extender/Client/FrameCap.inl, which refuses to write anything in that case):
+//
+//   FrameCap               frames a second asked for; 0 is no cap
+//   EffectiveFrameCap      frames a second actually in force right now
+//   LostFocusFrameCap      the cap used while the window is not in front; 0 is no throttle
+//   MicrosecondsPerFrame   what the engine's clock derives from the cap in force
+//   HasFocus               whether the engine believes its window is the one in front
+//   YieldOnLostFocus       the engine's own switch for throttling in the background
+UserReturn FrameCap(lua_State* L)
+{
+    auto app = FrameCapAccess::Probe();
+    if (!app) {
+        push(L, nullptr);
+        return 1;
+    }
+
+    lua_newtable(L);
+    settable(L, "FrameCap", app->FrameCap());
+    settable(L, "EffectiveFrameCap", app->EffectiveFrameCap());
+    settable(L, "LostFocusFrameCap", app->LostFocusFrameCap());
+    settable(L, "MicrosecondsPerFrame", app->MicrosecondsPerFrame());
+    settable(L, "HasFocus", app->HasFocus());
+    settable(L, "YieldOnLostFocus", FrameCapAccess::YieldOnLostFocus());
+    return 1;
+}
+
+// Ext.ClientRender.SetFrameCap(fps)
+//
+// Caps the game at `fps` frames a second, in front or not: the background cap is set with it, so
+// that a copy nobody is looking at draws at the rate it was given rather than the rate the engine
+// would have chosen for it. `fps` of 0 lifts both, which is also how the background throttle is
+// turned off.
+//
+// This is the same arithmetic BaseApp::SetFrameCap does, written into the same fields; nothing is
+// hooked and nothing is patched. False when the engine is not up yet or its layout has moved.
+bool SetFrameCap(uint32_t fps)
+{
+    if (fps > FrameCapAccess::MaxFrameCap) {
+        OsiError("Frame cap out of range: " << fps);
+        return false;
+    }
+
+    auto app = FrameCapAccess::Probe();
+    if (!app) return false;
+
+    app->SetFrameCap((uint16_t)fps);
+    app->SetLostFocusFrameCap((uint16_t)fps);
+    return true;
+}
+
+// Ext.ClientRender.SetLostFocusFrameCap(fps)
+//
+// The cap that applies only while the window is not the one in front, on its own. 0 lifts it, so
+// that a copy in the background draws as fast as one in front. Of use for measuring what the
+// engine does by itself; SetFrameCap is the one to reach for.
+bool SetLostFocusFrameCap(uint32_t fps)
+{
+    if (fps > FrameCapAccess::MaxFrameCap) {
+        OsiError("Frame cap out of range: " << fps);
+        return false;
+    }
+
+    auto app = FrameCapAccess::Probe();
+    if (!app) return false;
+
+    app->SetLostFocusFrameCap((uint16_t)fps);
+    return true;
+}
+
 void RegisterRenderLib()
 {
     DECLARE_MODULE(Render, Client)
@@ -88,6 +161,9 @@ void RegisterRenderLib()
     MODULE_FUNCTION(ScreenshotPending)
     MODULE_FUNCTION(MirrorEnable)
     MODULE_FUNCTION(MirrorInfo)
+    MODULE_FUNCTION(FrameCap)
+    MODULE_FUNCTION(SetFrameCap)
+    MODULE_FUNCTION(SetLostFocusFrameCap)
     END_MODULE()
 }
 
