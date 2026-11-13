@@ -10396,22 +10396,27 @@ struct NudgeDataComponent : public BaseComponent
     // hold time passes the threshold; Windows bg3.exe+0x428F5F0 creates the NudgeOneFrame only
     // when it is set. macOS ctor stores 1.
     bool field_8;
-    // unknown: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
+    // inferred: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
     // bg3.exe+0x7070F0): accumulates the frame time (param_2 +8) and is compared with
-    // ls::GlobalSwitches +0xE6C (a hold threshold); reset to 0 when the input drops by < 0.2.
-    float field_C;
-    // unknown: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
+    // ls::GlobalSwitches +0xE6C (a hold threshold); reset to 0 when the input drops by < 0.2. |
+    // Name: Per-frame nudge update bg3.exe+0x428F3D0 adds the frame time (GameTime +8) to it and
+    // compares it with a threshold.
+    [[bg3::legacy(field_C)]] float ElapsedTime;
+    // inferred: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
     // bg3.exe+0x7070F0): the last input magnitude; compared with the current one (within 0.01) and
-    // replaced together with Direction.
-    float field_10;
-    // unknown: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
+    // replaced together with Direction. | Name: Same function: the previous frame's input
+    // magnitude, compared with the current one.
+    [[bg3::legacy(field_10)]] float LastInputMagnitude;
+    // inferred: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
     // bg3.exe+0x7070F0): set to 0 when the threshold is reached, then accumulates the frame time
-    // while the input stays below 0.1.
-    float field_14;
-    // unknown: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
+    // while the input stays below 0.1. | Name: Same function: reset to 0 when the threshold is
+    // reached, then accumulates the frame time while the input is held.
+    [[bg3::legacy(field_14)]] float HoldTime;
+    // inferred: Windows bg3.exe+0x428F3D0 (per-frame nudge update; component fetched by its getter
     // bg3.exe+0x7070F0): byte flag set to 1 when the hold threshold is reached (selects the
-    // cooldown branch), cleared when the target is lost.
-    bool field_18;
+    // cooldown branch), cleared when the target is lost. | Name: Same function: set to 1 when the
+    // hold threshold is reached.
+    [[bg3::legacy(field_18)]] bool HoldThresholdReached;
 };
 
 // Client one-frame event of the controller (gamepad) picking: a 2D nudge direction for the
@@ -10933,14 +10938,23 @@ struct StateComponent : public BaseComponent
     // inferred: SetupJumpInitialState writes 0; UpdateJumpAnimationState adds GameTime delta (+8)
     // each frame. Live 0.
     float Time;
-    // unknown: SetupJumpInitialState sets +0x14 and +0x1C from the same value; when Time crosses
-    // it State becomes 1 (takeoff time). Live 0.109 .. 0.32.
-    float field_14;
-    // unknown: SetupJumpInitialState writes +0x1C (or half of it); used as the next phase
-    // threshold in UpdateJumpAnimationState. Live equals +0x1C.
-    float field_18;
-    // unknown: Written by SetupJumpInitialState; read when State becomes 2. Live 0.25 .. 0.91.
-    float field_1C;
+    // inferred: SetupJumpInitialState sets +0x14 and +0x1C from the same value; when Time crosses
+    // it State becomes 1 (takeoff time). Live 0.109 .. 0.32. | Name: Toolkit
+    // eoc::jump::helpers::SetupJumpInitialState (EoCShared.dll+0x133EAE0, same offsets as bg3.exe:
+    // Time +0x10, State +0xC) stores
+    // PathMover::SampleDuration(PathMover::GetInterpolationAtHeightPoint()) here: the time of the
+    // jump's highest point.
+    [[bg3::legacy(field_14)]] float PeakTime;
+    // inferred: SetupJumpInitialState writes +0x1C (or half of it); used as the next phase
+    // threshold in UpdateJumpAnimationState. Live equals +0x1C. | Name: SetupJumpInitialState:
+    // when the drop is at least the stats ExtraData FallDamageMinimumDistance, the time where the
+    // path crosses the start height again (GetInterpolationAtSourceYIntersection) or
+    // min(Duration/2, 0.3); otherwise Duration.
+    [[bg3::legacy(field_18)]] float FallStartTime;
+    // inferred: Written by SetupJumpInitialState; read when State becomes 2. Live 0.25 .. 0.91. |
+    // Name: SetupJumpInitialState stores PathMover::SampleDuration(1.0): the duration of the whole
+    // jump path.
+    [[bg3::legacy(field_1C)]] float Duration;
     // inferred: SetupJumpInitialState clears it; UpdateJumpAnimationState sets it to 1 when the
     // flight starts (projectile taken off hold) and returns early while it is 0.
     bool Started;
@@ -10949,14 +10963,16 @@ struct StateComponent : public BaseComponent
     bool field_21;
     // unknown: Copied from the same land request byte; leads to State 3 or 5.
     bool field_22;
-    // unknown: Set by SetupJumpInitialState; selects State 4 instead of 3 and enables the State 2
-    // phase.
-    bool field_23;
+    // inferred: Set by SetupJumpInitialState; selects State 4 instead of 3 and enables the State 2
+    // phase. | Name: SetupJumpInitialState sets it to (start height - end height >= ExtraData
+    // FallDamageMinimumDistance); selects the falling phase (State 2) and landing State 4.
+    [[bg3::legacy(field_23)]] bool IsLongFall;
     // unknown: Set from land request bytes 1/2; selects State 5 instead of 3. Live 0.
     bool field_24;
-    // unknown: Server UpdateJumpAnimationState (Toolkit) sets it when a jump finish request
-    // arrives. Live 0.
-    bool field_25;
+    // inferred: Server UpdateJumpAnimationState (Toolkit) sets it when a jump finish request
+    // arrives. Live 0. | Name: Server UpdateJumpAnimationState (Toolkit) sets it when a jump
+    // finish request arrives.
+    [[bg3::legacy(field_25)]] bool FinishRequested;
 };
 
 DEFINE_ONEFRAME_TAG_COMPONENT(eoc::jump, ActivationEventOneFrameComponent, JumpActivationEvent)
@@ -16114,10 +16130,14 @@ struct PatrolComponent : public BaseComponent
     // PatrolSystem update compares it with -1, passes it to the spline node stepper
     // bg3.exe+0x2F5BD40 and indexes 0x58-byte spline nodes with it. Live -1.
     int16_t NodeIndex;
-    // unknown: bg3.exe+0x2774600 stores (model +0x3A != 0) at +0x2A; default 0; PatrolSystem
+    // inferred: bg3.exe+0x2774600 stores (model +0x3A != 0) at +0x2A; default 0; PatrolSystem
     // update sets it to !direction when the stepper wraps and +0x2B is set (a reverse-direction
-    // flag?). Live 0/1. Set from patrol request byte +4.
-    bool field_2A;
+    // flag?). Live 0/1. Set from patrol request byte +4. | Name: PatrolSystem update
+    // bg3.exe+0x3560EA0 flips it when the spline stepper wraps (with +0x2B set) and passes it as
+    // the stepping direction; the crowd spawn model ls::model::game::crowds::v1::SpawnComponent
+    // names the same setting ReversePatrolDirection (savefields.py) - a name of a sibling model,
+    // so inferred.
+    [[bg3::legacy(field_2A)]] bool ReversePatrolDirection;
     // unknown: bg3.exe+0x2774600 stores (model +0x3B != 0) at +0x2B; default 1 (the 0x0100FFFF
     // store at +0x28). Tested before flipping +0x2A (ping-pong/loop flag?). Live 1. Set from
     // patrol request byte +5.
@@ -17162,10 +17182,12 @@ struct DataComponent : public BaseComponent
     // element in 4 of 48 instances. Name is a guess (entities excluded from/handled by the fall
     // damage).
     HashSet<EntityHandle> HitEntities;
-    // unknown: DamageHitEntities (EoCServer.dll+0x668AE0) computes (StartHeight - current height)
+    // inferred: DamageHitEntities (EoCServer.dll+0x668AE0) computes (StartHeight - current height)
     // + this; ForceOnImpact (EoCServer.dll+0x669B30) also reads it: an extra fall distance. Live
-    // 0.
-    float field_A8;
+    // 0. | Name: DamageHitEntities (EoCServer.dll+0x668AE0) computes (StartHeight - current
+    // height) + this value as the fall height; ForceOnImpact (EoCServer.dll+0x669B30) reads it
+    // too.
+    [[bg3::legacy(field_A8)]] float ExtraFallHeight;
     // inferred: UpdateFallingComponents (EoCServer.dll+0x66C470) adds GetDeltaTimeForEntity to
     // +0xAC every frame and aborts the fall when MaxFallTime <= it. Live 0.
     float FallTime;
@@ -17184,9 +17206,11 @@ struct DataComponent : public BaseComponent
     bool DeferredRemoval;
     // unknown: Cleared together with +0xB9 by LEGACY_RequestFallingStarted (uint16 store).
     bool field_BA;
-    // unknown: Set to 1 by LEGACY_RequestFallingStarted; when set, ProcessStopFallingRequest calls
-    // DamageHitEntities and ForceOnImpact on landing (apply impact). macOS default 1.
-    bool field_BB;
+    // inferred: Set to 1 by LEGACY_RequestFallingStarted; when set, ProcessStopFallingRequest
+    // calls DamageHitEntities and ForceOnImpact on landing (apply impact). macOS default 1. |
+    // Name: Set to 1 by LEGACY_RequestFallingStarted; when set, ProcessStopFallingRequest calls
+    // DamageHitEntities and ForceOnImpact on landing.
+    [[bg3::legacy(field_BB)]] bool ApplyImpactOnLanding;
 };
 
 END_NS()
@@ -20516,62 +20540,6 @@ struct BeingPickedUpComponent : public BaseComponent
     [[bg3::legacy(field_3C)]] bool MarkAsWares;
 };
 
-struct LegacyPickUpRequestVariant
-{
-    // unknown: PickUpRequest: first ID argument of EoCServer.dll+0xD40780 LEGACY_RequestPickUp(ID,
-    // ID, ID, Optional<int>, Guid, Optional<short>, Optional<unsigned short>, bool).
-    // PickUpCancelRequest (LEGACY_RequestPickUpCancel(ID, Guid)): the entity. Probably the picker.
-    EntityHandle field_0;
-    // unknown: PickUpRequest: second ID argument (probably the item). In a cancel request bytes
-    // +8..+0x18 hold the request Guid instead.
-    EntityHandle field_8;
-    // unknown: PickUpRequest: third ID argument (probably the target inventory).
-    EntityHandle field_10;
-    // inferred: ls::Optional<int> argument copied as 8 bytes to +0x18: value.
-    int32_t Amount;
-    // inferred: ls::Optional<int> presence flag (byte after the int).
-    bool HasAmount;
-    // inferred: ls::Guid argument copied (4 dwords) to +0x20; the cancel request carries the same
-    // kind of Guid to identify the request to cancel.
-    Guid RequestId;
-    // unknown: ls::Optional<short> argument (4 bytes copied to +0x30): value. Probably an
-    // inventory slot.
-    int16_t field_30;
-    // inferred: Optional<short> presence flag.
-    bool Has_field_30;
-    // unknown: ls::Optional<unsigned short> argument (4 bytes copied to +0x34): value.
-    uint16_t field_34;
-    // inferred: Optional<unsigned short> presence flag.
-    bool Has_field_34;
-    [[bg3::hidden]] std::array<uint8_t, 1> _Pad37;
-    // unknown: The trailing bool argument of LEGACY_RequestPickUp, stored at +0x38.
-    bool field_38;
-    [[bg3::hidden]] std::array<uint8_t, 7> _Pad39;
-    // inferred: ls::Variant index: LEGACY_RequestPickUp writes 0 at +0x40 (PickUpRequest),
-    // LEGACY_RequestPickUpCancel writes 1 (PickUpCancelRequest; then only +0 entity and +8 Guid
-    // are used).
-    uint8_t VariantIndex;
-};
-
-// Server singleton: pick-up and pick-up-cancel requests coming from the legacy (non-ECS) code,
-// moved in each frame from esv::pickup::PickUpLegacyRequestProxySystem and validated by
-// esv::pickup::PickUpRequestValidationSystem (ProcessLegacyPickupRequests /
-// ProcessLegacyPickupCancelRequests). Element is ls::Variant<esv::pickup::PickUpRequest,
-// esv::pickup::PickUpCancelRequest>. Seen.py context: idle level.
-struct LegacyPickUpRequestsSingletonComponent : public BaseComponent
-{
-    DEFINE_COMPONENT(ServerPickupLegacyPickUpRequests, "esv::pickup::LegacyPickUpRequestsSingletonComponent")
-
-    // inferred: EoCServer.dll+0xD409C0
-    // PickUpLegacyRequestProxySystem::ProcessPickUpAndCancelRequests moves the system's
-    // DynamicArray at this+0x10 into the component (pointer +0, capacity +8, size +0xC). The array
-    // is appended by EoCServer.dll+0xD40640, whose assert names
-    // ls::IndexedStorage<ls::Variant<esv::pickup::PickUpRequest,
-    // esv::pickup::PickUpCancelRequest>> and whose stride is 0x48 (copies 4x16 + 8 bytes). Live
-    // (idle): all zero.
-    Array<LegacyPickUpRequestVariant> Requests;
-};
-
 // Server singleton of the pick-up pipeline: the items whose pick-up execution failed this frame.
 // Seen.py context: lives in any idle level (created with the world). Read by
 // esv::pickup::PickUpExecutionFinishedSystem (Toolkit names).
@@ -20917,35 +20885,72 @@ struct ValidatedPickUpRequestsEntry
     // PickUpRequest in esv.pickup.LegacyPickUpRequestsSingletonComponent.json (first ID argument
     // of LEGACY_RequestPickUp).
     EntityHandle Picker;
-    // unknown: Second ID argument of LEGACY_RequestPickUp; copied into
-    // esv::pickup::PickUpRequestComponent +0.
-    EntityHandle field_8;
-    // inferred: HandleValidatedPickUpRequests adds esv::pickup::OriginalPickUpTargetComponent
-    // (tag) to this entity and reads its ls::TransformComponent; copied into
-    // esv::pickup::PickUpRequestComponent +8.
-    EntityHandle Target;
-    // inferred: ls::Optional<int> argument of LEGACY_RequestPickUp (value); copied with +0x1C as
-    // one qword.
-    int32_t Amount;
-    // inferred: ls::Optional<int> presence flag.
-    bool HasAmount;
+    // the game's own member name: Second ID argument of LEGACY_RequestPickUp; copied into
+    // esv::pickup::PickUpRequestComponent +0. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +8 -> PickUpRequestComponent +0
+    // m_TargetInventory.
+    [[bg3::legacy(field_8)]] EntityHandle TargetInventory;
+    // the game's own member name: HandleValidatedPickUpRequests adds
+    // esv::pickup::OriginalPickUpTargetComponent (tag) to this entity and reads its
+    // ls::TransformComponent; copied into esv::pickup::PickUpRequestComponent +8. | Name: Copied
+    // 1:1 into esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x10 -> PickUpRequestComponent +8
+    // m_EntityToPickUp.
+    [[bg3::legacy(Target)]] EntityHandle EntityToPickUp;
+    // the game's own member name: ls::Optional<int> argument of LEGACY_RequestPickUp (value);
+    // copied with +0x1C as one qword. | Name: Copied 1:1 into esv::pickup::PickUpRequestComponent
+    // by HandleValidatedPickUpRequests (EoCServer.dll+0xD384C0); that component's members carry
+    // the game's own names from savegame model ls::model::game::pickup::*::PickUpRequestComponent
+    // (see layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x18 -> m_AmountToPickUp.
+    [[bg3::legacy(Amount)]] int32_t AmountToPickUp;
+    // the game's own member name: ls::Optional<int> presence flag. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): m_AmountToPickUpHasValue.
+    [[bg3::legacy(HasAmount)]] bool AmountToPickUpHasValue;
     // inferred: Copied into eoc::pickup::PickUpRequestComponent.field_0 (Guid) by
     // HandleValidatedPickUpRequests; the cancel map at +0x10 of the component lists such Guids.
     Guid RequestId;
-    // unknown: ls::Optional<short> argument (value); copied to esv::pickup::PickUpRequestComponent
-    // +0x18.
-    int16_t field_30;
-    // inferred: Optional<short> presence flag.
-    bool Has_field_30;
-    // unknown: ls::Optional<unsigned short> argument (value); copied to
-    // esv::pickup::PickUpRequestComponent +0x1C.
-    uint16_t field_34;
-    // inferred: Optional<unsigned short> presence flag.
-    bool Has_field_34;
+    // the game's own member name: ls::Optional<short> argument (value); copied to
+    // esv::pickup::PickUpRequestComponent +0x18. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x30 -> m_HotbarSlot.
+    [[bg3::legacy(field_30)]] int16_t HotbarSlot;
+    // the game's own member name: Optional<short> presence flag. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): m_HotbarSlotHasValue.
+    [[bg3::legacy(Has_field_30)]] bool HotbarSlotHasValue;
+    // the game's own member name: ls::Optional<unsigned short> argument (value); copied to
+    // esv::pickup::PickUpRequestComponent +0x1C. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x34 -> m_TargetSlot.
+    [[bg3::legacy(field_34)]] uint16_t TargetSlot;
+    // the game's own member name: Optional<unsigned short> presence flag. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): m_TargetSlotHasValue.
+    [[bg3::legacy(Has_field_34)]] bool TargetSlotHasValue;
     [[bg3::hidden]] std::array<uint8_t, 1> _Pad37;
-    // unknown: Trailing bool argument of LEGACY_RequestPickUp; copied to
-    // esv::pickup::PickUpRequestComponent +0x3C.
-    bool field_38;
+    // the game's own member name: Trailing bool argument of LEGACY_RequestPickUp; copied to
+    // esv::pickup::PickUpRequestComponent +0x3C. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x38 -> m_MarkAsWares.
+    [[bg3::legacy(field_38)]] bool MarkAsWares;
     [[bg3::hidden]] std::array<uint8_t, 7> _Pad39;
     // inferred: EoCServer.dll+0xD33CB0 ProcessLegacyPickupRequests stores the result of
     // GetInitialRequestState (esv::pickup::EPickUpRequestState, 1 byte) here;
@@ -20982,6 +20987,102 @@ struct ValidatedPickUpRequestsSingletonComponent : public BaseComponent
 DEFINE_TAG_COMPONENT(esv::pickup, OriginalPickUpTargetComponent, ServerPickupOriginalPickUpTarget)
 DEFINE_TAG_COMPONENT(esv::pickup, PickUpPermissionGrantedComponent, ServerPickupPickUpPermissionGranted)
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::pickup, PickUpProcessSplitFinishedOneFrameComponent, ServerPickupPickUpProcessSplitFinished)
+struct LegacyPickUpRequestVariant
+{
+    // inferred: PickUpRequest: first ID argument of EoCServer.dll+0xD40780
+    // LEGACY_RequestPickUp(ID, ID, ID, Optional<int>, Guid, Optional<short>, Optional<unsigned
+    // short>, bool). PickUpCancelRequest (LEGACY_RequestPickUpCancel(ID, Guid)): the entity.
+    // Probably the picker. | Name: Same esv::pickup::PickUpRequest as
+    // ValidatedPickUpRequestsEntry, whose +0 is the picking character
+    // (HandleValidatedPickUpRequests).
+    [[bg3::legacy(field_0)]] EntityHandle Picker;
+    // the game's own member name: PickUpRequest: second ID argument (probably the item). In a
+    // cancel request bytes +8..+0x18 hold the request Guid instead. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +8 -> PickUpRequestComponent +0
+    // m_TargetInventory. (In a cancel request, VariantIndex 1, +8..+0x18 hold the request Guid
+    // instead.)
+    [[bg3::legacy(field_8)]] EntityHandle TargetInventory;
+    // the game's own member name: PickUpRequest: third ID argument (probably the target
+    // inventory). | Name: Copied 1:1 into esv::pickup::PickUpRequestComponent by
+    // HandleValidatedPickUpRequests (EoCServer.dll+0xD384C0); that component's members carry the
+    // game's own names from savegame model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x10 -> PickUpRequestComponent +8
+    // m_EntityToPickUp.
+    [[bg3::legacy(field_10)]] EntityHandle EntityToPickUp;
+    // the game's own member name: ls::Optional<int> argument copied as 8 bytes to +0x18: value. |
+    // Name: Copied 1:1 into esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x18 -> m_AmountToPickUp.
+    [[bg3::legacy(Amount)]] int32_t AmountToPickUp;
+    // the game's own member name: ls::Optional<int> presence flag (byte after the int). | Name:
+    // Copied 1:1 into esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): m_AmountToPickUpHasValue.
+    [[bg3::legacy(HasAmount)]] bool AmountToPickUpHasValue;
+    // inferred: ls::Guid argument copied (4 dwords) to +0x20; the cancel request carries the same
+    // kind of Guid to identify the request to cancel.
+    Guid RequestId;
+    // the game's own member name: ls::Optional<short> argument (4 bytes copied to +0x30): value.
+    // Probably an inventory slot. | Name: Copied 1:1 into esv::pickup::PickUpRequestComponent by
+    // HandleValidatedPickUpRequests (EoCServer.dll+0xD384C0); that component's members carry the
+    // game's own names from savegame model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x30 -> m_HotbarSlot.
+    [[bg3::legacy(field_30)]] int16_t HotbarSlot;
+    // the game's own member name: Optional<short> presence flag. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): m_HotbarSlotHasValue.
+    [[bg3::legacy(Has_field_30)]] bool HotbarSlotHasValue;
+    // the game's own member name: ls::Optional<unsigned short> argument (4 bytes copied to +0x34):
+    // value. | Name: Copied 1:1 into esv::pickup::PickUpRequestComponent by
+    // HandleValidatedPickUpRequests (EoCServer.dll+0xD384C0); that component's members carry the
+    // game's own names from savegame model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x34 -> m_TargetSlot.
+    [[bg3::legacy(field_34)]] uint16_t TargetSlot;
+    // the game's own member name: Optional<unsigned short> presence flag. | Name: Copied 1:1 into
+    // esv::pickup::PickUpRequestComponent by HandleValidatedPickUpRequests
+    // (EoCServer.dll+0xD384C0); that component's members carry the game's own names from savegame
+    // model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): m_TargetSlotHasValue.
+    [[bg3::legacy(Has_field_34)]] bool TargetSlotHasValue;
+    [[bg3::hidden]] std::array<uint8_t, 1> _Pad37;
+    // the game's own member name: The trailing bool argument of LEGACY_RequestPickUp, stored at
+    // +0x38. | Name: Copied 1:1 into esv::pickup::PickUpRequestComponent by
+    // HandleValidatedPickUpRequests (EoCServer.dll+0xD384C0); that component's members carry the
+    // game's own names from savegame model ls::model::game::pickup::*::PickUpRequestComponent (see
+    // layouts/alive/esv.pickup.PickUpRequestComponent.json): +0x38 -> m_MarkAsWares.
+    [[bg3::legacy(field_38)]] bool MarkAsWares;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad39;
+    // inferred: ls::Variant index: LEGACY_RequestPickUp writes 0 at +0x40 (PickUpRequest),
+    // LEGACY_RequestPickUpCancel writes 1 (PickUpCancelRequest; then only +0 entity and +8 Guid
+    // are used).
+    uint8_t VariantIndex;
+};
+
+// Server singleton: pick-up and pick-up-cancel requests coming from the legacy (non-ECS) code,
+// moved in each frame from esv::pickup::PickUpLegacyRequestProxySystem and validated by
+// esv::pickup::PickUpRequestValidationSystem (ProcessLegacyPickupRequests /
+// ProcessLegacyPickupCancelRequests). Element is ls::Variant<esv::pickup::PickUpRequest,
+// esv::pickup::PickUpCancelRequest>. Seen.py context: idle level.
+struct LegacyPickUpRequestsSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(ServerPickupLegacyPickUpRequests, "esv::pickup::LegacyPickUpRequestsSingletonComponent")
+
+    // inferred: EoCServer.dll+0xD409C0
+    // PickUpLegacyRequestProxySystem::ProcessPickUpAndCancelRequests moves the system's
+    // DynamicArray at this+0x10 into the component (pointer +0, capacity +8, size +0xC). The array
+    // is appended by EoCServer.dll+0xD40640, whose assert names
+    // ls::IndexedStorage<ls::Variant<esv::pickup::PickUpRequest,
+    // esv::pickup::PickUpCancelRequest>> and whose stride is 0x48 (copies 4x16 + 8 bytes). Live
+    // (idle): all zero.
+    Array<LegacyPickUpRequestVariant> Requests;
+};
 
 END_NS()
 
@@ -21486,29 +21587,68 @@ struct MovementRequestComponent : public BaseComponent
     // bg3.exe+0x25847E0 -> bg3.exe+0x2781190: the model EntityId member 1 is remapped and stored
     // at component +0.
     [[bg3::legacy(field_0)]] EntityHandle Platform;
-    // unknown: MoveRequest+0. macOS default ctor zeroes it (stp xzr,xzr [x23,#8]). Live 0.
-    uint64_t field_8;
-    // inferred: MoveRequest+8..+0x13: MovementSystem compares *(float*)(request+8/+0xC/+0x10) with
-    // the platform's current target floats (ABS(a-b) checks) and copies them into the target. Live
-    // (-413.2, -5.575, 565.1).
-    glm::vec3 TargetPosition;
-    // inferred: Destructor bg3.exe+0x22CAAC0 -> bg3.exe+0x22D5ED0(this+8) releases FixedStrings at
-    // +8+0x14 = +0x1C and +8+0x28 = +0x30. Live -1 (null FixedString). Meaning not established.
-    FixedString field_1C;
-    // unknown: MoveRequest+0x18; macOS ctor zeroes it. Live 0.
-    uint64_t field_20;
-    // unknown: MoveRequest+0x20. Live 1.5 (a speed or duration).
-    float field_28;
+    // the game's own member name: MoveRequest+0. macOS default ctor zeroes it (stp xzr,xzr
+    // [x23,#8]). Live 0. | Name: savegame model ls::model::game::platform::v0::MoveRequest
+    // (savefields.py: MoveType, TargetPos, SplineId, SourceSplineNode, TargetSplineNode, Speed,
+    // EventId, IgnoreTurnbased), the component's RequestedMovement member at +8; Windows model
+    // converter bg3.exe+0x2781330 (called by the loader bg3.exe+0x25847E0 via bg3.exe+0x2781190)
+    // maps model->runtime: model MoveType (+0, 8 bytes) is copied to runtime MoveRequest +0 =
+    // component +8.
+    [[bg3::legacy(field_8)]] uint64_t MoveType;
+    // the game's own member name: MoveRequest+8..+0x13: MovementSystem compares
+    // *(float*)(request+8/+0xC/+0x10) with the platform's current target floats (ABS(a-b) checks)
+    // and copies them into the target. Live (-413.2, -5.575, 565.1). | Name: savegame model
+    // ls::model::game::platform::v0::MoveRequest (savefields.py: MoveType, TargetPos, SplineId,
+    // SourceSplineNode, TargetSplineNode, Speed, EventId, IgnoreTurnbased), the component's
+    // RequestedMovement member at +8; Windows model converter bg3.exe+0x2781330 (called by the
+    // loader bg3.exe+0x25847E0 via bg3.exe+0x2781190) maps model->runtime: model TargetPos (+8) is
+    // transformed and stored at MoveRequest +8 = component +0x10.
+    [[bg3::legacy(TargetPosition)]] glm::vec3 TargetPos;
+    // the game's own member name: Destructor bg3.exe+0x22CAAC0 -> bg3.exe+0x22D5ED0(this+8)
+    // releases FixedStrings at +8+0x14 = +0x1C and +8+0x28 = +0x30. Live -1 (null FixedString).
+    // Meaning not established. | Name: savegame model ls::model::game::platform::v0::MoveRequest
+    // (savefields.py: MoveType, TargetPos, SplineId, SourceSplineNode, TargetSplineNode, Speed,
+    // EventId, IgnoreTurnbased), the component's RequestedMovement member at +8; Windows model
+    // converter bg3.exe+0x2781330 (called by the loader bg3.exe+0x25847E0 via bg3.exe+0x2781190)
+    // maps model->runtime: model SplineId (string at +0x18) becomes a FixedString at MoveRequest
+    // +0x14 = component +0x1C.
+    [[bg3::legacy(field_1C)]] FixedString SplineId;
+    // the game's own member name: savegame model platform::v0::MoveRequest; the Windows converter
+    // bg3.exe+0x2781330 copies model +0x28 / +0x2C to component +0x20 / +0x24
+    int32_t SourceSplineNode;
+    // the game's own member name: savegame model platform::v0::MoveRequest; the Windows converter
+    // bg3.exe+0x2781330 copies model +0x28 / +0x2C to component +0x20 / +0x24
+    int32_t TargetSplineNode;
+    // the game's own member name: MoveRequest+0x20. Live 1.5 (a speed or duration). | Name:
+    // savegame model ls::model::game::platform::v0::MoveRequest (savefields.py: MoveType,
+    // TargetPos, SplineId, SourceSplineNode, TargetSplineNode, Speed, EventId, IgnoreTurnbased),
+    // the component's RequestedMovement member at +8; Windows model converter bg3.exe+0x2781330
+    // (called by the loader bg3.exe+0x25847E0 via bg3.exe+0x2781190) maps model->runtime: model
+    // Speed (+0x30) -> MoveRequest +0x20 = component +0x28 (live 1.5). Osiris
+    // PlatformMoveTo/PlatformMoveOnSpline also take _Speed.
+    [[bg3::legacy(field_28)]] float Speed;
     // unknown: MoveRequest+0x24 byte. Live 0.
     uint8_t field_2C;
-    // unknown: MoveRequest+0x25 byte, copied by MovementSystem into the platform state (+9 of the
-    // target struct). Live 0.
-    uint8_t field_2D;
-    // inferred: FixedString released by the destructor (MoveRequest+0x28); MovementSystem passes
-    // request+0x28 as FixedString to esv::StoryGameEventManager (the Osiris event raised when the
-    // movement finishes). Live 0x02502591, equal to esv::platform::MovementComponent+0 of the same
-    // platform.
-    FixedString field_30;
+    // the game's own member name: MoveRequest+0x25 byte, copied by MovementSystem into the
+    // platform state (+9 of the target struct). Live 0. | Name: savegame model
+    // ls::model::game::platform::v0::MoveRequest (savefields.py: MoveType, TargetPos, SplineId,
+    // SourceSplineNode, TargetSplineNode, Speed, EventId, IgnoreTurnbased), the component's
+    // RequestedMovement member at +8; Windows model converter bg3.exe+0x2781330 (called by the
+    // loader bg3.exe+0x25847E0 via bg3.exe+0x2781190) maps model->runtime: model IgnoreTurnbased
+    // (bool +0x48) -> MoveRequest +0x25 = component +0x2D. Osiris PlatformMoveTo(...,
+    // _IgnoreTurnbased).
+    [[bg3::legacy(field_2D)]] uint8_t IgnoreTurnbased;
+    // the game's own member name: FixedString released by the destructor (MoveRequest+0x28);
+    // MovementSystem passes request+0x28 as FixedString to esv::StoryGameEventManager (the Osiris
+    // event raised when the movement finishes). Live 0x02502591, equal to
+    // esv::platform::MovementComponent+0 of the same platform. | Name: savegame model
+    // ls::model::game::platform::v0::MoveRequest (savefields.py: MoveType, TargetPos, SplineId,
+    // SourceSplineNode, TargetSplineNode, Speed, EventId, IgnoreTurnbased), the component's
+    // RequestedMovement member at +8; Windows model converter bg3.exe+0x2781330 (called by the
+    // loader bg3.exe+0x25847E0 via bg3.exe+0x2781190) maps model->runtime: model EventId (string
+    // at +0x38) -> FixedString at MoveRequest +0x28 = component +0x30; MovementSystem raises it to
+    // Osiris as PlatformMovementFinished/Canceled(_Object, _EventId).
+    [[bg3::legacy(field_30)]] FixedString EventId;
 };
 
 // One-frame event of esv::PlatformSystem (per-frame update bg3.exe+0x2CB1610 -> bg3.exe+0x2CB36F0,
@@ -21746,20 +21886,41 @@ struct RelationChangedEventOneFrameComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerRelationRelationChangedEvent, "esv::relation::RelationChangedEventOneFrameComponent")
 
-    // unknown: Toolkit ctor EoCServer.dll+0x50B550 constructs ls::Guid at +0; operator=
-    // EoCServer.dll+0x50B950 copies two qwords. Live: 18 distinct random 16-byte values (faction-
-    // like Guids, the same set as +0x10).
-    Guid field_0;
-    // unknown: Toolkit ctor constructs ls::Guid at +0x10; operator= copies +0x10/+0x18. Live: 17
-    // distinct values from the same set as +0.
-    Guid field_10;
-    // unknown: Toolkit ctor writes the uint16 0x0032 at +0x20, i.e. byte +0x20 = 50; operator=
-    // copies bytes +0x20 and +0x21 separately. Live byte values 0x00, 0x32 (50), 0x64 (100): a
-    // relation value on the 0..100 scale (50 = neutral default) - probably the new relation, not
-    // proven.
-    uint8_t field_20;
-    // unknown: Ctor default 0 (high byte of 0x0032); operator= copies it separately. Live 0/1.
-    bool field_21;
+    // the game's own member name: Toolkit ctor EoCServer.dll+0x50B550 constructs ls::Guid at +0;
+    // operator= EoCServer.dll+0x50B950 copies two qwords. Live: 18 distinct random 16-byte values
+    // (faction-like Guids, the same set as +0x10). | Name: Osiris event
+    // RelationChanged((FACTION)_SourceFaction, (FACTION)_TargetFaction, (INTEGER)_NewRelation,
+    // (INTEGER)_Permanent) (story_header, gameindex.py osiris). esv::StoryGameEventManager::Init
+    // bg3.exe+0x308BBE0 connects the handler bg3.exe+0x3093790 to this component's signal; the
+    // handler pushes, in this order, Guid +0, Guid +0x10, (int)byte +0x20, (bool)byte +0x21: first
+    // parameter = Guid +0.
+    [[bg3::legacy(field_0)]] Guid SourceFaction;
+    // the game's own member name: Toolkit ctor constructs ls::Guid at +0x10; operator= copies
+    // +0x10/+0x18. Live: 17 distinct values from the same set as +0. | Name: Osiris event
+    // RelationChanged((FACTION)_SourceFaction, (FACTION)_TargetFaction, (INTEGER)_NewRelation,
+    // (INTEGER)_Permanent) (story_header, gameindex.py osiris). esv::StoryGameEventManager::Init
+    // bg3.exe+0x308BBE0 connects the handler bg3.exe+0x3093790 to this component's signal; the
+    // handler pushes, in this order, Guid +0, Guid +0x10, (int)byte +0x20, (bool)byte +0x21:
+    // second parameter = Guid +0x10.
+    [[bg3::legacy(field_10)]] Guid TargetFaction;
+    // the game's own member name: Toolkit ctor writes the uint16 0x0032 at +0x20, i.e. byte +0x20
+    // = 50; operator= copies bytes +0x20 and +0x21 separately. Live byte values 0x00, 0x32 (50),
+    // 0x64 (100): a relation value on the 0..100 scale (50 = neutral default) - probably the new
+    // relation, not proven. | Name: Osiris event RelationChanged((FACTION)_SourceFaction,
+    // (FACTION)_TargetFaction, (INTEGER)_NewRelation, (INTEGER)_Permanent) (story_header,
+    // gameindex.py osiris). esv::StoryGameEventManager::Init bg3.exe+0x308BBE0 connects the
+    // handler bg3.exe+0x3093790 to this component's signal; the handler pushes, in this order,
+    // Guid +0, Guid +0x10, (int)byte +0x20, (bool)byte +0x21: third parameter = byte +0x20 widened
+    // to int (Toolkit ctor default 50; live 0 / 50 / 100).
+    [[bg3::legacy(field_20)]] uint8_t NewRelation;
+    // the game's own member name: Ctor default 0 (high byte of 0x0032); operator= copies it
+    // separately. Live 0/1. | Name: Osiris event RelationChanged((FACTION)_SourceFaction,
+    // (FACTION)_TargetFaction, (INTEGER)_NewRelation, (INTEGER)_Permanent) (story_header,
+    // gameindex.py osiris). esv::StoryGameEventManager::Init bg3.exe+0x308BBE0 connects the
+    // handler bg3.exe+0x3093790 to this component's signal; the handler pushes, in this order,
+    // Guid +0, Guid +0x10, (int)byte +0x20, (bool)byte +0x21: fourth parameter = (byte +0x21 !=
+    // 0).
+    [[bg3::legacy(field_21)]] bool Permanent;
 };
 
 // One-frame event of esv::relation::RelationSystem: a summon got its faction set (from its owner).
@@ -25529,9 +25690,11 @@ struct CreateRequestOneFrameComponent : public BaseComponent
     // unknown: dword copy; builder param_24; copied to SpellComponent +0x7C; game default 0. Live
     // 0.
     int32_t field_F0;
-    // unknown: start of eoc::SpellZoneInfo (builder: SpellZoneInfo::SpellZoneInfo at this offset,
-    // 0x34 bytes up to +0x128); game default byte 0. Live 0.
-    uint8_t field_F4;
+    // inferred: start of eoc::SpellZoneInfo (builder: SpellZoneInfo::SpellZoneInfo at this offset,
+    // 0x34 bytes up to +0x128); game default byte 0. Live 0. | Name: eoc::SpellZoneInfo::Init
+    // (EoCShared.dll+0x10075A0, same offsets in the macOS build) stores (stats Shape == "Square")
+    // in SpellZoneInfo +0, i.e. 0 = cone, 1 = square (stats property Shape of the zone spell).
+    [[bg3::legacy(field_F4)]] uint8_t Shape;
     // unknown: SpellZoneInfo member; live 0.2 / 0.249
     float field_F8;
     // unknown: SpellZoneInfo member; live 1.614 / 1.663
@@ -25542,16 +25705,21 @@ struct CreateRequestOneFrameComponent : public BaseComponent
     float field_104;
     // unknown: SpellZoneInfo member; live 5 (range?)
     float field_108;
-    // unknown: SpellZoneInfo member; live 60 (cone angle in degrees?)
-    float field_10C;
-    // unknown: SpellZoneInfo member; live 0
-    float field_110;
+    // inferred: SpellZoneInfo member; live 60 (cone angle in degrees?) | Name: SpellZoneInfo::Init
+    // stores stats Angle (cone) or Base (square) as float at SpellZoneInfo +0x18 = component
+    // +0x10C; live 60 = a cone angle.
+    [[bg3::legacy(field_10C)]] float AngleOrBase;
+    // inferred: SpellZoneInfo member; live 0 | Name: SpellZoneInfo::Init stores stats FrontOffset
+    // as float at SpellZoneInfo +0x1C = component +0x110; live 0.
+    [[bg3::legacy(field_110)]] float FrontOffset;
     // unknown: SpellZoneInfo member; live 1.4 / 2
     float field_114;
     // unknown: SpellZoneInfo member; live equal to +0x28 (a world position)
     glm::vec3 field_118;
-    // unknown: game creator clears its low two bits (flags byte, end of SpellZoneInfo); live 8
-    uint8_t field_124;
+    // inferred: game creator clears its low two bits (flags byte, end of SpellZoneInfo); live 8 |
+    // Name: SpellZoneInfo::Init sets bit 1 of SpellZoneInfo +0x30 (= component +0x124) from bit 4
+    // of SpellPrototype byte +0x10; the other bits are set elsewhere.
+    [[bg3::legacy(field_124)]] uint8_t ZoneFlags;
     [[bg3::hidden]] std::array<uint8_t, 3> _Pad125;
     // unknown: byte; builder from *param_13; game default 0xFF. Live 0x15 / 0x4B (a surface type
     // from eoc::GetSurfaceTypeFromStats?).
@@ -32956,8 +33124,6 @@ static_assert(sizeof(bg3se::esv::patrol::CaretComponent) == 84);
 static_assert(sizeof(bg3se::esv::patrol::SplinesComponent) == 128);
 static_assert(sizeof(bg3se::esv::photo_mode::SessionFailedEventSingletonComponent) == 1);
 static_assert(sizeof(bg3se::esv::pickup::BeingPickedUpComponent) == 64);
-static_assert(sizeof(bg3se::esv::pickup::LegacyPickUpRequestsSingletonComponent) == 16);
-static_assert(sizeof(bg3se::esv::pickup::LegacyPickUpRequestVariant) == 72);
 static_assert(sizeof(bg3se::esv::pickup::PickUpExecutionFailedSingletonComponent) == 16);
 static_assert(sizeof(bg3se::esv::pickup::PickUpExecutionInFlightComponent) == 8);
 static_assert(sizeof(bg3se::esv::pickup::PickUpFailedToSpendResourceSingletonComponent) == 16);
@@ -32975,6 +33141,8 @@ static_assert(sizeof(bg3se::esv::pickup::SuccessfullyPickedUpSingletonComponent)
 static_assert(sizeof(bg3se::esv::pickup::PickedUpTransferFinished) == 16);
 static_assert(sizeof(bg3se::esv::pickup::ValidatedPickUpRequestsSingletonComponent) == 80);
 static_assert(sizeof(bg3se::esv::pickup::ValidatedPickUpRequestsEntry) == 72);
+static_assert(sizeof(bg3se::esv::pickup::LegacyPickUpRequestsSingletonComponent) == 16);
+static_assert(sizeof(bg3se::esv::pickup::LegacyPickUpRequestVariant) == 72);
 static_assert(sizeof(bg3se::esv::placement::PlacementComponent) == 64);
 static_assert(sizeof(bg3se::esv::placement::PlacementComponentEntry) == 120);
 static_assert(sizeof(bg3se::esv::placement::PlacementResultEventOneFrameComponent) == 2);
