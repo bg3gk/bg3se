@@ -83,7 +83,13 @@ namespace bg3se
         uint8_t ControllerMode;
         uint8_t field_39;
         float NodeWaitTimeMultiplier;
-        float AnimationBlueprintSpeedScale_M;
+        // The engine's own time scale: every frame the server loop, the client loop and the UI
+        // multiply their clamped frame delta by this (bg3.exe+0x5E5D85, +0x3F7A2CA, +0x121129E in
+        // 4.1.1.7631656); the default is 1. The name is the Toolkit's: BaseApp::SetDeltaTimeScale
+        // and the console command "deltaTimeScale" store this member (clamped there to 0.001..10).
+        // Live, 2026-11-13: at 4 and 10 status timers and fights run 4 and 9-10 times faster.
+        // Formerly AnimationBlueprintSpeedScale_M (kept as an alias).
+        float DeltaTimeScale;
         float field_44;
         float field_48;
         int field_4C;
