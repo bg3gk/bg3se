@@ -529,13 +529,23 @@ void StoredValueHelpers::PushValue(lua_State* L, Type const* type, StoredValue c
         return;
     }
 
-    // TODO - complex values not supported yet
     if (o->flags.isComplex) {
-        if (o->flags.isExpression) {
+        // GateKit: a complex value keeps the effective value next to its source. For a value
+        // set by a binding (an expression) Noesis keeps the result of the binding in `base`
+        // ("if there is an expression stored above, this will contain the result of evaluating
+        // the expression", DependencyObjectValueData.h); a coerced or animated value wins over it.
+        // Command properties stay unread here: a command reached through a binding is stored as
+        // an object, and treating it as the ICommand interface pointer crashed the game.
+        auto& types = gStaticSymbols.Types;
+        if (o->flags.isExpression && type == types.ICommand.Type) {
             lua::push(L, nullptr);
-        } else {
-            PushValue(L, type, o->value.complex->base, objectType, propertyName);
+            return;
         }
+        auto complex = o->value.complex;
+        void* value = complex->base;
+        if (o->flags.isAnimated) value = complex->animated;
+        if (o->flags.isCoerced) value = complex->coerced;
+        PushValue(L, type, value, objectType, propertyName);
     } else {
         PushValue(L, type, o->value.simple, objectType, propertyName);
     }
