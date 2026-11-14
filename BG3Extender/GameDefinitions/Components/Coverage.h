@@ -25864,9 +25864,17 @@ struct CreateRequestOneFrameComponent : public BaseComponent
 {
     DEFINE_ONEFRAME_COMPONENT(ServerZoneCreateRequest, "esv::zone::CreateRequestOneFrameComponent")
 
-    // unknown: FUN_18114c290 copies a dword; builder FUN_18164dc50 stores param_2; game default
-    // -1. Live 0x2E / 0x126.
-    int32_t field_0;
+    // inferred: macOS esv::functor::StatsFunctorCreateZone::Execute (bg3_macos_x64+0x64CB660),
+    // whose demangled signature is (StoryActionID, EntityHandle, Guid, HitDesc, AttackDesc,
+    // Vector3f, Vector3f, EntityHandle, SpellId, EAbility, InitialTarget, ESurfaceType,
+    // SpellZoneInfo&&, uint, float, float, AiTilePos[]*, EntityHandle[]*, HitDesc[]*, bool, bool,
+    // FixedString, int, bool), fills a local esv::zone::CreationParams (0x188 bytes, copy-
+    // constructed into the request array). It stores the first argument, ls::TypeWrap<unsigned
+    // int, eoc::TStoryActionIDClassname>, at CreationParams +0 (local_1c0[0]). The Windows builder
+    // FUN_18164dc50 likewise stores param_2 here, and its parameter order matches the macOS
+    // signature at every other field: Guid +0x10 = param_4, Vector3f +0x28/+0x34 = param_7/8,
+    // EntityHandle +0x20 = param_9. Game default -1. Live 0x2E / 0x126.
+    int32_t StoryActionId;
     // unknown: game default null handle; ProcessCreateRequests copies it to
     // esv::zone::SpellComponent +0 only when valid (the caster/source). Live entity handles.
     EntityHandle field_8;
@@ -25884,8 +25892,15 @@ struct CreateRequestOneFrameComponent : public BaseComponent
     // inferred: FUN_18114c290: eoc::spell::SpellId::operator= at +0x40 (0x38 bytes, equals SE
     // SpellId)
     ZoneCreateRequestSpellId SpellId;
-    // unknown: byte copy; builder from *param_11; game default 0. Live 2 / 4.
-    uint8_t field_78;
+    // inferred: macOS esv::functor::StatsFunctorCreateZone::Execute (bg3_macos_x64+0x64CB660),
+    // whose demangled signature is (StoryActionID, EntityHandle, Guid, HitDesc, AttackDesc,
+    // Vector3f, Vector3f, EntityHandle, SpellId, EAbility, InitialTarget, ESurfaceType,
+    // SpellZoneInfo&&, uint, float, float, AiTilePos[]*, EntityHandle[]*, HitDesc[]*, bool, bool,
+    // FixedString, int, bool), fills a local esv::zone::CreationParams (0x188 bytes, copy-
+    // constructed into the request array). The EAbility const& argument is stored as one byte at
+    // CreationParams +0x78 (local_148 = *param_13). Windows builder: byte from *param_11, the 10th
+    // argument in the same order. Live 2 / 4 (EAbility values).
+    uint8_t Ability;
     // inferred: FUN_18114c290: eoc::spell_cast::InitialTarget::operator= at +0x80 (equals SE
     // InitialTarget); copied to esv::zone::SpellComponent +8
     ZoneCreateRequestInitialTarget Target;
@@ -25940,9 +25955,16 @@ struct CreateRequestOneFrameComponent : public BaseComponent
     // of SpellPrototype byte +0x10; the other bits are set elsewhere.
     [[bg3::legacy(field_124)]] uint8_t ZoneFlags;
     [[bg3::hidden]] std::array<uint8_t, 3> _Pad125;
-    // unknown: byte; builder from *param_13; game default 0xFF. Live 0x15 / 0x4B (a surface type
-    // from eoc::GetSurfaceTypeFromStats?).
-    uint8_t field_128;
+    // inferred: macOS esv::functor::StatsFunctorCreateZone::Execute (bg3_macos_x64+0x64CB660),
+    // whose demangled signature is (StoryActionID, EntityHandle, Guid, HitDesc, AttackDesc,
+    // Vector3f, Vector3f, EntityHandle, SpellId, EAbility, InitialTarget, ESurfaceType,
+    // SpellZoneInfo&&, uint, float, float, AiTilePos[]*, EntityHandle[]*, HitDesc[]*, bool, bool,
+    // FixedString, int, bool), fills a local esv::zone::CreationParams (0x188 bytes, copy-
+    // constructed into the request array). The eoc::ESurfaceType const& argument is stored as one
+    // byte at CreationParams +0x128 (local_98 = *param_15), right after the SpellZoneInfo copy at
+    // +0xF4. Windows builder: from *param_13, the 12th argument. Game default 0xFF. Live 0x15 /
+    // 0x4B.
+    uint8_t SurfaceType;
     // unknown: builder param_15; game default 10. Live 5.
     int32_t field_12C;
     // unknown: builder param_16; game default 1.0. Live 0.01.
