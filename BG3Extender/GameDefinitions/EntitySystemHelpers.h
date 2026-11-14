@@ -64,6 +64,10 @@ struct ECSComponentLog
 {
     ComponentTypeIndex ComponentType{ 0 };
     ComponentChangeFlags Flags{ 0 };
+    // The ECS frame (EntitySystemHelpersBase::PostUpdate count) and ECB flush in which this change
+    // was first logged since the log was last cleared: orders one-frame lifetimes inside a tick.
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
 
     StringView GetName(lua_State* L) const;
     std::optional<ExtComponentType> GetType(lua_State* L) const;
@@ -80,6 +84,9 @@ struct ECSEntityLog
 struct ECSChangeLog
 {
     HashMap<EntityHandle, ECSEntityLog> Entities;
+    // Running counters (not reset by Clear): ECS frames ended and ECB flushes seen by the tracer.
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
 
     void Clear();
     void AddEntityChange(EntityHandle entity, EntityChangeFlags flags);
@@ -118,6 +125,16 @@ public:
     void LogImmediateWorldCacheChanges();
     void LogComponentModifications();
     void LogReplicatedChanges();
+
+    inline void OnFrameEnd()
+    {
+        log_.Frame++;
+    }
+
+    inline void OnFlush()
+    {
+        log_.Flush++;
+    }
 
 private:
     EntitySystemHelpersBase* ecs_;
