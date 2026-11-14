@@ -11404,11 +11404,18 @@ struct CinematicArenaScriptEventComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationCinematicArenaScriptEvent, "eoc::notification::CinematicArenaScriptEventComponent")
 
-    // unknown: serializer bg3.exe+0x98BCB0 member 1: 16-byte scratch write at +0; macOS default
-    // str q0,[x23].
-    Guid field_0;
-    // unknown: serializer bg3.exe+0x98BCB0 member 2: 16-byte scratch write at +0x10.
-    Guid field_10;
+    // inferred: Toolkit EoCClient.dll+0x6741A0 ecl::timeline::ArenaDecisionSystem::AddScriptEvents
+    // resolves the Guid at +0 to an entity (FUN_1806751a0) and puts it, with its position, in the
+    // first entity slot of an arena event of kind 4 (ArenaEventToString: OnScriptEvent). In
+    // AddDeathEvents (EoCClient.dll+0x673580) that first slot holds DeathComponent +0
+    // (DeathData::Cause), the second the dying entity: the first slot is the event's source.
+    Guid Source;
+    // inferred: Toolkit EoCClient.dll+0x6741A0 ecl::timeline::ArenaDecisionSystem::AddScriptEvents
+    // resolves the Guid at +0x10 to an entity and puts it, with its position, in the second entity
+    // slot of an OnScriptEvent arena event; in AddDeathEvents (EoCClient.dll+0x673580) that slot
+    // holds the entity that died while the first holds the death's Cause: the second slot is the
+    // event's subject.
+    Guid Target;
     // unknown: serializer bg3.exe+0x98BCB0 member 3: bg3.exe+0x4016480 writes an int32 length read
     // at +0x10 then the bytes (inline when capacity at +0x14 <= 15): the 24-byte STDString layout;
     // 0x20+24 = 56 = registered size.
@@ -11771,13 +11778,16 @@ struct PingRequestComponent : public BaseComponent
     // inferred: write-all serializer bg3.exe+0x9183D0: member 1, raw 12-byte write at +0; macOS
     // default zero. 12 bytes = three floats; a ping marks a place, hence Position.
     glm::vec3 Position;
-    // unknown: write-all serializer bg3.exe+0x9183D0: member 2, bg3.exe+0x4017090 (EntityHandle
-    // writer) on +0x10; macOS default str q1 [x23,#0x10] with q1 = dup of 0xFFC0000000000000 (null
-    // handle)
-    EntityHandle field_10;
-    // unknown: write-all serializer bg3.exe+0x9183D0: member 3, bg3.exe+0x4017090 on +0x18;
-    // default null handle (same q1 store)
-    EntityHandle field_18;
+    // inferred: Toolkit EoCClient.dll+0x694810 ecl::ping::PingSystem::ProcessServerPingRequests
+    // copies the 0x28-byte component into an eoc::PingRequestData (0x20 bytes): component +0x10 ->
+    // data +8, which Script Extender declares as PingRequestData::Target; the same function then
+    // highlights the entity at +0x10 (ProvidedMultiEffectObject::SetEntity) when it is valid.
+    EntityHandle Target;
+    // inferred: Toolkit EoCClient.dll+0x694810 ecl::ping::PingSystem::ProcessServerPingRequests
+    // copies component +0x18 -> eoc::PingRequestData +0, which Script Extender declares as
+    // PingRequestData::Source (Source, Target, Position, field_1C at 0/8/0x10/0x1C); Position +0
+    // -> data +0x10 agrees with the name already given.
+    EntityHandle Source;
     // unknown: write-all serializer bg3.exe+0x9183D0: member 4, raw 1-byte write at +0x20; macOS
     // default strb w17(=1) [x23,#0x20]
     uint8_t field_20;
@@ -25894,17 +25904,27 @@ struct CreateRequestOneFrameComponent : public BaseComponent
     // unknown: game default null handle; ProcessCreateRequests copies it to
     // esv::zone::SpellComponent +0 only when valid (the caster/source). Live entity handles.
     EntityHandle field_8;
-    // unknown: builder: ls::Guid default-constructed then copied from param_4 (16 bytes). Live
-    // random 128-bit values (a cast Guid?).
-    Guid field_10;
-    // unknown: builder copies *param_9; game default null handle. Live entity handles.
-    EntityHandle field_20;
-    // unknown: copied as 8+4 bytes; builder from param_7. Live (48.75, 17, 209.5) - a world
-    // position (equal to +0x118).
-    glm::vec3 field_28;
-    // unknown: copied as 8+4 bytes; builder from param_8. Live (51.25, 17.21, 204.8) - a second
-    // position (target/end point?).
-    glm::vec3 field_34;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests copies
+    // request +0x10..+0x1F (16 bytes) to the new ZoneAction +0x40, which is
+    // SurfaceAction::SpellCastUuid in Script Extender's layout (esv::SurfaceAction +0x40). Toolkit
+    // 4.69 build; the request is 0x188 bytes there as in the game.
+    Guid SpellCastUuid;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests:
+    // ZoneAction +0x80 = request +0x20 (EntityHandle); +0x80 is CreateSurfaceActionBase::Owner in
+    // Script Extender's layout. Toolkit 4.69 build.
+    EntityHandle Owner;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests:
+    // ZoneAction +0x8C..+0x97 = request +0x28 (8+4 bytes); +0x8C is
+    // CreateSurfaceActionBase::Position in Script Extender's layout. Live samples are world
+    // positions. Toolkit 4.69 build. Prefixed Action because the layout already calls the
+    // SpellZoneInfo position at +0x118 Position (the two are equal in live samples).
+    glm::vec3 ActionPosition;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests:
+    // ZoneAction +0x5DC..+0x5E7 = request +0x34 (vec3). In the Toolkit's ZoneAction the accessor
+    // TextKey is at +0x5D8 and Script Extender's ZoneAction declares glm::vec3 Target right after
+    // TextKey, so +0x5DC is ZoneAction::Target. Live a second world position near Position.
+    // Prefixed Action because the layout already calls the InitialTarget at +0x80 Target.
+    glm::vec3 ActionTarget;
     // inferred: FUN_18114c290: eoc::spell::SpellId::operator= at +0x40 (0x38 bytes, equals SE
     // SpellId)
     ZoneCreateRequestSpellId SpellId;
@@ -25981,12 +26001,18 @@ struct CreateRequestOneFrameComponent : public BaseComponent
     // +0xF4. Windows builder: from *param_13, the 12th argument. Game default 0xFF. Live 0x15 /
     // 0x4B.
     uint8_t SurfaceType;
-    // unknown: builder param_15; game default 10. Live 5.
-    int32_t field_12C;
-    // unknown: builder param_16; game default 1.0. Live 0.01.
-    float field_130;
-    // unknown: builder param_17; game default 0. Live 0 / 18.
-    float field_134;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests:
+    // ZoneAction +0x620 = request +0x12C (int32); the Toolkit exports the accessor esv::ZoneAction
+    // set GrowStep at +0x620 (symbols fields esv::ZoneAction). Game default 10.
+    int32_t GrowStep;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests:
+    // ZoneAction +0x61C = request +0x130 (float); the Toolkit exports the accessor esv::ZoneAction
+    // set GrowTimer at +0x61C (symbols fields esv::ZoneAction). Game default 1.0.
+    float GrowTimer;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests:
+    // ZoneAction +0x88 = request +0x134 (float); +0x88 is CreateSurfaceActionBase::Duration in
+    // Script Extender's layout. Game default 0; live 0 and 18.
+    float Duration;
     // inferred: optional<Array<eoc::AiTilePos>>, flag at +0x148. Live: engaged, capacity
     // 0x199-0x1A0, size 0x3C-0x3F.
     ZoneCreateRequestOptionalTiles Tiles;
@@ -25994,11 +26020,17 @@ struct CreateRequestOneFrameComponent : public BaseComponent
     ZoneCreateRequestOptionalEntities Entities;
     // inferred: optional<Array<eoc::HitDesc>>, flag at +0x178. Live empty.
     ZoneCreateRequestOptionalHits Hits;
-    // unknown: FixedString::operator=; builder from param_23; copied to SpellComponent +0x78; game
-    // default null. Live 0.
-    FixedString field_180;
-    // unknown: builder param_21; game default 0
-    uint8_t field_184;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests passes
+    // request +0x180 as the FixedString argument of esv::ZoneAction::SetSpellID
+    // (EoCServer.dll+0x6AD110), which stores it at ZoneAction +0x5D8 = the Toolkit accessor
+    // TextKey, and looks the spell properties up by it (LEGACY_GetSpellProperties(prototype,
+    // TextKey)).
+    FixedString TextKey;
+    // inferred: Toolkit EoCServer.dll+0x6D5690 esv::SurfaceManager::ProcessZoneRequests passes
+    // byte +0x184 as the first bool of esv::ZoneAction::SetSpellID (EoCServer.dll+0x6AD110), which
+    // writes it to bit 0 of ZoneAction +0x670 = the Toolkit accessor 'get IsFromItem' (bit 0, mask
+    // 0x1).
+    uint8_t IsFromItem;
     // unknown: builder param_22; game default 0; live 0/1
     uint8_t field_185;
     // unknown: builder param_25; game default 0
@@ -26082,8 +26114,11 @@ struct SpellComponent : public BaseComponent
     // eoc::spell_cast::InitialTarget::operator=(SpellComponent+8, CreationParams+0x80). Live
     // layout matches (vtable, target handle, TargetingType 1 at +0x38).
     ZoneSpellInitialTarget Target;
-    // unknown: FixedString::operator=(SpellComponent+0x78, CreationParams+0x180). Live 0.
-    FixedString field_78;
+    // inferred: EoCServer.dll+0x114C5E0 esv::zone::CreationSystem::ProcessCreateRequests:
+    // FixedString::operator=(SpellComponent+0x78, request+0x180), and request +0x180 is the
+    // TextKey the surface manager hands to esv::ZoneAction::SetSpellID (EoCServer.dll+0x6AD110,
+    // stored at the Toolkit accessor TextKey +0x5D8).
+    FixedString TextKey;
     // unknown: SpellComponent+0x7C = (int)CreationParams+0xF0. Live 0.
     int32_t field_7C;
 };
