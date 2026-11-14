@@ -483,8 +483,8 @@ void ScriptExtenderUpdater::LoadConfig()
     }
 
 #if defined(HAS_DEBUG_LOGGING)
-    // Enable debug logging if shift is down when the game is launched
-    if (GetAsyncKeyState(VK_SHIFT) < 0) {
+    // Enable debug logging if shift is down when the game is launched (unless ShiftOpensConsole is off)
+    if (config_.ShiftOpensConsole && GetAsyncKeyState(VK_SHIFT) < 0) {
         config_.Debug = true;
     }
 #endif

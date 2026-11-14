@@ -55,6 +55,11 @@ struct ExtenderConfig
     // directly should be on a screen.
     bool KeepWindowOffScreen{ false };
 
+    // Holding Shift as the game starts opens the console whatever CreateConsole says. A tool that
+    // starts copies while somebody types elsewhere turns this off: a capital letter typed at the
+    // wrong moment put a console on their desktop. On by default, as upstream behaves.
+    bool ShiftOpensConsole{ true };
+
 #if defined(OSI_EXTENSION_BUILD)
 #if defined(_DEBUG)
     bool DeveloperMode{ true };
