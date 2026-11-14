@@ -68,3 +68,9 @@ here has been offered upstream yet; when it is, it will be as ordinary pull requ
 
 As upstream: Visual Studio with the C++ toolchain, `BG3Tools.sln`, the `Game Release`
 configuration. GateKit users do not build it — `gatekit se install` fetches a release.
+
+**Build `v34-tools`** (2026-11-14, normal mode with whole-program optimisation, `Game Release`
+x64, from `fd2239ff`): `gatekit-v34` with the memory instrument merged (`Ext.Debug`, above), the
+ECS tracer stamps merged (each change in `Ext.Entity.GetTrace()` carries `Frame` and `Flush`, and
+the log itself the running counters) and `GlobalSwitches::SoundSettings` mapped. DLL SHA-256
+`2b983653949938cdcb0044e157dc41dd1e03d2abd0457f948900343cc1eb95bf`.
