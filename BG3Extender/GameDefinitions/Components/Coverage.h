@@ -11361,9 +11361,13 @@ struct CancelScriptAnimationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationCancelScriptAnimation, "eoc::notification::CancelScriptAnimationComponent")
 
-    // unknown: serializer bg3.exe+0x99D840 member 1: 16-byte scratch write at +0; macOS default
-    // zero.
-    Guid field_0;
+    // inferred: EoCServer.dll+0x83A0F0 (lambda over
+    // esv::script::AnimationCancelRequestOneFrameComponent, variant tag 3 =
+    // CancelItemAnimationNotificationRequest) puts the Guid of the entity carrying the request
+    // (FUN_180367E90) at request +0 and the one-frame's byte at +0x10; dispatcher
+    // bg3.exe+0x2DF53B0 case 3 copies both into this component (creator bg3.exe+0x2DF1AC0): the
+    // entity whose script animation is cancelled.
+    Guid Entity;
     // unknown: serializer bg3.exe+0x99D840 member 2: 1-byte scratch write at +0x10; macOS default
     // zero.
     bool field_10;
@@ -11491,18 +11495,36 @@ struct CombatantKilledNotificationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationCombatantKilled, "eoc::notification::CombatantKilledNotificationComponent")
 
-    // unknown: serializer bg3.exe+0x8FDE20 member 1: 16-byte scratch write at +0 (killed
-    // combatant?); macOS default zero.
-    Guid field_0;
-    // unknown: serializer bg3.exe+0x8FDE20 member 2: 16-byte scratch write at +0x10.
-    Guid field_10;
-    // unknown: serializer bg3.exe+0x8FDE20 member 3: 1-byte write at +0x20.
-    uint8_t field_20;
-    // unknown: serializer bg3.exe+0x8FDE20 member 4: 1-byte write at +0x21.
-    uint8_t field_21;
-    // unknown: serializer bg3.exe+0x8FDE20 member 5: 1-byte write at +0x22; macOS default strb
-    // w17,[x23,#0x22] (non-zero default, value not resolved).
-    uint8_t field_22;
+    // inferred: esv::combat::CombatantKilledSystem::ProcessDeaths (EoCServer.dll+0x149A060; query
+    // Spec<Participant, Death | optional eoc::PlayerComponent | added Death>) writes
+    // esv::combat::CombatantKilledEventOneFrameComponent +0 = the dying entity.
+    // EoCServer.dll+0x83FE70 (notification lambda, variant tag 6 =
+    // CombatantKilledNotificationRequest) turns event +0 into its Guid (FUN_180367e90) at request
+    // +0; dispatcher bg3.exe+0x2DF53B0 case 6 copies request +0..+0x22 straight into this
+    // component (creator bg3.exe+0x2DF4690, TypeIndex CombatantKilledNotificationComponent). The
+    // combatant that died.
+    Guid Combatant;
+    // inferred: ProcessDeaths EoCServer.dll+0x149A060 writes event +8 = DeathComponent +0
+    // (death::DeathData::Cause); EoCServer.dll+0x83FE70 turns it into its Guid at request +0x10
+    // (Empty Guid when the handle is invalid); bg3.exe+0x2DF53B0 case 6 copies it to +0x10. Named
+    // after DeathData::Cause: the entity that caused the death.
+    Guid Cause;
+    // inferred: ProcessDeaths EoCServer.dll+0x149A060 writes event +0x10 = (the query's optional
+    // eoc::PlayerComponent of the dying entity is present); copied through request
+    // (EoCServer.dll+0x83FE70, 3 bytes) and bg3.exe+0x2DF53B0 case 6 to +0x20. Read as a flag by
+    // ecl::GameplaySoundSystem::ProcessCombatMusicNotifications (EoCClient.dll+0xE39BB0).
+    bool CombatantIsPlayer;
+    // inferred: ProcessDeaths EoCServer.dll+0x149A060 writes event +0x11 =
+    // HasComponent(DeathData::Cause, eoc::PlayerComponent) (type index DAT_1821f166c, registered
+    // by EoCServer.dll+0x156D0 with GetTypeName<eoc::PlayerComponent>); copied through the request
+    // to +0x21. ProcessCombatMusicNotifications branches on it.
+    bool CauseIsPlayer;
+    // inferred: ProcessDeaths EoCServer.dll+0x149A060 writes event +0x12 = true when
+    // eoc::relation::IsEnemy(Cause (or the dying entity when Cause is invalid), p) holds for some
+    // participant p != the dying entity of eoc::CombatHelpers::GetCombatParticipants(dying
+    // entity's combat); copied through the request to +0x22. ProcessCombatMusicNotifications picks
+    // its sound event first on this byte.
+    bool CauseHasEnemiesInCombat;
 };
 
 struct ConcentrationChangedComponent : public BaseComponent
@@ -11642,32 +11664,35 @@ struct FailedPrivateDialogJoinAttemptNotificationComponent : public BaseComponen
 {
     DEFINE_COMPONENT(NotificationFailedPrivateDialogJoinAttempt, "eoc::notification::FailedPrivateDialogJoinAttemptNotificationComponent")
 
-    // unknown: Windows replication writer bg3.exe+0x9A3090: 4 raw bytes at the FieldMeta offset
-    // global DAT_14627FED0 (0: the next member is at +8); Windows creator bg3.exe+0xFC0E40
-    // (ComponentFrameStorageAllocRaw 0x48, called by bg3.exe+0x2DF14F0) writes 0 (not the UserId
-    // 'unassigned' default).
-    int32_t field_0;
-    // unknown: Windows replication writer bg3.exe+0x9A3090: 16 raw bytes at +8; Windows creator
-    // bg3.exe+0xFC0E40 (ComponentFrameStorageAllocRaw 0x48, called by bg3.exe+0x2DF14F0) zeroes
-    // +8..+0x17.
-    Guid field_8;
-    // inferred: Windows replication writer bg3.exe+0x9A3090: 2-byte Version at +0x1C, then the
-    // FixedString Handle at +0x18; Windows creator bg3.exe+0xFC0E40 (ComponentFrameStorageAllocRaw
-    // 0x48, called by bg3.exe+0x2DF14F0) stores ls::TranslatedStringRepository::s_HandleUnknown at
-    // +0x18, 0 at +0x1C and constructs the ArgumentString at +0x20; Windows destructor
-    // bg3.exe+0xA53660 calls TranslatedString::~TranslatedString on +0x38 and +0x18. SE
-    // TranslatedString (16 bytes, 4-aligned).
-    TranslatedString field_18;
-    // unknown: Windows replication writer bg3.exe+0x9A3090: 16 raw bytes at +0x28; Windows creator
-    // bg3.exe+0xFC0E40 (ComponentFrameStorageAllocRaw 0x48, called by bg3.exe+0x2DF14F0) zeroes
-    // +0x28..+0x37.
-    Guid field_28;
-    // inferred: Windows replication writer bg3.exe+0x9A3090: 2-byte Version at +0x3C, FixedString
-    // Handle at +0x38; Windows creator bg3.exe+0xFC0E40 (ComponentFrameStorageAllocRaw 0x48,
-    // called by bg3.exe+0x2DF14F0) stores s_HandleUnknown at +0x38, 0 at +0x3C and constructs the
-    // ArgumentString at +0x40; Windows destructor bg3.exe+0xA53660 calls
-    // TranslatedString::~TranslatedString on +0x38 and +0x18.
-    TranslatedString field_38;
+    // inferred: Server: EoCServer.dll+0x846050 (esv::notification::System query lambda over
+    // esv::dialog::FailedPrivateDialogJoinAttemptOneFrameComponent, stride 0x28) copies the whole
+    // one-frame (u32 +0, Guid +8, Guid +0x18) into a notification request with variant tag 0xF;
+    // tag 15 of ls::Variant<esv::notification::System::...> is
+    // FailedPrivateDialogJoinAttemptNotification (variant type list in the lambda's IndexedStorage
+    // name). Client: the notification dispatcher bg3.exe+0x2DF53B0 case 0xF calls this component's
+    // creator bg3.exe+0x2DF14F0 and stores request +0 (u32) here. The one-frame's +0 is DialogId
+    // (key of PrivacySystem's map, first argument of
+    // ecl::LSDialogsProtocol::SendFailedJoinDialog).
+    int32_t DialogId;
+    // inferred: bg3.exe+0x2DF53B0 case 0xF copies request +8..+0x17 here; the request is the
+    // esv::dialog::FailedPrivateDialogJoinAttemptOneFrameComponent copied whole by
+    // EoCServer.dll+0x846050, whose +8 is Listener (second argument of SendFailedJoinDialog, the
+    // character that tried to join).
+    Guid Listener;
+    // inferred: bg3.exe+0x2DF53B0 case 0xF maps the Guid at request +8 to an entity
+    // (FUN_141013470) and calls bg3.exe+0x41FD1C0, which reads that entity's
+    // eoc::DisplayNameComponent (bg3.exe+0xB22830 uses TypeIndex<eoc::DisplayNameComponent>) and
+    // returns a TranslatedString; both handles of it are stored at +0x18/+0x20: the display name
+    // of the Listener.
+    TranslatedString ListenerName;
+    // inferred: bg3.exe+0x2DF53B0 case 0xF copies request +0x18..+0x27 to +0x28; request =
+    // esv::dialog::FailedPrivateDialogJoinAttemptOneFrameComponent (copied whole by
+    // EoCServer.dll+0x846050), whose +0x18 is Speaker (third argument of SendFailedJoinDialog).
+    Guid Speaker;
+    // inferred: bg3.exe+0x2DF53B0 case 0xF maps the Guid at request +0x18 to an entity and stores
+    // the TranslatedString from bg3.exe+0x41FD1C0 (the entity's eoc::DisplayNameComponent) at
+    // +0x38/+0x40: the display name of the Speaker.
+    TranslatedString SpeakerName;
 };
 
 // NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
@@ -11876,8 +11901,14 @@ struct PlayServerSoundComponent : public BaseComponent
     // RouteCharacterServerRequests passes it to character::SoundSystem::PlaySound /
     // PlayerManager::PlaySoundForLocalPlayer.
     FixedString SoundEvent;
-    // unknown: Serializer member 3: 4 bytes at +0x14. Live 0..2.
-    uint32_t field_14;
+    // inferred: EoCServer.dll+0x845C60 (lambda over
+    // esv::sound::PlayServerSoundRequestOneFrameComponent, variant tag 0x1C =
+    // PlayServerSoundNotificationRequest) copies the request whole (Entity, Event, u32 +0xC, bytes
+    // +0x10/+0x11); dispatcher helper bg3.exe+0x2DEE710 stores request +0xC here, and on the same
+    // value chooses whose Guid goes to +0: 0 -> the character's, 1 -> the item's
+    // (esv::Item::GetUUID), 2/3 -> empty. Request +0xC is the one-frame's SoundObjectType
+    // (PlayHUDRequest writes 2).
+    uint32_t SoundObjectType;
     // unknown: Serializer member 4: 1 byte at +0x18; when set, RouteCharacterServerRequests
     // resolves the sound through the current sound bank (type 9) and may play it as an external
     // SFX instead.
@@ -11994,11 +12025,12 @@ struct SkillCheckNotificationComponent : public BaseComponent
     // pass 2: Server: notification byte +9; client bg3.exe+0x18A7E20 copies it into the listener
     // payload.
     uint8_t field_11;
-    // unknown: write-all serializer bg3.exe+0x99E3F0: member 4 is bg3.exe+0x4016480 (24-byte
-    // STDString writer) on +0x18; macOS default zeroes +0x18..0x28 (str xzr [x23,#0x20] + q0) and
-    // calls 0x106536d10 (string init) | names pass 2: Server: STDString from notification +0x10;
-    // client copies it into the listener payload.
-    STDString field_18;
+    // inferred: EoCServer.dll+0x844E70 (lambda over esv::stats::SkillCheckEventOneFrameComponent,
+    // stride 400; variant tag 0x24 = SkillCheckNotificationRequest) copies event +0 (Target),
+    // +0x159 (Success), +0x158 and the STDString at +0x160 (StatsExpression in Script Extender's
+    // Events.h) into the request; dispatcher bg3.exe+0x2DF53B0 case 0x24 constructs this STDString
+    // from request +0x10, which is that string.
+    STDString StatsExpression;
 };
 
 struct SpellCastDestroyedComponent : public BaseComponent
@@ -12021,9 +12053,12 @@ struct SpellCastFailedComponent : public BaseComponent
     // bytes at +0 (DAT_14627ff40). Live: the same Guid values as SpellCastDestroyed /
     // SpellCastMovementAndPrecalculationEnd (spell cast id).
     Guid SpellCastGuid;
-    // unknown: serializer member 2 = 1 byte at +0x10 (written with size 1 in bg3.exe+0x997EE0).
-    // Live values 2, 5, 6: a small enum, probably the failure reason; no SE enum identified.
-    uint8_t field_10;
+    // inferred: EoCServer.dll+0x83BF10 section for eoc::spell_cast::FinishedEventOneFrameComponent
+    // (variant tag 0x28 = SpellCastFailedNotificationRequest) sends only when the event's byte +0
+    // (Result, SpellCastFailReason) is non-zero, with that byte at request +8; dispatcher
+    // bg3.exe+0x2DF53B0 case 0x28 stores request +8 here. Live values 2, 5, 6 fit a non-zero fail
+    // reason.
+    uint8_t Result;
 };
 
 struct SpellCastMovementAndPrecalculationEndComponent : public BaseComponent
@@ -12034,10 +12069,12 @@ struct SpellCastMovementAndPrecalculationEndComponent : public BaseComponent
     // bytes at +0 (DAT_14627ff80). Live: same Guid values as SpellCastDestroyedComponent (spell
     // cast id).
     Guid SpellCastGuid;
-    // unknown: serializer member 2 = 1 byte at +0x10. Live 0/1. Read by
-    // ecl::movement::DashingSystem (registration bg3.exe+0x726190 queries Accepted + this
-    // component + spell_cast::StateComponent).
-    bool field_10;
+    // inferred: EoCServer.dll+0x83BF10 section for
+    // esv::spell_cast::MovementAndPrecalculationEndEventOneFrameComponent (variant tag 0x29)
+    // copies event byte +0 (PhaseFinished) to request +8 and u32 +4 to request +0xC; dispatcher
+    // helper bg3.exe+0x2DEE8B0 creates this component (creator bg3.exe+0x2DF3740) and stores
+    // request +8 at +0x10 (request +0xC at +0x14).
+    bool PhaseFinished;
     // unknown: serializer member 3 = 4 bytes at +0x14. Live always 0.
     uint32_t field_14;
 };
@@ -12048,9 +12085,12 @@ struct SpellCastRollAbortComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationSpellCastRollAbort, "eoc::notification::SpellCastRollAbortComponent")
 
-    // unknown: write-all serializer bg3.exe+0x998A00: single raw 16-byte write at +0; macOS
-    // default stp xzr,xzr [x23]
-    Guid field_0;
+    // inferred: Dispatcher bg3.exe+0x2DF53B0 case 0x25 (SpellCastAbortNotificationRequest, sent by
+    // EoCServer.dll+0x83BF10 for eoc::spell_cast::SpellRollAbortEventOneFrameComponent) looks up
+    // the entity's eoc::spell_cast::StateComponent (bg3.exe+0xB06C20) and copies its 16 bytes at
+    // +0xA0 here - the same bytes cases 0x26 and 0x28 put at +0 of SpellCastConfirmComponent /
+    // SpellCastFailedComponent (SpellCastGuid).
+    Guid SpellCastGuid;
 };
 
 struct SpellCastZoneRangeComputedComponent : public BaseComponent
@@ -12127,11 +12167,18 @@ struct UnlockedEventComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationUnlockedEvent, "eoc::notification::UnlockedEventComponent")
 
-    // unknown: write-all serializer bg3.exe+0x995140: member 1, raw 16-byte write at +0; macOS
-    // default stp q0,q0 [x23] = 0
-    Guid field_0;
-    // unknown: write-all serializer bg3.exe+0x995140: member 2, raw 16-byte write at +0x10
-    Guid field_10;
+    // inferred: EoCServer.dll+0x83B4B0 (esv::notification::System lambda over
+    // esv::lock::UnlockedEventOneFrameComponent; variant tag 0x2E =
+    // UnlockedEventNotificationRequest) puts the event's owner entity (the door/chest
+    // LockSystem::FinalizeLockRequests unlocked) at request +0 and the event's Key at +8.
+    // Dispatcher bg3.exe+0x2DF53B0 case 0x2E creates this component (creator bg3.exe+0x2DF3460)
+    // and stores the Guid of request +0 (FUN_142B8DC50, entity -> uuid) at +0: the entity that was
+    // unlocked.
+    Guid Entity;
+    // inferred: bg3.exe+0x2DF53B0 case 0x2E stores the Guid of request +8 at +0x10;
+    // EoCServer.dll+0x83B4B0 filled request +8 from esv::lock::UnlockedEventOneFrameComponent +0
+    // (Key, the key item; null handle when unlocked without one, then the Guid is empty).
+    Guid Key;
 };
 
 // NOT VERIFIED LIVE: this layout comes from the game's code; no live or captured instance: needs a
@@ -30603,9 +30650,13 @@ struct UgcCacheModDependenciesId
     // ModDependencyCachedRequestSystemHelper::RequestItemDependencies(unsigned long long, bool):
     // the 64-bit mod item id.
     uint64_t ModId;
-    // unknown: The byte compared at +8 (Windows bg3.exe+0x3BE4540): the bool argument of
-    // RequestItemDependencies(unsigned long long, bool) on macOS; meaning not established.
-    bool field_8;
+    // inferred: macOS modio::UGCManager::RequestItemDependencies (bg3_macos_x64+0x6794AF0) calls
+    // http::GetDependenciesRequestData(id, 0, bool) with its bool argument, and
+    // bg3_dx11.exe+0x38C0B30 (modio::http::GetDependenciesRequestData) writes it as
+    // '&recursive=true/false'. The ModItemDependenciesInfoID byte at +8 is that bool
+    // (ModDependencyCachedRequestSystemHelper::RequestItemDependencies(u64, bool) takes the key's
+    // members in order; compared with the id by bg3.exe+0x3BE4540).
+    bool Recursive;
 };
 
 // Client cache of mod.io dependency lists, written by
@@ -30651,81 +30702,79 @@ struct CacheModDependenciesSingletonComponent : public BaseComponent
     Array<UgcCacheModDependenciesId> RecentIds;
 };
 
-struct UgcCacheModInfoId
-{
-    // inferred: ls::ugc::ModItemInfoID +0: macOS HashTable<ModItemInfoID>::Ensure
-    // (bg3_macos_x64+0x260BA40) hashes and compares this qword first; Windows default
-    // (bg3.exe+0x3BE8230) 0. Named by analogy with ModItemDependenciesInfoID's 64-bit item id.
-    uint64_t ModId;
-    // unknown: Value of an optional 64-bit member: Ensure compares it (and mixes it into the hash)
-    // only when the flag at +0x10 is set on both sides; Windows default 0 (8-byte store).
-    uint64_t field_8;
-    // inferred: The flag of the optional at +8 (Ensure: 'if flag == 0, value hashed as 0';
-    // compared as bool); Windows default 0 (8-byte zero store at +0x10).
-    bool field_8HasValue;
-    [[bg3::hidden]] std::array<uint8_t, 7> _Pad11;
-    // unknown: Compared as one byte by Ensure; Windows default byte 0 at +0x18.
-    uint8_t field_18;
-    // unknown: Compared and hashed as a 4-byte int by Ensure; Windows default 0xFFFFFFFF (-1) at
-    // +0x1C.
-    int32_t field_1C;
-};
-
-// Client cache of mod.io mod info, written by ls::ugc::ModInfoCachedRequestSystem::GatherRequests:
-// HashMap<ls::ugc::ModItemInfoID, net::PublishModInfo> plus a POD array at +0x40 (by analogy with
-// CacheModDependenciesSingleton: pending ModItemInfoIDs). The map is written out member by member
-// because its key is a struct. Live: idle, all zero.
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
-struct CacheModInfoSingletonComponent : public BaseComponent
-{
-    DEFINE_COMPONENT(UgcCacheModInfoSingleton, "ls::ugc::CacheModInfoSingletonComponent")
-
-    // inferred: Bucket table of ls::HashMap<ls::ugc::ModItemInfoID, ls::ugc::ModItemInfoResponse>
-    // (macOS EnsureNode/Remove of that type); creator bg3.exe+0x3BEA620 zeroes 0x50; destructor
-    // bg3.exe+0x3B7A240 -> bg3.exe+0x3B7CF00 destroys the values and the plain-key set
-    // (bg3.exe+0x582AD0). Written member by member because the key is a struct.
-    [[bg3::hidden]] void* HashKeys;
-    // inferred: Bucket count.
-    uint32_t HashKeysSize;
-    // inferred: Hash chain array of the ls::HashTable.
-    Array<int32_t> NextIds;
-    // inferred: Key array, 0x20-byte ModItemInfoID elements (Windows bg3.exe+0x3BE9490 indexes
-    // keys with stride 0x20; macOS Ensure stride 0x20).
-    Array<UgcCacheModInfoId> Keys;
-    // inferred: Value storage, one ls::ugc::ModItemInfoResponse per key, 0x150-byte stride on
-    // Windows: bg3.exe+0x3B7CF00 runs bg3.exe+0x38B5D20 (the net::PublishModInfo destructor, also
-    // used for ModList entries) on value+8 for every key; bg3.exe+0x3BE9490 copies a response as
-    // qword +0, PublishModInfo +8 (0x140 bytes, bg3.exe+0x3BDF700) and the 4 bytes at +0x148.
-    // Spelled out as raw parts (a struct key forbids the HashMap form).
-    [[bg3::hidden]] void* Values;
-    // inferred: Capacity of the value storage.
-    uint32_t ValuesCapacity;
-    // inferred: Windows bg3.exe+0x3BE9490: each cached id is found/moved
-    // (bg3.exe+0x3BEA400/+0x3BEA4B0) or appended (bg3.exe+0x3BEA240) in the 0x20-byte-stride array
-    // at +0x40 (count +0x4C); then 'while (count > 30)' the last entry is popped and its response
-    // removed from the map - an LRU list capping the cache at 30 mod infos. Destructor frees it as
-    // a plain array (bg3.exe+0x5BD630).
-    Array<UgcCacheModInfoId> RecentIds;
-};
-
 struct UgcCacheModListQuery
 {
-    // unknown: ModItemListInfoID dtor bg3.exe+0x11FCB50: array at +0 cleared by bg3.exe+0x5C3E80
-    // (stride 0x18, string reset) then freed
-    Array<STDString> field_0;
-    // unknown: moved as 4 bytes by bg3.exe+0x11FC8C0
-    uint32_t field_10;
-    // unknown: moved as 1 byte
-    uint8_t field_14;
-    // unknown: moved as 1 byte
-    uint8_t field_15;
-    // unknown: MSVC std::string (capacity at +0x2C reset to 0xF by the dtor)
-    STDString field_18;
-    // unknown: moved as 1 byte
-    uint8_t field_30;
-    // unknown: moved as 1 byte
-    uint8_t field_31;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It appends '&tags=' then each STDString of the array at
+    // +0, joined by ',' (strings at bg3_dx11.exe+0x588169C / +0x5516730).
+    Array<STDString> Tags;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It GetModsRequestData formats '&_offset=' from the u32
+    // at +0x10 multiplied by 0x18 and '&_limit=' with 0x18: the page index of 24 mods.
+    uint32_t Page;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It switches on the byte at +0x14: 0 '&_sort=downloads',
+    // 1 '-downloads', 2 'rating', 3 '-rating', 4 '-date_added', 5 '-date_updated', 6 'name', 7
+    // 'submitted_by', 8 '-popular', 9 'subscribers'.
+    uint8_t SortType;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It byte +0x15 picks the search filter written before the
+    // text at +0x18: 1 '&name-lk=*', 2 '&submitted_by-lk=*'; no filter otherwise.
+    uint8_t SearchType;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It the STDString at +0x18 (length +0x28) is appended
+    // after the name-lk / submitted_by-lk filter when it is not empty.
+    STDString SearchText;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It adds '&maturity_option=0' when the byte at +0x30 is
+    // 0.
+    bool IncludeMature;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It adds '&tags-not-in=External+Dependency' when the byte
+    // at +0x31 is 0.
+    bool IncludeExternalDependencies;
 };
 
 // Client cache of mod.io mod-list query results, ls::ugc::ModListCachedRequestSystem:
@@ -30784,9 +30833,16 @@ struct UgcCacheRequestAvailableModModItemInfoId
     // inferred: has-value flag of the optional at +8 (bg3.exe+0x126FEA0 / bg3.exe+0x12705B0).
     bool HasVersion;
     [[bg3::hidden]] std::array<uint8_t, 7> _Pad11;
-    // unknown: bg3.exe+0x12705B0 compares the byte at +0x18 (not hashed); the bool argument of
-    // RequestItemInfo by order.
-    bool field_18;
+    // inferred: macOS modio::UGCManager::QueryMod (bg3_macos_x64+0x67995A0, called by
+    // RequestItemInfo(Guid, EUGCRequestType, u64, Optional<STDString>, bool, EHardwareType))
+    // stores the bool argument at request +0xF4, and ProcessQueryItemResult
+    // (bg3_macos_x64+0x67A0130) passes that byte as the third argument of
+    // http::GetDependenciesRequestData(u64, u32, bool), which bg3_dx11.exe+0x38C0B30 writes as
+    // '&recursive=true/false'. The ModItemInfoID byte at +0x18 is that bool argument
+    // (ModInfoCachedRequestSystemHelper::RequestItemInfo(u64, Optional<Version>, bool,
+    // EHardwareType) takes the key's members in order; compared, not hashed): whether the
+    // dependencies fetched with the item info are resolved recursively.
+    bool RecursiveDependencies;
     // inferred: bg3.exe+0x126FEA0 hashes the int at +0x1C and bg3.exe+0x12705B0 compares it: the
     // EHardwareType argument of RequestItemInfo by order (enum not declared in Script Extender; 4
     // bytes).
@@ -30861,9 +30917,16 @@ struct UgcCacheRequestPublishingModItemInfoId
     // inferred: has-value flag of the optional at +8 (bg3.exe+0x126FEA0 / bg3.exe+0x12705B0).
     bool HasVersion;
     [[bg3::hidden]] std::array<uint8_t, 7> _Pad11;
-    // unknown: bg3.exe+0x12705B0 compares the byte at +0x18 (not hashed); the bool argument of
-    // RequestItemInfo by order.
-    bool field_18;
+    // inferred: macOS modio::UGCManager::QueryMod (bg3_macos_x64+0x67995A0, called by
+    // RequestItemInfo(Guid, EUGCRequestType, u64, Optional<STDString>, bool, EHardwareType))
+    // stores the bool argument at request +0xF4, and ProcessQueryItemResult
+    // (bg3_macos_x64+0x67A0130) passes that byte as the third argument of
+    // http::GetDependenciesRequestData(u64, u32, bool), which bg3_dx11.exe+0x38C0B30 writes as
+    // '&recursive=true/false'. The ModItemInfoID byte at +0x18 is that bool argument
+    // (ModInfoCachedRequestSystemHelper::RequestItemInfo(u64, Optional<Version>, bool,
+    // EHardwareType) takes the key's members in order; compared, not hashed): whether the
+    // dependencies fetched with the item info are resolved recursively.
+    bool RecursiveDependencies;
     // inferred: bg3.exe+0x126FEA0 hashes the int at +0x1C and bg3.exe+0x12705B0 compares it: the
     // EHardwareType argument of RequestItemInfo by order (enum not declared in Script Extender; 4
     // bytes).
@@ -30938,9 +31001,16 @@ struct UgcCachedModInfoResultsModItemInfoId
     // inferred: has-value flag of the optional at +8 (bg3.exe+0x126FEA0 / bg3.exe+0x12705B0).
     bool HasVersion;
     [[bg3::hidden]] std::array<uint8_t, 7> _Pad11;
-    // unknown: bg3.exe+0x12705B0 compares the byte at +0x18 (not hashed); the bool argument of
-    // RequestItemInfo by order.
-    bool field_18;
+    // inferred: macOS modio::UGCManager::QueryMod (bg3_macos_x64+0x67995A0, called by
+    // RequestItemInfo(Guid, EUGCRequestType, u64, Optional<STDString>, bool, EHardwareType))
+    // stores the bool argument at request +0xF4, and ProcessQueryItemResult
+    // (bg3_macos_x64+0x67A0130) passes that byte as the third argument of
+    // http::GetDependenciesRequestData(u64, u32, bool), which bg3_dx11.exe+0x38C0B30 writes as
+    // '&recursive=true/false'. The ModItemInfoID byte at +0x18 is that bool argument
+    // (ModInfoCachedRequestSystemHelper::RequestItemInfo(u64, Optional<Version>, bool,
+    // EHardwareType) takes the key's members in order; compared, not hashed): whether the
+    // dependencies fetched with the item info are resolved recursively.
+    bool RecursiveDependencies;
     // inferred: bg3.exe+0x126FEA0 hashes the int at +0x1C and bg3.exe+0x12705B0 compares it: the
     // EHardwareType argument of RequestItemInfo by order (enum not declared in Script Extender; 4
     // bytes).
@@ -30993,26 +31063,77 @@ struct CachedModInfoResultsOneFrameComponent : public BaseComponent
 
 struct UgcCachedModListResultsModItemListInfoId
 {
-    // unknown: ls::ugc::ModItemListInfoID (0x38 bytes, built from net::UGCQueryOptions): Windows
-    // copy bg3.exe+0x127F540 copies +0 with the Array<STDString> copier FUN_141220F40; the
-    // equality bg3.exe+0x15F83E0 compares the counts (+0xC) and then the 24-byte STDStrings of
-    // both arrays.
-    Array<STDString> field_0;
-    // unknown: bg3.exe+0x127F540 copies 4 bytes; bg3.exe+0x15F83E0 compares them first; the
-    // HashSet insert bg3.exe+0x127EB60 uses this value as the hash (bucket = +0x10 % bucket
-    // count).
-    uint32_t field_10;
-    // unknown: byte copied by bg3.exe+0x127F540 and compared by bg3.exe+0x15F83E0.
-    uint8_t field_14;
-    // unknown: byte copied by bg3.exe+0x127F540 and compared by bg3.exe+0x15F83E0.
-    uint8_t field_15;
-    // unknown: bg3.exe+0x127F540 copy-constructs an ls::STDString at +0x18; bg3.exe+0x15F83E0
-    // compares it (capacity word +0x2C > 0xF selects the heap buffer).
-    STDString field_18;
-    // unknown: byte copied by bg3.exe+0x127F540 and compared by bg3.exe+0x15F83E0.
-    uint8_t field_30;
-    // unknown: byte copied by bg3.exe+0x127F540 and compared by bg3.exe+0x15F83E0.
-    uint8_t field_31;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It appends '&tags=' then each STDString of the array at
+    // +0, joined by ',' (strings at bg3_dx11.exe+0x588169C / +0x5516730).
+    Array<STDString> Tags;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It GetModsRequestData formats '&_offset=' from the u32
+    // at +0x10 multiplied by 0x18 and '&_limit=' with 0x18: the page index of 24 mods.
+    uint32_t Page;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It switches on the byte at +0x14: 0 '&_sort=downloads',
+    // 1 '-downloads', 2 'rating', 3 '-rating', 4 '-date_added', 5 '-date_updated', 6 'name', 7
+    // 'submitted_by', 8 '-popular', 9 'subscribers'.
+    uint8_t SortType;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It byte +0x15 picks the search filter written before the
+    // text at +0x18: 1 '&name-lk=*', 2 '&submitted_by-lk=*'; no filter otherwise.
+    uint8_t SearchType;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It the STDString at +0x18 (length +0x28) is appended
+    // after the name-lk / submitted_by-lk filter when it is not empty.
+    STDString SearchText;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It adds '&maturity_option=0' when the byte at +0x30 is
+    // 0.
+    bool IncludeMature;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It adds '&tags-not-in=External+Dependency' when the byte
+    // at +0x31 is 0.
+    bool IncludeExternalDependencies;
 };
 
 // One-frame batch of answers delivered by ls::ugc::ModListCachedRequestSystem (macOS Update writes
@@ -31287,9 +31408,13 @@ struct UgcPendingModDependencyRequestId
     // ModDependencyCachedRequestSystemHelper::RequestItemDependencies(unsigned long long, bool):
     // the 64-bit mod item id.
     uint64_t ModId;
-    // unknown: The byte compared at +8 (Windows bg3.exe+0x3BE4540): the bool argument of
-    // RequestItemDependencies(unsigned long long, bool) on macOS; meaning not established.
-    bool field_8;
+    // inferred: macOS modio::UGCManager::RequestItemDependencies (bg3_macos_x64+0x6794AF0) calls
+    // http::GetDependenciesRequestData(id, 0, bool) with its bool argument, and
+    // bg3_dx11.exe+0x38C0B30 (modio::http::GetDependenciesRequestData) writes it as
+    // '&recursive=true/false'. The ModItemDependenciesInfoID byte at +8 is that bool
+    // (ModDependencyCachedRequestSystemHelper::RequestItemDependencies(u64, bool) takes the key's
+    // members in order; compared with the id by bg3.exe+0x3BE4540).
+    bool Recursive;
 };
 
 // Client singleton of mod.io dependency requests in flight, used by
@@ -31319,67 +31444,79 @@ struct PendingModDependencyRequestSingletonComponent : public BaseComponent
     HashMap<Guid, UgcPendingModDependencyRequestId> field_40;
 };
 
-struct UgcPendingModInfoRequestId
-{
-    // inferred: ls::ugc::ModItemInfoID +0: macOS HashTable<ModItemInfoID>::Ensure
-    // (bg3_macos_x64+0x260BA40) hashes and compares this qword first; Windows default
-    // (bg3.exe+0x3BE8230) 0. Named by analogy with ModItemDependenciesInfoID's 64-bit item id.
-    uint64_t ModId;
-    // unknown: Value of an optional 64-bit member: Ensure compares it (and mixes it into the hash)
-    // only when the flag at +0x10 is set on both sides; Windows default 0 (8-byte store).
-    uint64_t field_8;
-    // inferred: The flag of the optional at +8 (Ensure: 'if flag == 0, value hashed as 0';
-    // compared as bool); Windows default 0 (8-byte zero store at +0x10).
-    bool field_8HasValue;
-    [[bg3::hidden]] std::array<uint8_t, 7> _Pad11;
-    // unknown: Compared as one byte by Ensure; Windows default byte 0 at +0x18.
-    uint8_t field_18;
-    // unknown: Compared and hashed as a 4-byte int by Ensure; Windows default 0xFFFFFFFF (-1) at
-    // +0x1C.
-    int32_t field_1C;
-};
-
-// Client singleton of mod.io mod-info requests in flight, used by
-// ls::ugc::ModInfoCachedRequestSystem (macOS GatherRequests / SendRequests(HashSet<ModItemInfoID>
-// const&, HashMap<ls::Guid, ModItemInfoID>&); Windows per-frame update bg3.exe+0x3BE8230): request
-// Guid -> ls::ugc::ModItemInfoID. Two maps of the same shape (same Windows destructor as
-// PendingModDependencyRequestSingleton). Live: idle, all zero.
-// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
-// seen: the member boundaries are untested
-struct PendingModInfoRequestSingletonComponent : public BaseComponent
-{
-    DEFINE_COMPONENT(UgcPendingModInfoRequest, "ls::ugc::PendingModInfoRequestSingletonComponent")
-
-    // inferred: ls::HashMap<ls::Guid, ls::ugc::ModItemInfoID> (macOS SendRequests). Windows
-    // bg3.exe+0x3BE9CF0 (singleton through bg3.exe+0x3BE9010) removes answered request Guids from
-    // both maps, then inserts every new request (Guid hash '(lo ^ hi) % buckets', 32-byte value
-    // copied as four qwords through bg3.exe+0x3BEA130). Creator bg3.exe+0x3BEA800 zeroes two map
-    // patterns; destructor bg3.exe+0x682800 frees trivial values and the plain-key set.
-    HashMap<Guid, UgcPendingModInfoRequestId> Requests;
-    // unknown: Same map type at +0x40: bg3.exe+0x3BE9CF0 inserts only the requests of its second
-    // input list into it (and into +0x00 too). Role of that list not established.
-    HashMap<Guid, UgcPendingModInfoRequestId> field_40;
-};
-
 struct UgcPendingModListRequestQuery
 {
-    // unknown: ModItemListInfoID dtor bg3.exe+0x11FCB50 resizes the array at +0 to 0 with
-    // bg3.exe+0x5C3E80 (element stride 0x18, MSVC string reset per element) then frees it; move
-    // code in bg3.exe+0x11FC8C0 moves ptr/cap/size
-    Array<STDString> field_0;
-    // unknown: moved as 4 bytes by bg3.exe+0x11FC8C0
-    uint32_t field_10;
-    // unknown: moved as 1 byte by bg3.exe+0x11FC8C0
-    uint8_t field_14;
-    // unknown: moved as 1 byte by bg3.exe+0x11FC8C0
-    uint8_t field_15;
-    // unknown: MSVC std::string: dtor bg3.exe+0x11FCB50 frees +0x18 when capacity at +0x2C > 0xF,
-    // then resets size +0x28 = 0, capacity +0x2C = 0xF
-    STDString field_18;
-    // unknown: moved as 1 byte by bg3.exe+0x11FC8C0
-    uint8_t field_30;
-    // unknown: moved as 1 byte by bg3.exe+0x11FC8C0
-    uint8_t field_31;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It appends '&tags=' then each STDString of the array at
+    // +0, joined by ',' (strings at bg3_dx11.exe+0x588169C / +0x5516730).
+    Array<STDString> Tags;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It GetModsRequestData formats '&_offset=' from the u32
+    // at +0x10 multiplied by 0x18 and '&_limit=' with 0x18: the page index of 24 mods.
+    uint32_t Page;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It switches on the byte at +0x14: 0 '&_sort=downloads',
+    // 1 '-downloads', 2 'rating', 3 '-rating', 4 '-date_added', 5 '-date_updated', 6 'name', 7
+    // 'submitted_by', 8 '-popular', 9 'subscribers'.
+    uint8_t SortType;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It byte +0x15 picks the search filter written before the
+    // text at +0x18: 1 '&name-lk=*', 2 '&submitted_by-lk=*'; no filter otherwise.
+    uint8_t SearchType;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It the STDString at +0x18 (length +0x28) is appended
+    // after the name-lk / submitted_by-lk filter when it is not empty.
+    STDString SearchText;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It adds '&maturity_option=0' when the byte at +0x30 is
+    // 0.
+    bool IncludeMature;
+    // inferred: bg3_dx11.exe+0x38C0330 (the mod.io filter-string builder that
+    // modio::http::GetModsRequestData bg3_dx11.exe+0x38C15B0 calls first on its
+    // net::UGCQueryOptions; macOS names it (anonymous)::GetFiltersString(net::UGCQueryOptions
+    // const&)) reads the options member for member at the same offsets and types as
+    // ls::ugc::ModItemListInfoID (Array<STDString> +0, u32 +0x10, bytes +0x14/+0x15, STDString
+    // +0x18, bytes +0x30/+0x31; 0x38 bytes; macOS
+    // ModListCachedRequestSystemHelper::RequestQueryItems takes net::UGCQueryOptions for the
+    // system keyed by ModItemListInfoID). It adds '&tags-not-in=External+Dependency' when the byte
+    // at +0x31 is 0.
+    bool IncludeExternalDependencies;
 };
 
 // Client singleton of mod.io mod-list queries in flight, used by
@@ -32181,6 +32318,133 @@ struct UserDataComponent : public BaseComponent
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::ugc, UserAuthResultOneFrameComponent, UgcUserAuthResult)
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::ugc, UserInfoResultOneFrameComponent, UgcUserInfoResult)
 DEFINE_ONEFRAME_TAG_COMPONENT(ls::ugc, UserLogoutResultOneFrameComponent, UgcUserLogoutResult)
+struct UgcCacheModInfoId
+{
+    // inferred: ls::ugc::ModItemInfoID +0: macOS HashTable<ModItemInfoID>::Ensure
+    // (bg3_macos_x64+0x260BA40) hashes and compares this qword first; Windows default
+    // (bg3.exe+0x3BE8230) 0. Named by analogy with ModItemDependenciesInfoID's 64-bit item id.
+    uint64_t ModId;
+    // inferred: Same ls::ugc::ModItemInfoID as UgcCacheRequestAvailableModModItemInfoId (0x20
+    // bytes, same hash/compare: macOS HashTable<ModItemInfoID>::Ensure): +8 is the value of an
+    // optional hashed and compared only when the flag at +0x10 is set - the Optional<Version>
+    // argument of ModInfoCachedRequestSystemHelper::RequestItemInfo(u64, Optional<Version>, bool,
+    // EHardwareType).
+    uint64_t Version;
+    // inferred: Same ls::ugc::ModItemInfoID as UgcCacheRequestAvailableModModItemInfoId (0x20
+    // bytes, same hash/compare: macOS HashTable<ModItemInfoID>::Ensure): +0x10 is the has-value
+    // flag of the optional Version at +8.
+    bool HasVersion;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad11;
+    // inferred: macOS modio::UGCManager::QueryMod (bg3_macos_x64+0x67995A0, called by
+    // RequestItemInfo(Guid, EUGCRequestType, u64, Optional<STDString>, bool, EHardwareType))
+    // stores the bool argument at request +0xF4, and ProcessQueryItemResult
+    // (bg3_macos_x64+0x67A0130) passes that byte as the third argument of
+    // http::GetDependenciesRequestData(u64, u32, bool), which bg3_dx11.exe+0x38C0B30 writes as
+    // '&recursive=true/false'. The ModItemInfoID byte at +0x18 is that bool argument
+    // (ModInfoCachedRequestSystemHelper::RequestItemInfo(u64, Optional<Version>, bool,
+    // EHardwareType) takes the key's members in order; compared, not hashed): whether the
+    // dependencies fetched with the item info are resolved recursively.
+    bool RecursiveDependencies;
+    // inferred: Same ls::ugc::ModItemInfoID as UgcCacheRequestAvailableModModItemInfoId (0x20
+    // bytes, same hash/compare: macOS HashTable<ModItemInfoID>::Ensure): +0x1C is hashed and
+    // compared as an int, default -1: the EHardwareType argument of RequestItemInfo (macOS modio
+    // QueryMod maps it to a platform name, 0xFFFFFFFF -> 10).
+    int32_t HardwareType;
+};
+
+// Client cache of mod.io mod info, written by ls::ugc::ModInfoCachedRequestSystem::GatherRequests:
+// HashMap<ls::ugc::ModItemInfoID, net::PublishModInfo> plus a POD array at +0x40 (by analogy with
+// CacheModDependenciesSingleton: pending ModItemInfoIDs). The map is written out member by member
+// because its key is a struct. Live: idle, all zero.
+// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
+// seen: the member boundaries are untested
+struct CacheModInfoSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(UgcCacheModInfoSingleton, "ls::ugc::CacheModInfoSingletonComponent")
+
+    // inferred: Bucket table of ls::HashMap<ls::ugc::ModItemInfoID, ls::ugc::ModItemInfoResponse>
+    // (macOS EnsureNode/Remove of that type); creator bg3.exe+0x3BEA620 zeroes 0x50; destructor
+    // bg3.exe+0x3B7A240 -> bg3.exe+0x3B7CF00 destroys the values and the plain-key set
+    // (bg3.exe+0x582AD0). Written member by member because the key is a struct.
+    [[bg3::hidden]] void* HashKeys;
+    // inferred: Bucket count.
+    uint32_t HashKeysSize;
+    // inferred: Hash chain array of the ls::HashTable.
+    Array<int32_t> NextIds;
+    // inferred: Key array, 0x20-byte ModItemInfoID elements (Windows bg3.exe+0x3BE9490 indexes
+    // keys with stride 0x20; macOS Ensure stride 0x20).
+    Array<UgcCacheModInfoId> Keys;
+    // inferred: Value storage, one ls::ugc::ModItemInfoResponse per key, 0x150-byte stride on
+    // Windows: bg3.exe+0x3B7CF00 runs bg3.exe+0x38B5D20 (the net::PublishModInfo destructor, also
+    // used for ModList entries) on value+8 for every key; bg3.exe+0x3BE9490 copies a response as
+    // qword +0, PublishModInfo +8 (0x140 bytes, bg3.exe+0x3BDF700) and the 4 bytes at +0x148.
+    // Spelled out as raw parts (a struct key forbids the HashMap form).
+    [[bg3::hidden]] void* Values;
+    // inferred: Capacity of the value storage.
+    uint32_t ValuesCapacity;
+    // inferred: Windows bg3.exe+0x3BE9490: each cached id is found/moved
+    // (bg3.exe+0x3BEA400/+0x3BEA4B0) or appended (bg3.exe+0x3BEA240) in the 0x20-byte-stride array
+    // at +0x40 (count +0x4C); then 'while (count > 30)' the last entry is popped and its response
+    // removed from the map - an LRU list capping the cache at 30 mod infos. Destructor frees it as
+    // a plain array (bg3.exe+0x5BD630).
+    Array<UgcCacheModInfoId> RecentIds;
+};
+
+struct UgcPendingModInfoRequestId
+{
+    // inferred: ls::ugc::ModItemInfoID +0: macOS HashTable<ModItemInfoID>::Ensure
+    // (bg3_macos_x64+0x260BA40) hashes and compares this qword first; Windows default
+    // (bg3.exe+0x3BE8230) 0. Named by analogy with ModItemDependenciesInfoID's 64-bit item id.
+    uint64_t ModId;
+    // inferred: Same ls::ugc::ModItemInfoID as UgcCacheRequestAvailableModModItemInfoId (0x20
+    // bytes, same hash/compare: macOS HashTable<ModItemInfoID>::Ensure): +8 is the value of an
+    // optional hashed and compared only when the flag at +0x10 is set - the Optional<Version>
+    // argument of ModInfoCachedRequestSystemHelper::RequestItemInfo(u64, Optional<Version>, bool,
+    // EHardwareType).
+    uint64_t Version;
+    // inferred: Same ls::ugc::ModItemInfoID as UgcCacheRequestAvailableModModItemInfoId (0x20
+    // bytes, same hash/compare: macOS HashTable<ModItemInfoID>::Ensure): +0x10 is the has-value
+    // flag of the optional Version at +8.
+    bool HasVersion;
+    [[bg3::hidden]] std::array<uint8_t, 7> _Pad11;
+    // inferred: macOS modio::UGCManager::QueryMod (bg3_macos_x64+0x67995A0, called by
+    // RequestItemInfo(Guid, EUGCRequestType, u64, Optional<STDString>, bool, EHardwareType))
+    // stores the bool argument at request +0xF4, and ProcessQueryItemResult
+    // (bg3_macos_x64+0x67A0130) passes that byte as the third argument of
+    // http::GetDependenciesRequestData(u64, u32, bool), which bg3_dx11.exe+0x38C0B30 writes as
+    // '&recursive=true/false'. The ModItemInfoID byte at +0x18 is that bool argument
+    // (ModInfoCachedRequestSystemHelper::RequestItemInfo(u64, Optional<Version>, bool,
+    // EHardwareType) takes the key's members in order; compared, not hashed): whether the
+    // dependencies fetched with the item info are resolved recursively.
+    bool RecursiveDependencies;
+    // inferred: Same ls::ugc::ModItemInfoID as UgcCacheRequestAvailableModModItemInfoId (0x20
+    // bytes, same hash/compare: macOS HashTable<ModItemInfoID>::Ensure): +0x1C is hashed and
+    // compared as an int, default -1: the EHardwareType argument of RequestItemInfo (macOS modio
+    // QueryMod maps it to a platform name, 0xFFFFFFFF -> 10).
+    int32_t HardwareType;
+};
+
+// Client singleton of mod.io mod-info requests in flight, used by
+// ls::ugc::ModInfoCachedRequestSystem (macOS GatherRequests / SendRequests(HashSet<ModItemInfoID>
+// const&, HashMap<ls::Guid, ModItemInfoID>&); Windows per-frame update bg3.exe+0x3BE8230): request
+// Guid -> ls::ugc::ModItemInfoID. Two maps of the same shape (same Windows destructor as
+// PendingModDependencyRequestSingleton). Live: idle, all zero.
+// NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
+// seen: the member boundaries are untested
+struct PendingModInfoRequestSingletonComponent : public BaseComponent
+{
+    DEFINE_COMPONENT(UgcPendingModInfoRequest, "ls::ugc::PendingModInfoRequestSingletonComponent")
+
+    // inferred: ls::HashMap<ls::Guid, ls::ugc::ModItemInfoID> (macOS SendRequests). Windows
+    // bg3.exe+0x3BE9CF0 (singleton through bg3.exe+0x3BE9010) removes answered request Guids from
+    // both maps, then inserts every new request (Guid hash '(lo ^ hi) % buckets', 32-byte value
+    // copied as four qwords through bg3.exe+0x3BEA130). Creator bg3.exe+0x3BEA800 zeroes two map
+    // patterns; destructor bg3.exe+0x682800 frees trivial values and the plain-key set.
+    HashMap<Guid, UgcPendingModInfoRequestId> Requests;
+    // unknown: Same map type at +0x40: bg3.exe+0x3BE9CF0 inserts only the requests of its second
+    // input list into it (and into +0x00 too). Role of that list not established.
+    HashMap<Guid, UgcPendingModInfoRequestId> field_40;
+};
 
 END_NS()
 
@@ -34023,8 +34287,6 @@ static_assert(sizeof(bg3se::ls::photo_mode::FoVComponent) == 4);
 static_assert(sizeof(bg3se::ls::photo_mode::VignetteComponent) == 24);
 static_assert(sizeof(bg3se::ls::ugc::CacheModDependenciesSingletonComponent) == 80);
 static_assert(sizeof(bg3se::ls::ugc::UgcCacheModDependenciesId) == 16);
-static_assert(sizeof(bg3se::ls::ugc::CacheModInfoSingletonComponent) == 80);
-static_assert(sizeof(bg3se::ls::ugc::UgcCacheModInfoId) == 32);
 static_assert(sizeof(bg3se::ls::ugc::CacheModListSingletonComponent) == 80);
 static_assert(sizeof(bg3se::ls::ugc::UgcCacheModListQuery) == 56);
 static_assert(sizeof(bg3se::ls::ugc::CacheRequestAvailableModOneFrameComponent) == 96);
@@ -34046,8 +34308,6 @@ static_assert(sizeof(bg3se::ls::ugc::ModDependenciesResultOneFrameComponent) == 
 static_assert(sizeof(bg3se::ls::ugc::UgcModDependenciesResultDependency) == 80);
 static_assert(sizeof(bg3se::ls::ugc::PendingModDependencyRequestSingletonComponent) == 128);
 static_assert(sizeof(bg3se::ls::ugc::UgcPendingModDependencyRequestId) == 16);
-static_assert(sizeof(bg3se::ls::ugc::PendingModInfoRequestSingletonComponent) == 128);
-static_assert(sizeof(bg3se::ls::ugc::UgcPendingModInfoRequestId) == 32);
 static_assert(sizeof(bg3se::ls::ugc::PendingModListRequestSingletonComponent) == 128);
 static_assert(sizeof(bg3se::ls::ugc::UgcPendingModListRequestQuery) == 56);
 static_assert(sizeof(bg3se::ls::ugc::QueryModInfoResultOneFrameComponent) == 336);
@@ -34066,6 +34326,10 @@ static_assert(sizeof(bg3se::ls::ugc::UserDataComponent) == 80);
 static_assert(sizeof(bg3se::ls::ugc::UgcUserDataModDependency) == 80);
 static_assert(sizeof(bg3se::ls::ugc::UgcUserDataStringPair) == 48);
 static_assert(sizeof(bg3se::ls::ugc::UgcUserDataPublishModInfo) == 320);
+static_assert(sizeof(bg3se::ls::ugc::CacheModInfoSingletonComponent) == 80);
+static_assert(sizeof(bg3se::ls::ugc::UgcCacheModInfoId) == 32);
+static_assert(sizeof(bg3se::ls::ugc::PendingModInfoRequestSingletonComponent) == 128);
+static_assert(sizeof(bg3se::ls::ugc::UgcPendingModInfoRequestId) == 32);
 static_assert(sizeof(bg3se::navcloud::AgentComponent) == 4);
 static_assert(sizeof(bg3se::navcloud::PathInternalComponent) == 176);
 static_assert(sizeof(bg3se::navcloud::NavcloudPathInternalTilePos) == 24);
