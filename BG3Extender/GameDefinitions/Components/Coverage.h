@@ -8729,12 +8729,15 @@ struct ResetProfileOneFrameComponent : public BaseComponent
 {
     DEFINE_ONEFRAME_COMPONENT(ClientTutorialResetProfile, "ecl::tutorial::ResetProfileOneFrameComponent")
 
-    // unknown: Creator bg3.exe+0x1ABFBD0 (AllocRaw 4) stores 0xFFFFFFFF; destructor
-    // bg3.exe+0x698FE0 DecRefs +0 in the global string table. bg3.exe+0x1ABEFB0 (lines ~287-306)
-    // creates one component per element of a collected FixedString array (stride 4) and assigns
-    // the element with IncRef/DecRef. What the FixedString names (profile / tutorial category) is
-    // not established.
-    FixedString field_0;
+    // inferred: EoCClient.dll+0x63BD50 ecl::tutorial::ResetSystem::Update (Toolkit, named): for
+    // each splitscreen player (ecl::splitscreen::PlayersSingletonComponent, short ids at +4 and
+    // +0x1C) it takes pFVar13 = PlayerManager::GetPlayerProfileGUID(playerId) and, when the
+    // profile HasAnyTutorialEntryShown and the notification's bool at +4 is 0, collects that
+    // FixedString (FUN_1805a1de0 into local_238); then one entity per collected element gets the
+    // component through the add helper FUN_180639990 (type id _DAT_1819da8e0, between
+    // FinishResetResetTutorialsProcess 8d8 and ShowResetMessageRequest 8e8, the WorldView order)
+    // and FixedString::operator=(component, element). The value is the player profile's GUID.
+    FixedString ProfileGuid;
 };
 
 // One-frame request on the client to show the 'tutorials were reset' message, carrying one 16-bit
@@ -8749,11 +8752,14 @@ struct ShowResetMessageRequestOneFrameComponent : public BaseComponent
 {
     DEFINE_ONEFRAME_COMPONENT(ClientTutorialShowResetMessageRequest, "ecl::tutorial::ShowResetMessageRequestOneFrameComponent")
 
-    // unknown: Creator bg3.exe+0x1ABFD30 (AllocRaw 2) stores uint16 0. bg3.exe+0x1ABEFB0 (lines
-    // ~383-395) creates one component per element of a collected uint16 array (stride 2) and
-    // writes `*(undefined2*)p = element`. Probably a player id (short ids of this kind are player
-    // ids in ecl::ftb / ecl::party one-frame events) - not established.
-    uint16_t field_0;
+    // inferred: EoCClient.dll+0x63BD50 ecl::tutorial::ResetSystem::Update (Toolkit, named): when
+    // the server's ResetTutorialsMessageRequestNotification bool at +4 is set, it collects the
+    // splitscreen player's short id (*(short*)(players+4) / +0x1C, the same value passed to
+    // PlayerManager::GetPlayerProfileGUID(short)) with FUN_18054ed60 into local_268; then one
+    // entity per element gets the component through the add helper FUN_180639ba0 (type id
+    // _DAT_1819da8e8, after ResetProfile 8e0 in the WorldView order) and *(uint16*)component =
+    // element. The value is the 16-bit player id the message is shown for.
+    uint16_t PlayerId;
 };
 
 struct TutorialUILayerEntry
@@ -15238,10 +15244,15 @@ struct EndTheDayResultEventOneFrameComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerCampEndTheDayResultEvent, "esv::camp::EndTheDayResultEventOneFrameComponent")
 
-    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
-    // build (address 103B18928) stores it (strb wzr, [x23]; default zero). What the byte means is
-    // not established.
-    uint8_t field_0;
+    // inferred: EoCServer.dll+0x9CB4C0 esv::camp::EndTheDaySystem::FinalizeEndTheDayState
+    // (Toolkit, named): a local byte starts 0 and is set to 1, 2, 3, 4 or 6 on the function's
+    // branches; when it is nonzero the function logs 'Creating Result event: result (%s)' (a
+    // switch over the byte picks the text) and adds the component through FUN_1809c7e10, whose
+    // type id DAT_18222f834 is registered by EoCServer.dll+0xEDA10 with FUN_1809c9a30 =
+    // GetTypeName<esv::camp::EndTheDayResultEventOneFrameComponent>, then *component = the byte.
+    // The byte is the end-the-day result code (values 1-6 seen in the code; the enumeration's name
+    // and labels are not in the record).
+    uint8_t Result;
 };
 
 // Seen once at a level change (camp). Written by esv::camp::InteractionSystem::Update (macOS).
@@ -15306,10 +15317,15 @@ struct SuppliesSelectionStateChangedEventOneFrameComponent : public BaseComponen
 {
     DEFINE_ONEFRAME_COMPONENT(ServerCampSuppliesSelectionStateChangedEvent, "esv::camp::SuppliesSelectionStateChangedEventOneFrameComponent")
 
-    // unknown: Creator bg3.exe+0x2BF73A0 writes byte 0 at +0. FinalizeEndTheDayState writes
-    // `*puVar9 = 1` when the end-the-day state is 2 and the end-the-day entity is valid (line
-    // ~443), and `*puVar9 = 0` in the per-entity loop (line ~716): a selection open/closed flag.
-    bool field_0;
+    // inferred: EoCServer.dll+0x9CB4C0 esv::camp::EndTheDaySystem::FinalizeEndTheDayState
+    // (Toolkit, named) adds the component through FUN_1809c7b70 -> FUN_1809c84a0 (type id
+    // DAT_18222f8a4, registered by EoCServer.dll+0xEDC20 with FUN_1809c9e50 =
+    // GetTypeName<esv::camp::SuppliesSelectionStateChangedEventOneFrameComponent>, 0x10 bytes)
+    // twice: right after logging 'RestType request received, transitioning to ClientChoicePending'
+    // (end-the-day state set to 3) it writes +0 = 1; in the loop that logs 'Accepting User choice:
+    // (%s)' (eoc::rest::LongRestTypeToString) it writes +0 = 0. The byte is true while the
+    // players' long-rest choice is pending and false once a choice is accepted.
+    bool ChoicePending;
     // inferred: Creator writes 0xffc0000000000000 (null EntityHandle) at +8.
     // FinalizeEndTheDayState writes `*(longlong *)(puVar9 + 8) = lVar21` (the handle returned by
     // FUN_142bf5d70, the end-the-day entity, checked valid just before) or `*(local_6c8 + 8)` (a
