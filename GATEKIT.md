@@ -42,6 +42,18 @@ upstream and is rebased onto it rather than carrying a long-lived divergence.
   Every attempt is recorded with the module and offset of whoever made it, whether it is refused
   or not, which is how we learned that this game never asks: over a whole eighty-second start the
   record was empty. Off by default - a game somebody started to play may raise itself.
+- **A memory instrument, developer mode only** (`Ext.Debug`): the address of a component's field
+  for an entity, from the extender's own type information (`GetFieldAddress`); conversion both ways
+  between an absolute address and `module+0xRVA` (`ModuleFromAddress`, `AddressFromModule`); a
+  bounds-checked read and write of a typed value (`ReadValue`, `WriteValue`, a write refused on a
+  code page); and **who writes a field** - a hardware watchpoint (`WatchWrite`) on up to four
+  addresses, armed on every thread through the debug registers, caught by a vectored handler that
+  records the writing instruction and a short return chain as raw addresses into a ring buffer
+  (`ReadWatchHits`), resuming at once. The handler does no allocation; exceptions that are not ours
+  are passed on; threads made after arming are picked up by re-arming, throttled to once a second so
+  the game's tick rate is not disturbed. A value can be held fixed (`Freeze`, rewritten each tick).
+  Everything is bounds-checked against committed memory; nothing names a function in the extender -
+  the caller turns `module+0xRVA` into a name through its own code database.
 
 Every change of meaning — not only of layout — is verified in the running game before it lands.
 What is verified and what is merely deduced is recorded with the change.
