@@ -3433,11 +3433,19 @@ struct TargetVisualComponent : public BaseComponent
     // (TargetVisual +0x80) = Elf race 6c038dcb-... (Races.lsx), same value as
     // LoadedRaceVisualChangedComponent
     Guid Race;
-    // inferred: FillTargetVisualComponent fills it from Span<Guid> parameter 5
-    // (DynamicArray<ls::Guid>, stride 0x10). Live 1 entry
-    Array<Guid> field_90;
-    // inferred: FillTargetVisualComponent fills it from Span<Guid> parameter 6. Live 1 entry
-    Array<Guid> field_A0;
+    // inferred: Filled by macOS SubsystemHelper::FillTargetVisualComponent
+    // (bg3_macos_x64+0x3A1E780) from its first Span<Guid> argument (parameter 5). The caller is
+    // DummySubsystem::UpdateDummyVisual (bg3_macos_x64+0x3A00CD0): it passes the span of
+    // DummyDefinitionComponent +0xA8 (count at +0xB4), with RootTemplate +0x60, Origin +0x70, Race
+    // +0x88 and BodyType/BodyShape +0x80/+0x81 alongside. SE's CharacterCreation.h calls
+    // DummyDefinitionComponent +0xA8 'Array<Guid> Classes'. The target there is the 0xF0-byte
+    // TargetVisualComponent (GetComponentModPairRaw size 0xF0). Live 1 entry.
+    Array<Guid> Classes;
+    // inferred: Filled by macOS FillTargetVisualComponent (bg3_macos_x64+0x3A1E780) from its
+    // second Span<Guid> argument (parameter 6). UpdateDummyVisual (bg3_macos_x64+0x3A00CD0) passes
+    // DummyDefinitionComponent +0xB8 (count +0xC4) there, which SE's CharacterCreation.h names
+    // 'Array<Guid> Subclasses'. Live 1 entry.
+    Array<Guid> Subclasses;
     // inferred: FillTargetVisualComponent writes its Guid parameter 4 here; live (TargetVisual
     // +0xB0) = Astarion origin 3780c689-... (Origins.lsx), same as
     // LoadedOriginVisualChangedComponent
