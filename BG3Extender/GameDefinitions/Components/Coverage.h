@@ -3091,11 +3091,19 @@ struct CurrentVisualComponent : public BaseComponent
     // (TargetVisual +0x80) = Elf race 6c038dcb-... (Races.lsx), same value as
     // LoadedRaceVisualChangedComponent
     Guid Race;
-    // inferred: FillTargetVisualComponent fills it from Span<Guid> parameter 5
-    // (DynamicArray<ls::Guid>, stride 0x10). Live 1 entry
-    Array<Guid> field_98;
-    // inferred: FillTargetVisualComponent fills it from Span<Guid> parameter 6. Live 1 entry
-    Array<Guid> field_A8;
+    // inferred: Same member as TargetVisualComponent.Classes (+0x90), shifted by the 8 bytes
+    // CurrentVisual has at +0x10 (identical default-store sequence of the Windows creators
+    // bg3.exe+0x201B8E0 / 0x201BE90): filled by macOS SubsystemHelper::FillTargetVisualComponent
+    // from its first Span<Guid> argument (parameter 5), which DummySubsystem::UpdateDummyVisual
+    // takes from the DummyDefinitionComponent class list (Script Extender's CharacterCreation.h).
+    // Live 1 entry.
+    Array<Guid> Classes;
+    // inferred: Same member as TargetVisualComponent.Subclasses (+0xA0), shifted by 8 (identical
+    // default-store sequence of the Windows creators bg3.exe+0x201B8E0 / 0x201BE90): filled by
+    // macOS FillTargetVisualComponent from its second Span<Guid> argument (parameter 6), which
+    // UpdateDummyVisual takes from DummyDefinitionComponent +0xB8 (Script Extender names it the
+    // subclass list). Live 1 entry.
+    Array<Guid> Subclasses;
     // inferred: FillTargetVisualComponent writes its Guid parameter 4 here; live (TargetVisual
     // +0xB0) = Astarion origin 3780c689-... (Origins.lsx), same as
     // LoadedOriginVisualChangedComponent
@@ -7724,10 +7732,11 @@ struct DummyAttachmentComponent : public BaseComponent
     // bounds to centre the attachment). bg3.exe+0x1A2A790 checks this handle with IsEntityAlive
     // for every component.
     EntityHandle ThrownEntity;
-    // unknown: Creator: 0. bg3.exe+0x1A2BB60 copies the byte at +8 of the owner's
-    // eoc::thrown::AttachComponent (bg3.exe+0xAF8730) when it has one; that component is not
-    // declared in Script Extender, the meaning of the byte is unknown.
-    uint8_t field_140;
+    // inferred: bg3.exe+0x1A2BB60 copies the byte at +8 of the owner's
+    // eoc::thrown::AttachComponent, which esv::thrown::AttachmentSystem::ProcessAttachmentRequests
+    // (EoCServer.dll+0x3DDB60) sets to 'attached entity has a WeaponComponent and sits in an
+    // Equipment inventory (inventory type 1)'.
+    uint8_t IsEquippedWeapon;
     // unknown: Not part of the object: the component slot holds a pointer (creator
     // bg3.exe+0x1A2C8C0: ComponentFrameStorageAllocRaw(storage, 8) stores the pointer returned by
     // a 0x148-byte allocation), so the registry size 336 is the object size 0x148 + 8.
@@ -13079,18 +13088,19 @@ struct AttachComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ThrownAttach, "eoc::thrown::AttachComponent")
 
-    // unknown: Replication serializer bg3.exe+0x8EDB90 / write-all bg3.exe+0x8EDA90: dirty bit 1
-    // -> bg3.exe+0x4017090 (EntityHandle writer) with *(DAT_146280598 /* zero-filled, so 0 */ +
-    // base) = offset 0. Toolkit esv::thrown::AttachmentSystem::ProcessAttachmentRequests copies
-    // the request's entity (+0) here when it adds the component; GatherRequests fills that entity
-    // from a queried component or an inventory member. Which entity (thrower / attach target) is
-    // not established.
-    EntityHandle field_0;
-    // unknown: Serializer: dirty bit 2 -> ScratchBuffer::Write(base + 8, 1 byte).
-    // ProcessAttachmentRequests sets it to (eoc::inventory::GetInventoryType(parent inventory of
-    // the entity) == 1). The client's ecl::thrown::DummyAttachmentComponent creator copies this
-    // byte (see layouts/equipment).
-    bool field_8;
+    // inferred: EoCServer.dll+0x3DD080
+    // esv::thrown::AttachmentSystem::LEGACY_RequestAttachEntity(ID entity, ID attached, bool,
+    // bool, FixedString) queues {attached, flags, FixedString} under entity;
+    // ProcessAttachmentRequests (EoCServer.dll+0x3DDB60) adds this component on the key entity and
+    // writes the queued handle at +0, then checks that handle's eoc::WeaponComponent and parent
+    // inventory - the object being attached (held), not the holder.
+    EntityHandle AttachedEntity;
+    // inferred: ProcessAttachmentRequests (EoCServer.dll+0x3DDB60) writes +8 = (attached entity
+    // has eoc::WeaponComponent, has-check FUN_1803d8b40) &&
+    // eoc::inventory::GetInventoryType(GetParentInventory(attached)) == 1, and inventory type 1 is
+    // Equipment (Script Extender's InventoryType enum: Main 0, Equipment 1).
+    // ecl::thrown::DummyAttachmentComponent +0x140 copies it.
+    bool IsEquippedWeapon;
     // unknown: Serializer: dirty bit 4 -> Write(base + 9, 1 byte). Copied from request byte +8
     // (GatherRequests writes 1 there). macOS default constructor stores 0 at +9.
     bool field_9;
@@ -13110,16 +13120,19 @@ struct IsThrownComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ThrownIsThrown, "eoc::thrown::IsThrownComponent")
 
-    // unknown: Serializer bg3.exe+0x8EE450: 4 bytes at +0 (DAT_1462805a0 base); bg3.exe+0x2AFA000
-    // copies the request's float at +0xC (only when it is non-zero). Live 0.33 .. 1.31.
-    float field_0;
-    // unknown: Serializer: 1 byte at +4; bg3.exe+0x2AFA000 copies the request's byte at +0x10.
-    // Live 3; upper bytes garbage.
-    uint8_t field_4;
-    // unknown: Serializer writes an EntityHandle (FUN_144017090) from +8; creator
-    // bg3.exe+0x2AFBE90 writes the null handle; copied from the request's +0x18. Live entity
-    // handles (the thrower?).
-    EntityHandle field_8;
+    // inferred: esv::thrown::ThrowAnimationSystem::ProcessThrownRequests (EoCServer.dll+0x3D3D50,
+    // line 321) copies esv::thrown::EntityThrownRequestOneFrameComponent +0xC here, which
+    // InitializeProjectileThrown fills with eoc::PathMover::SampleDuration of the projectile path
+    // (flight time). Live 0.33 .. 1.31.
+    float Duration;
+    // inferred: ProcessThrownRequests (EoCServer.dll+0x3D3D50, line 322) copies the request byte
+    // +0x10, which InitializeProjectileThrown (EoCServer.dll+0x7F2D80) takes from
+    // eoc::SpellPrototype +0x19 = Script Extender's SpellPrototype.SpellAnimationType. Live 3.
+    uint8_t SpellAnimationType;
+    // inferred: ProcessThrownRequests (EoCServer.dll+0x3D3D50, line 323) copies the request handle
+    // +0x18, which InitializeProjectileThrown (EoCServer.dll+0x7F2D80) takes from
+    // InitializationInfo +0x70 = Script Extender's esv::projectile::InitializationData.Caster.
+    EntityHandle Caster;
 };
 
 // Replicated rotation parameters of a thrown object (how it spins in flight), written by
@@ -13129,9 +13142,13 @@ struct RotationParametersComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ThrownRotationParameters, "eoc::thrown::RotationParametersComponent")
 
-    // unknown: Serializer bg3.exe+0x8EF080 member 1: 12 bytes at +0 (DAT_1462805a8 base). Live (0,
-    // -18.8, 0) / (0, -24.2, 0) (angular speed?).
-    glm::vec3 field_0;
+    // inferred: ProcessThrownRequests (EoCServer.dll+0x3D3D50, lines 480-552) computes spins (0..3
+    // by the throw displacement's length against three thresholds of the item throw param) * 2*pi
+    // / Duration, puts it on the axis and sign the throw param's axis enum selects (cases 1..6),
+    // and stores it as the first vec3 of the 0x38-byte rotation parameters that
+    // ProcessApplyRotationParams copies into this component. Live (0,-18.8,0) = 3 turns * 2*pi /
+    // 1.0 s; (0,-24.2,0) = 3 turns / 0.78 s.
+    glm::vec3 AngularVelocity;
     // unknown: Serializer member 2: 12 bytes at +0xC; copied to
     // ecl::thrown::CurrentRotationComponent +0 by bg3.exe+0x1A25F70. Live (0, 0, 1.5708).
     glm::vec3 field_C;
@@ -13170,15 +13187,17 @@ struct ThrownAnimationRequestOneFrameComponent : public BaseComponent
 {
     DEFINE_ONEFRAME_COMPONENT(ThrownThrownAnimationRequest, "eoc::thrown::ThrownAnimationRequestOneFrameComponent")
 
-    // unknown: Creator bg3.exe+0x1A27DE0 (AllocRaw 8): `*(uint32*)p = 0`. Server bg3.exe+0x2AFA000
-    // line 396: `*p = *(uint32*)(req + 0xC)` where req is the 0x28-stride throw request; the same
-    // value is compared `ABS(x) > FLT_EPSILON` and used as a divisor of pi (line 186/295) - a
-    // float. Client bg3.exe+0x1A25B70: `*p = *(uint32*)(src + 0)` from a 0x10-stride component
-    // (eoc::thrown::IsThrownComponent, whose +0 is that float).
-    float field_0;
-    // unknown: Creator writes byte 0 at +4. Server copies the request byte at +0x10, client the
-    // byte at +4 of the 16-byte component (IsThrownComponent.field_4, live value 3 there).
-    uint8_t field_4;
+    // inferred: Server: ProcessThrownRequests (EoCServer.dll+0x3D3D50 line 589, add helper
+    // 0x3CF6D0 = this 8-byte type) copies esv::thrown::EntityThrownRequestOneFrameComponent +0xC
+    // (eoc::PathMover::SampleDuration of the throw path, InitializeProjectileThrown
+    // EoCServer.dll+0x7F2D80); client bg3.exe+0x1A25B70 copies eoc::thrown::IsThrownComponent +0,
+    // the same value.
+    float Duration;
+    // inferred: Server: ProcessThrownRequests (EoCServer.dll+0x3D3D50 line 590) copies the request
+    // byte +0x10 = eoc::SpellPrototype +0x19 (Script Extender's SpellPrototype.SpellAnimationType,
+    // written by InitializeProjectileThrown EoCServer.dll+0x7F2D80); client copies
+    // IsThrownComponent +4.
+    uint8_t SpellAnimationType;
 };
 
 END_NS()
@@ -15500,10 +15519,14 @@ struct CanOpenDoorsOverrideComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerCharacterCanOpenDoorsOverride, "esv::character::CanOpenDoorsOverrideComponent")
 
-    // unknown: One byte of data: ecs::ComponentOps<T>::DefaultConstructComponents of the macOS
-    // build (address 103B87CD0) stores it (strb w0, [x23]; default a value computed in the
-    // constructor). What the byte means is not established.
-    uint8_t field_0;
+    // inferred: EoCServer.dll+0x15F0710
+    // esv::character::CanOpenDoorsSystem::LEGACY_SetCanOpenDoorsOverride(ID, bool) stores the bool
+    // into an ls::Optional<bool> request per entity; EoCServer.dll+0x15F0760 ProcessRequests adds
+    // the component with byte 0 = the optional's value (*comp = *opt) or removes the component
+    // when the optional is empty (LEGACY_ClearCanOpenDoorsOverride). Runner world 2026-11-14
+    // (recipe world_can_open_doors_override, repeated): probe read 0x01 after
+    // Osi.SetCanOpenDoorsOverride(char, 1); Clear removed the component.
+    bool CanOpenDoors;
 };
 
 struct DeathActionsQueueSingletonComponent : public BaseComponent
@@ -24562,23 +24585,35 @@ struct EntityThrownRequestOneFrameComponent : public BaseComponent
 {
     DEFINE_ONEFRAME_COMPONENT(ServerThrownEntityThrownRequest, "esv::thrown::EntityThrownRequestOneFrameComponent")
 
-    // unknown: Creator bg3.exe+0x2E8F670 zeroes +0..+0xF. EoCServer.dll+0x3D3D50 lines 523-533
-    // read floats +0,+4,+8 together with +0xC and compose them like a quaternion (x,y,z,w) with
-    // the computed spin rotation. Live: (4, -1.3, 1), (17.6, -1.36, 5) ... - not normalised, so
-    // kept as vec3.
-    glm::vec3 field_0;
-    // unknown: EoCServer.dll+0x3D3D50 line 299: request handled only when |+0xC| > FLT_EPSILON;
-    // line 321 copies it to IsThrownComponent +0. Live 0.287 .. 1.313.
-    float field_C;
-    // unknown: Creator bg3.exe+0x2E8F670 writes byte 0 at +0x10; EoCServer.dll+0x3D3D50 line 322
-    // copies the byte into IsThrownComponent +4. Live 3; upper bytes are garbage.
-    uint8_t field_10;
-    // unknown: Creator writes the null handle 0xFFC0000000000000; EoCServer.dll+0x3D3D50 line 323
-    // copies it into IsThrownComponent +8. Live entity handles.
-    EntityHandle field_18;
-    // unknown: Creator writes the null handle 0xFFC0000000000000 at +0x20. Live entity handles
-    // (different from +0x18).
-    EntityHandle field_20;
+    // inferred: EoCServer.dll+0x7F2D80
+    // esv::ProjectileInitializationSystem::InitializeProjectileThrown (bg3.exe twin 0x2E8EC40)
+    // adds the request and writes +0..+8 = InitializationInfo.TargetPosition (+0x10) -
+    // StartPosition (+4) (Script Extender's esv::projectile::InitializationData layout): the
+    // vector from the throw's start to its target, not normalised (live (17.6,-1.36,5)).
+    // ProcessThrownRequests EoCServer.dll+0x3D3D50 uses its length against the throw-param
+    // thresholds to choose the number of spins and its x/z direction for the yaw.
+    glm::vec3 Displacement;
+    // inferred: EoCServer.dll+0x7F2D80 InitializeProjectileThrown writes +0xC =
+    // eoc::PathMover::SampleDuration(projectile +0x238, 1.0): the flight time of the projectile
+    // path. ProcessThrownRequests EoCServer.dll+0x3D3D50 skips the request when it is ~0, copies
+    // it into eoc::thrown::IsThrownComponent +0 and ThrownAnimationRequestOneFrameComponent +0,
+    // and divides spins*2*pi by it to get the angular velocity. Live 0.287 .. 1.313.
+    float Duration;
+    // inferred: EoCServer.dll+0x7F2D80 InitializeProjectileThrown writes +0x10 = byte +0x19 of the
+    // throw's eoc::SpellPrototype, which Script Extender's stats::SpellPrototype names
+    // SpellAnimationType (gatekit symbols layout: +0x019 uint8_t SpellAnimationType). Copied to
+    // IsThrownComponent +4 and ThrownAnimationRequestOneFrameComponent +4. Live 3.
+    uint8_t SpellAnimationType;
+    // inferred: EoCServer.dll+0x7F2D80 InitializeProjectileThrown writes +0x18 =
+    // InitializationInfo +0x70, Script Extender's esv::projectile::InitializationData.Caster
+    // (gatekit symbols layout +0x070 EntityHandle Caster). Copied into
+    // eoc::thrown::IsThrownComponent +8 by ProcessThrownRequests.
+    EntityHandle Caster;
+    // inferred: EoCServer.dll+0x7F2D80 InitializeProjectileThrown writes +0x20 =
+    // InitializationInfo +0x2B0, the entity the function checks for character/item ('Thrown object
+    // type is not supported' otherwise) and matches against split stacks - Script Extender's
+    // InitializationData.ThrownObject.
+    EntityHandle ThrownObject;
 };
 
 struct ThrownParametersCondition
