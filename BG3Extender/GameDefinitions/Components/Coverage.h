@@ -11824,10 +11824,14 @@ struct ProfileShownTutorialsUpdateNotificationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(NotificationProfileShownTutorialsUpdate, "eoc::notification::ProfileShownTutorialsUpdateNotificationComponent")
 
-    // unknown: Serializer bg3.exe+0x99F950 calls ecs::sync::Serialize(FixedString) on +0; macOS
-    // default ctor stores -1 at +0 (null FixedString). Not named by a FieldMeta symbol (profile
-    // id?).
-    FixedString field_0;
+    // inferred: Toolkit EoCClient.dll+0x5CA000
+    // ecl::profile::ManagementSystem::ProcessUpdateShownTutorialsRequests groups the components by
+    // the FixedString at +0 (HashMap keyed by it, the HashSet at +8 merged into the value) and
+    // passes each key to the profile manager's vfunc +0x100 to get the net::PlayerProfile it calls
+    // AddTutorialEntriesShown on, then vfunc +0x108 (save). ecl::tutorial::ResetSystem::Update
+    // (EoCClient.dll+0x63BD50) calls the same vfunc +0x100 with
+    // PlayerManager::GetPlayerProfileGUID(playerId): the key is the player profile's GUID.
+    FixedString ProfileGuid;
     // the game's own member name: Windows type name ls::FieldMeta<class ls::HashSet<class
     // ls::Guid,struct ls::HashTableOpsDefault>
     // eoc::notification::ProfileShownTutorialsUpdateNotificationComponent::*,8>; macOS
@@ -14762,10 +14766,11 @@ struct TurnActionsCalculationComponent : public BaseComponent
 {
     DEFINE_COMPONENT(ServerAiSwarmTurnActionsCalculation, "esv::ai::swarm::TurnActionsCalculationComponent")
 
-    // unknown: Live 0..2. The esv::ai::swarm::TurnActionsCalculation object starts at +8 (copy
-    // ctor EoCServer.dll+0xBC0E70 and game dtor bg3.exe+0x30B9EA0 offsets + 8 match the live
-    // sample).
-    int32_t field_0;
+    // inferred: Toolkit EoCServer.dll+0x16BBC80 esv::ai::swarm::DebugSystem::FindEntitiesInfo
+    // copies the 4 bytes at +0 of this component into eoc::ai::swarm::DebugTurnActionsComponent
+    // +0x10 and marks replication bit 1 - that member is the game's m_UpdateIndex (macOS
+    // FieldMeta, serialization position 2). Live 0..2.
+    int32_t UpdateIndex;
     [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
     // inferred: TurnActionsCalculation +0 (int); name from the replicated debug copy
     // eoc::ai::swarm::ReplicatedDebugCalculation m_TargetIndex (macOS FieldMeta), mapped by order.
@@ -14951,8 +14956,14 @@ struct TurnActionsComponent : public BaseComponent
     AiSwarmTurnActionsInitialTarget Target;
     // unknown: Live varying values.
     uint64_t field_140;
-    // unknown: Live 18.0 / -1.0 (like MovementPoints).
-    double field_148;
+    // inferred: Toolkit EoCServer.dll+0x16CC2A0 (the swarm action calculation) creates TurnActions
+    // and copies the 8 bytes at TurnActionsCalculationComponent +0xB8 (MovementPoints, the game's
+    // m_MovementPoints of ReplicatedDebugCalculation) to +0x148, next to DashSpell, CastPosition,
+    // ReachablePosition and Path from the same calculation.
+    // esv::ai::swarm::ActionSequencerSystem::GetNextState (EoCServer.dll+0x16D6100) compares
+    // GetMovementResource() < *(double*)(+0x148) to decide whether to cast the DashSpell at +8.
+    // Live 18.0 / -1.0, as in the calculation.
+    double MovementPoints;
     // inferred: FindEntitiesInfo: optional vec3 at +0x150 -> DebugTurnActions.CastPosition (+0xCC,
     // dirty bit 10).
     glm::vec3 CastPosition;
@@ -20538,22 +20549,26 @@ struct CaretComponent : public BaseComponent
     // %08x-%04hx-...): the spline's id. The save loader bg3.exe+0x2591640 copies the runtime
     // struct into the 0x54-byte component member by member with this width.
     FixedString SplineId;
-    // unknown: macOS default 0; GotoNextSplinePoint (macOS bg3_macos_x64+0x56C4680) reads byte +4
-    // to choose the direction of travel (hint). Live 0. Converter bg3.exe+0x277FF60 (model
-    // ls::model::game::patrol::v1::CaretComponent, 72 bytes -> runtime 0x54) writes
-    // bool(model+0x10); default 0. The save loader bg3.exe+0x2591640 copies the runtime struct
-    // into the 0x54-byte component member by member with this width.
-    bool field_4;
-    // unknown: macOS default 2. Live 1..3. Converter bg3.exe+0x277FF60 (model
-    // ls::model::game::patrol::v1::CaretComponent, 72 bytes -> runtime 0x54) copies byte
-    // model+0x12; default 2 (half-word 0x200 at +4). The save loader bg3.exe+0x2591640 copies the
-    // runtime struct into the 0x54-byte component member by member with this width.
-    uint8_t field_5;
-    // unknown: macOS default 1. Live 0/1. Converter bg3.exe+0x277FF60 (model
-    // ls::model::game::patrol::v1::CaretComponent, 72 bytes -> runtime 0x54) writes
-    // bool(model+0x11); default 1. The save loader bg3.exe+0x2591640 copies the runtime struct
-    // into the 0x54-byte component member by member with this width.
-    bool field_6;
+    // inferred: Toolkit EoCServer.dll+0xA49380 esv::patrol::CaretSystem::Setup(...,
+    // esv::patrol::InitData const&, bool) writes caret +4 = InitData +4 and passes it as the
+    // direction bool of ls::SplineTemplate::GetClosestLocationInDirection. InitData +4 is the
+    // 'reversed' argument of the Anubis function StartCaretPatrol: macOS bg3_macos_x64+0x30F6900
+    // reads the bool argument named 'reversed' and hands it to ls::anubis::game::DoPatrolImpl
+    // (bg3_macos_x64+0x3337CD0), which stores it at InitData +4. GotoNextSplinePoint reads +4 to
+    // choose the direction of travel.
+    bool Reversed;
+    // inferred: Toolkit EoCServer.dll+0xA49380 esv::patrol::CaretSystem::Setup writes caret +5 =
+    // InitData +5 (and only updates +5 when the rest of the setup is unchanged). InitData +5 is
+    // the eoc::EPathMovementSpeed argument named 'pathMovementSpeed' of the Anubis function
+    // StartCaretPatrol (bg3_macos_x64+0x30F6900 -> DoPatrolImpl bg3_macos_x64+0x3337CD0, stored at
+    // InitData +5). Live 1..3, macOS default 2.
+    uint8_t PathMovementSpeed;
+    // inferred: Toolkit EoCServer.dll+0xA49380 esv::patrol::CaretSystem::Setup writes caret +6 =
+    // InitData +6. InitData +6 is the bool argument named 'reverseIfBlocked' of the Anubis
+    // function StartCaretPatrol (bg3_macos_x64+0x30F6900; default 1 when the argument is left
+    // out), ANDed by DoPatrolImpl (bg3_macos_x64+0x3337CD0) with a flag of the spline. macOS
+    // default 1.
+    bool ReverseIfBlocked;
     // unknown: Converter bg3.exe+0x277FF60 (model ls::model::game::patrol::v1::CaretComponent, 72
     // bytes -> runtime 0x54) writes bool(model+0x19); default 0. The save loader bg3.exe+0x2591640
     // copies the runtime struct into the 0x54-byte component member by member with this width.
