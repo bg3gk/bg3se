@@ -6209,9 +6209,16 @@ struct MixStatePostSoundEventRequest
     // unknown: PostMixEvent writes 3, UIPrioritySystem::SendMuffleEvent writes 0; copied as 4
     // bytes by EoCClient.dll+0xD4E0A0. Possibly SoundEventType (3 = HUD) - not confirmed.
     uint32_t field_4;
-    // unknown: PostMixEvent and SendMuffleEvent write 2; copied as one byte by
-    // EoCClient.dll+0xD4E0A0.
-    uint8_t field_8;
+    // inferred: Toolkit EoCClient.dll+0xDBE200
+    // ecl::sound::InterfaceSystem::ProcessPostHUDEventRequests hands each element of the three
+    // PostHUD request singletons (MixState, TimelineSave, UIPanel; stride 0xC) to
+    // EoCClient.dll+0xD4E0A0, which appends it to
+    // ls::GameplayGlobalSoundRequestsSingletonComponent copying FixedString +0, uint +4 and byte
+    // +8 one for one; byte +8 there is GameplayGlobalSoundRequest::ObjectType, which
+    // GameEngine.dll+0x89B3A0 ls::GameplaySoundInterfaceSystem::ProcessPostSoundEventRequests maps
+    // 0..3 to ERoutedSoundEventType and otherwise asserts EGlobalSoundObjectType not supported.
+    // Value 2 at every writer.
+    uint8_t ObjectType;
 };
 
 struct MixStatePostHUDEventRequestsSingletonComponent : public BaseComponent
@@ -6380,12 +6387,18 @@ struct PhotoModeRequestsSingletonComponent : public BaseComponent
 
 struct PointAndClickSoundSwitchUpdate
 {
-    // unknown: Element of DynamicArray<ecl::sound::SoundSwitchUpdate> (macOS name); FUN_180dfc0a0
-    // (Toolkit) copies elements of 8 bytes (allocation (n, 8, 4)) through FixedString ops.
-    FixedString field_0;
-    // unknown: Second 4-byte half of SoundSwitchUpdate; assumed FixedString (switch group / state
-    // pair) - not verified.
-    FixedString field_4;
+    // inferred: Toolkit EoCClient.dll+0xDFC710
+    // ecl::sound::PointAndClickSoundSystem::ConfigureSoundSwitches appends pairs (FixedString +0,
+    // FixedString +4) whose first member is always one constant per pair (the combat-state group,
+    // the approval group) and whose second is chosen by condition; EoCClient.dll+0xDFCC50 matches
+    // +0 against those group constants and +4 against their values: a Wwise switch group and its
+    // state.
+    FixedString SwitchGroup;
+    // inferred: Second FixedString of the pair built in ConfigureSoundSwitches
+    // (EoCClient.dll+0xDFC710): the value chosen for the group at +0 (combat / sneaking / normal;
+    // negative / neutral / positive / romantic from the approval rating type), matched by
+    // EoCClient.dll+0xDFCC50.
+    FixedString SwitchState;
 };
 
 // Per-character request of ecl::sound::PointAndClickSoundSystem: UpdateSoundRequestComponents
@@ -6399,9 +6412,13 @@ struct PointAndClickSoundRequestComponent : public BaseComponent
     // unknown: UpdateSoundRequestComponents copies ReactionToPlay byte +9 here; reset to 0. Live
     // 0/1.
     uint8_t field_0;
-    // unknown: ls::STDString::operator= from ReactionToPlay +0x10; reset to "". Live: heap
-    // pointer, size 0x1D/0x26, capacity 0x1F/0x2F (an event/sound name).
-    STDString field_8;
+    // inferred: Toolkit EoCClient.dll+0xDFF7F0
+    // ecl::sound::PointAndClickSoundSystem::UpdateSoundRequestComponents copies ReactionToPlay
+    // +0x10 here (STDString::operator=); ConfigureSoundEvent (EoCClient.dll+0xDFC5F0) fills
+    // ReactionToPlay +0x10 from EoCClient.dll+0xDFCFF0, which builds 'BGClickReaction' + '_Action'
+    // or '_ReptAction' + '_Attack', '_HealTarget', '_MoveTo' ... from the action. Live strings of
+    // 0x1D/0x26 characters.
+    STDString ReactionName;
     // unknown: Copied from ReactionToPlay +0x28; reset 0. Live 0.
     uint8_t field_20;
     // unknown: Copied from ReactionToPlay +0x2C; reset to the global 'Unassigned' value. Live 0x1
@@ -6413,13 +6430,23 @@ struct PointAndClickSoundRequestComponent : public BaseComponent
     // inferred: Optional value: DynamicArray<ecl::sound::SoundSwitchUpdate> copied by
     // FUN_180dfc0a0 and destroyed by FUN_180dfee40. Live: heap pointer, capacity 1, size 0/1.
     Array<PointAndClickSoundSwitchUpdate> SwitchUpdates;
-    // unknown: Reset to 0x14 (2-byte store 0x0014 at +0x40) or set by FUN_180dfcc50 from the
-    // reaction type; probably an EPointAndClickActionType/ReactionType enum. Live 6/0xA/0x14.
-    uint8_t field_40;
-    // unknown: Zeroed with +0x40; live 0/2.
-    uint8_t field_41;
-    // unknown: Reset to 0. Live 0.
-    uint8_t field_42;
+    // inferred: Toolkit EoCClient.dll+0xD3BAE0
+    // ecl::GameAnalyticsSystem::RecordPointAndClickSoundEvent (called from
+    // ProcessPointAndClickEvents with this component, stride 0x48) passes byte +0x40 to
+    // ecl::sound::ConvertToString(EPointAndClickActionType); UpdateSoundRequestComponents sets it
+    // from ReactionToPlay +8 through EoCClient.dll+0xDFCC50 and resets it to 0x14.
+    uint8_t ActionType;
+    // inferred: Toolkit EoCClient.dll+0xD3BAE0 RecordPointAndClickSoundEvent records byte +0x41
+    // under the analytics key 'state' as 0 normal, 1 combat, 2 sneaking; EoCClient.dll+0xDFCC50
+    // sets it from the state of the switch group ConfigureSoundSwitches sets to its combat value
+    // when the character is a combat participant and to its sneak value when sneaking.
+    uint8_t State;
+    // inferred: Toolkit EoCClient.dll+0xD3BAE0 RecordPointAndClickSoundEvent records byte +0x42
+    // under the analytics key 'approval' as 1 negative, 2 neutral, 3 positive, 4 romantic;
+    // EoCClient.dll+0xDFCC50 sets it from the approval switch that ConfigureSoundSwitches
+    // (EoCClient.dll+0xDFC710) picks from eoc::approval::GetApprovalRatingType when
+    // CanSetApprovalSwitches holds.
+    uint8_t Approval;
 };
 
 struct PointAndClickSoundStateComponent : public BaseComponent
@@ -6747,8 +6774,16 @@ struct TimelineSavePostHUDEventRequest
     FixedString Event;
     // unknown: bg3.exe+0x1D36B10 always writes 3 (both request sites).
     uint32_t field_4;
-    // unknown: bg3.exe+0x1D36B10 always writes 2; copied as one byte by bg3.exe+0x1D36FE0.
-    uint8_t field_8;
+    // inferred: Toolkit EoCClient.dll+0xDBE200
+    // ecl::sound::InterfaceSystem::ProcessPostHUDEventRequests hands each element of the three
+    // PostHUD request singletons (MixState, TimelineSave, UIPanel; stride 0xC) to
+    // EoCClient.dll+0xD4E0A0, which appends it to
+    // ls::GameplayGlobalSoundRequestsSingletonComponent copying FixedString +0, uint +4 and byte
+    // +8 one for one; byte +8 there is GameplayGlobalSoundRequest::ObjectType, which
+    // GameEngine.dll+0x89B3A0 ls::GameplaySoundInterfaceSystem::ProcessPostSoundEventRequests maps
+    // 0..3 to ERoutedSoundEventType and otherwise asserts EGlobalSoundObjectType not supported.
+    // Value 2 at every writer.
+    uint8_t ObjectType;
 };
 
 struct TimelineSavePostHUDEventRequestsSingletonComponent : public BaseComponent
@@ -6809,8 +6844,16 @@ struct UIPanelPostSoundEventRequest
     // unknown: SendMuffleEvent writes 0 (MixStateSystem::PostMixEvent writes 3 to the same member
     // of ls::PostSoundEventRequest). Possibly SoundEventType - not confirmed.
     uint32_t field_4;
-    // unknown: SendMuffleEvent writes 2.
-    uint8_t field_8;
+    // inferred: Toolkit EoCClient.dll+0xDBE200
+    // ecl::sound::InterfaceSystem::ProcessPostHUDEventRequests hands each element of the three
+    // PostHUD request singletons (MixState, TimelineSave, UIPanel; stride 0xC) to
+    // EoCClient.dll+0xD4E0A0, which appends it to
+    // ls::GameplayGlobalSoundRequestsSingletonComponent copying FixedString +0, uint +4 and byte
+    // +8 one for one; byte +8 there is GameplayGlobalSoundRequest::ObjectType, which
+    // GameEngine.dll+0x89B3A0 ls::GameplaySoundInterfaceSystem::ProcessPostSoundEventRequests maps
+    // 0..3 to ERoutedSoundEventType and otherwise asserts EGlobalSoundObjectType not supported.
+    // Value 2 at every writer.
+    uint8_t ObjectType;
 };
 
 struct UIPanelPostHUDRequestsSingletonComponent : public BaseComponent
@@ -14772,10 +14815,13 @@ struct TurnActionsCalculationComponent : public BaseComponent
     // FieldMeta, serialization position 2). Live 0..2.
     int32_t UpdateIndex;
     [[bg3::hidden]] std::array<uint8_t, 4> _Pad4;
-    // inferred: TurnActionsCalculation +0 (int); name from the replicated debug copy
-    // eoc::ai::swarm::ReplicatedDebugCalculation m_TargetIndex (macOS FieldMeta), mapped by order.
-    // Live 3..0xC.
-    int32_t TargetIndex;
+    // inferred: Toolkit EoCServer.dll+0x16BBC80 FindEntitiesInfo copies the first dword of the
+    // TurnActionsCalculation held in a debug entry (entry +0x48, which is this component's +8:
+    // CastPosition follows at entry +0x4C = component +0xC) into ReplicatedDebugCalculation +0x54,
+    // m_CalculationState in the macOS FieldMeta; TargetIndex comes from the entry's own +0,
+    // outside the calculation. EoCServer.dll+0x16CC2A0 sets this dword to 2, 1 or 0xF when it is
+    // 0. Was TargetIndex by member order.
+    [[bg3::legacy(TargetIndex)]] int32_t CalculationState;
     // inferred: TurnActionsCalculation +4 (16 bytes copied, Optional<vec3>);
     // ReplicatedDebugCalculation m_CastPosition by order. Live world coordinates, flag 1.
     glm::vec3 CastPosition;
@@ -14833,10 +14879,16 @@ struct TurnActionsCalculationComponent : public BaseComponent
     float PathDistanceXZ;
     // inferred: Optional flag.
     bool HasPathDistanceXZ;
-    // unknown: Calc +0xF8 (16 bytes). Live world coordinates with flag 1 in 16 of 48 samples.
-    glm::vec3 field_100;
-    // unknown: ls::Optional flag of field_100
-    bool field_100_set;
+    // inferred: Toolkit EoCServer.dll+0x16CC2A0 (swarm action calculation) creates
+    // TurnActionsComponent and copies the 16 bytes at +0x100 (vec3 + flag) into TurnActions
+    // +0x160, which FindEntitiesInfo (EoCServer.dll+0x16BBC80) copies to
+    // DebugTurnActions.ReachablePosition. The same FindEntitiesInfo copies the slot right after
+    // PathDistanceXZ into ReplicatedDebugCalculation.m_ReachablePosition (+0x138, macOS
+    // FieldMeta). Live world coordinates with flag 1 in 16 of 48 samples.
+    glm::vec3 ReachablePosition;
+    // inferred: ls::Optional flag of ReachablePosition (+0x100); copied with it into TurnActions
+    // +0x16C at EoCServer.dll+0x16CC2A0.
+    bool HasReachablePosition;
     // unknown: Calc +0x108 (16 bytes). Live zero.
     glm::vec3 field_110;
     // unknown: ls::Optional flag of field_110
@@ -14844,10 +14896,14 @@ struct TurnActionsCalculationComponent : public BaseComponent
     // inferred: Calc +0x118: copy ctor allocates count * 0xC (IndexedStorage<Vector3f>);
     // m_PathPoints by order. Live heap, capacity 4..0x40.
     Array<glm::vec3> PathPoints;
-    // inferred: Calc +0x128 (16 bytes, last member); m_ReachablePosition by order. Live zero.
-    glm::vec3 ReachablePosition;
-    // inferred: ls::Optional flag of ReachablePosition
-    bool HasReachablePosition;
+    // unknown: Was ReachablePosition by member order; the code contradicts that (see +0x100).
+    // Toolkit EoCServer.dll+0x16CC2A0 saves the 16 bytes at +0x130 before resetting the
+    // calculation (memset of +0x8..+0x140) and writes them back after, so the value survives a
+    // recalculation. No reader of it found; ReplicatedDebugCalculation has no member for it.
+    glm::vec3 field_130;
+    // unknown: Optional flag of field_130 (byte after the vec3; cleared in the default value at
+    // EoCServer.dll+0x16CC2A0).
+    bool field_130_set;
 };
 
 struct AiSwarmTurnActionsSpellId
