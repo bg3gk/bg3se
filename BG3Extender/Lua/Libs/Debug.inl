@@ -416,7 +416,10 @@ Array<EntityHandle> GetComponentHolders(lua_State* L, STDString name, std::optio
                 if (entities.size() >= limit) return entities;
                 entities.push_back(entity);
             }
-        } else if (cls->ComponentTypeToIndex.try_get(*type)) {
+        } else if (cls->HasComponent(*type) || cls->ComponentTypeToIndex.try_get(*type)) {
+            // ComponentsInClass is what a class carries; ComponentTypeToIndex lists only the
+            // types that have a data slot in its pages, so a type without one (a tag) was never
+            // found - eoc::heal::MaxIncomingComponent, alive on an entity, read as held by nobody
             for (auto const& entity : cls->InstanceToPageMap.keys()) {
                 if (entities.size() >= limit) return entities;
                 entities.push_back(entity);
@@ -440,8 +443,12 @@ UserReturn GetComponentCounts(lua_State* L)
         for (auto cls : world->Storage->Storages) {
             auto entities = (uint32_t)cls->InstanceToPageMap.keys().size();
             if (entities > 0) {
+                // every type of the class, a data slot or not (see GetComponentHolders)
+                for (uint32_t type = 0; type < ecs::ComponentTypeMask::NumBits; type++) {
+                    if (cls->ComponentsInClass[type]) counts[(uint16_t)type] += entities;
+                }
                 for (auto type : cls->ComponentTypeToIndex.keys()) {
-                    counts[(uint16_t)type] += entities;
+                    if (!cls->ComponentsInClass[(uint16_t)type]) counts[(uint16_t)type] += entities;
                 }
             }
             if (cls->HasOneFrameComponents) {
