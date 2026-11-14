@@ -3344,8 +3344,11 @@ struct SessionStateComponent : public BaseComponent
     // select sessions by it. Local player ids are 16-bit in the game (ui::Widget::GetPlayerId
     // returns short). Live 1 (= ecl::character::AssignedComponent of the same character).
     int16_t PlayerId;
-    // unknown: Creator writes 0 (8-byte store +0xC..+0x13). Live 0.
-    uint32_t field_C;
+    // inferred: EoCClient.dll+0x11BE6E0 ecl::character_creation::SessionView::IsLocked returns bit
+    // 1 of the uint32 at +0xC of the component SessionView keeps at +8 - the one whose +8 int16
+    // GetOwnerPlayerId (0x11BB5A0) returns, i.e. this component's PlayerId. A bit set; other bits
+    // not read. Creator writes 0, live 0.
+    uint32_t Flags;
     // unknown: Creator writes 0. Live 0.
     uint32_t field_10;
     // unknown: Creator writes 0. Live 0.
@@ -3470,10 +3473,15 @@ struct TargetVisualComponent : public BaseComponent
     // inferred: FillTargetVisualComponent: (template byte +0x84)<<5 | (template byte +0x7C)<<2 |
     // template byte +0x82 - bits taken from the character template. Creator 16-bit zero. Live 4.
     uint16_t TemplateFlags;
-    // unknown: Creator writes DAT_146174978 with IncRef; destructor DecRefs +0xC8.
-    // FillTargetVisualComponent copies a FixedString of an object found through parameter 5
-    // (object +0xD4). Live 0x27F000C1.
-    FixedString field_C8;
+    // inferred: macOS ecl::character_creation::SubsystemHelper::FillTargetVisualComponent
+    // (bg3_macos_x64+0x3A1E780, decompiled): when the class span (parameter 5) has a non-null
+    // first Guid, it resolves it through the class manager of eoc::character_creation::Environment
+    // (+0x78, virtual +0x30) and copies the FixedString at +0xD4 of the result into +0xC8
+    // (acquire/release pair). +0xD4 of resource::ClassDescription is Script Extender's
+    // CharacterCreationPose (gatekit symbols layout ClassDescription: +0x0D4 FixedString
+    // CharacterCreationPose). Windows creator bg3.exe+0x201BE90 writes the null FixedString here.
+    // Live 0x27F000C1.
+    FixedString CharacterCreationPose;
     // unknown: Creator writes 0; FillTargetVisualComponent copies template byte +0x526. Live 5.
     uint8_t field_CC;
     // unknown: buffer of an array of trivially destructible elements (destructor bg3.exe+0x6CF0D0
@@ -13149,9 +13157,14 @@ struct RotationParametersComponent : public BaseComponent
     // ProcessApplyRotationParams copies into this component. Live (0,-18.8,0) = 3 turns * 2*pi /
     // 1.0 s; (0,-24.2,0) = 3 turns / 0.78 s.
     glm::vec3 AngularVelocity;
-    // unknown: Serializer member 2: 12 bytes at +0xC; copied to
-    // ecl::thrown::CurrentRotationComponent +0 by bg3.exe+0x1A25F70. Live (0, 0, 1.5708).
-    glm::vec3 field_C;
+    // inferred: esv::thrown::ThrowAnimationSystem::ProcessThrownRequests (EoCServer.dll+0x3D3D50,
+    // lines 519-522 and 542-552) copies the vec3 at +0x44 of the item throw param into +0xC..+0x17
+    // of the 0x38-byte rotation parameters it stores for this component. That resource is
+    // resource::ItemThrowParams: its +0x38/+0x3C/+0x40 are the MaxDistFor{One,Two,Zero}Rotations
+    // thresholds and +0x50 the RotationAxis the same function compares and switches on, and +0x44
+    // is Script Extender's StartAngle (gatekit symbols layout ItemThrowParams). Live (0, 0,
+    // 1.5708).
+    glm::vec3 StartAngle;
     // unknown: Serializer member 3: 16 bytes at +0x18. Live (0, 0.70, 0, 0.46) - not a unit
     // quaternion, so kept as vec4.
     glm::vec4 field_18;
