@@ -11909,10 +11909,13 @@ struct PlayServerSoundComponent : public BaseComponent
     // (esv::Item::GetUUID), 2/3 -> empty. Request +0xC is the one-frame's SoundObjectType
     // (PlayHUDRequest writes 2).
     uint32_t SoundObjectType;
-    // unknown: Serializer member 4: 1 byte at +0x18; when set, RouteCharacterServerRequests
-    // resolves the sound through the current sound bank (type 9) and may play it as an external
-    // SFX instead.
-    bool field_18;
+    // inferred: bg3.exe+0x2DEE710 stores byte +0x10 of the PlayServerSoundNotificationRequest
+    // here, which EoCServer.dll+0x845C60 copied from
+    // esv::sound::PlayServerSoundRequestOneFrameComponent +0x10 - the byte
+    // esv::ServerSoundSystem::Request*SoundFromResource (EoCServer.dll+0x4CAA70 / +0x4CA860) set
+    // to 1 and RequestPlaySound / RequestPlayHUDSound set to 0. Client side: when set,
+    // RouteCharacterServerRequests resolves the sound through the current sound bank (type 9).
+    bool FromResource;
     // inferred: Serializer member 5: 1 byte at +0x19; macOS default strb wzr at +0x19; when set,
     // RouteCharacterServerRequests calls PlayerManager::PlaySoundForLocalPlayer /
     // PlayExternalSoundForLocalPlayer instead of the character sound system.
@@ -16289,11 +16292,10 @@ struct CrowdsDetourMoveToRequest
     // stores value+0xC into MoveToComponent+0x18, which the confirmed MoveTo layout names Radius
     // (arrival when squared distance <= radius^2).
     float Radius;
-    // unknown: Copied as one byte to esv::crowds::MoveToComponent+0x21 (EoCServer.dll+0xD8C530);
-    // the merge loop copies the whole dword, so bytes 0x11..0x13 are treated as padding. Windows:
-    // bg3.exe+0x3565F80 stores the byte value+0x10 into MoveToComponent+0x21 (field_21 there, live
-    // 1..4).
-    uint8_t field_10;
+    // inferred: Copied as one byte to esv::crowds::MoveToComponent +0x21 (EoCServer.dll+0xD8C530),
+    // which becomes the uint8_t Speed of the eoc::PathSettings the move is started with. See
+    // MoveToComponent::MovementSpeed.
+    uint8_t MovementSpeed;
 };
 
 // NOT VERIFIED LIVE: this layout comes from the game's code; only empty (all-zero) instances were
@@ -16337,9 +16339,13 @@ struct CrowdsDetourPatrolRequest
     // bg3.exe+0x3563590; the merged request byte +4 becomes PatrolComponent +0x2A and is passed to
     // the spline node search bg3.exe+0x3C91470.
     bool field_4;
-    // unknown: Copied to PatrolComponent+0x2B (EoCServer.dll+0xD86770); not otherwise read there.
-    // Windows: copied by bg3.exe+0x3563590; becomes PatrolComponent +0x2B.
-    uint8_t field_5;
+    // inferred: Copied to esv::crowds::PatrolComponent +0x2B (EoCServer.dll+0xD86770; Windows
+    // bg3.exe+0x3563590). bg3.exe+0x3560EA0 (esv::crowds::PatrolSystem update) steps to the next
+    // spline node with bg3.exe+0x2F5BD40(spline, node, direction +0x2A); when the stepper reports
+    // it wrapped past the end and byte +0x2B is set, it flips +0x2A (direction) and steps again -
+    // so with it set the patrol turns back at the end of the spline instead of wrapping round.
+    // Loader bg3.exe+0x2774600 stores (model +0x3B != 0); default 1.
+    uint8_t ReverseAtEnd;
     // inferred: Copied to PatrolComponent+0x2C and switched on 1..4 to pick a template speed
     // (template +0x608/+0x610/+0x618/+0x620); otherwise asserts "Invalid m_PathMovementSpeed enum
     // %d" in `anonymous-namespace'::GetCharacterMovementSpeed (CrowdCharacterPatrolSystem.cpp).
@@ -16451,15 +16457,25 @@ struct MoveToComponent : public BaseComponent
     // inferred: Update copies request+0xC here; arrival when squared distance <= radius^2;
     // increased by 0.05 when the character is stuck for 30 frames; live 0.5..3.3
     float Radius;
-    // unknown: Update zeroes it when a request arrives and when stuck; compared with an id at
-    // +0x10 of another object (a path/request id); live 0..0x3E1
-    uint32_t field_1c;
+    // inferred: CharacterMovementSystem::Update (EoCServer.dll+0xD8C530) passes &component+0x1C as
+    // the 'unsigned int *' of esv::BehaviourMachine::SetState(EBehaviourLayer, BehaviourState*,
+    // unsigned int*, bool) when it sets the BSMove state, tests it with
+    // BehaviourMachine::VerifyState(layer 0, id) each frame, and when the order ends clears the
+    // layer only if the current state's id (+0x10) equals it; zeroed on a new request and when
+    // stuck.
+    uint32_t BehaviourStateId;
     // inferred: Update increments the byte at +0x20 while the position is unchanged and resets it
     // at 30 (0x1E) or when the character moves; live 0
     uint8_t StuckFrames;
-    // unknown: Update copies the request's byte at +0x10 here (a movement kind/speed enum?); live
-    // 1..4
-    uint8_t field_21;
+    // inferred: esv::crowds::CharacterMovementSystem::Update (EoCServer.dll+0xD8C530) copies
+    // MoveToComponent byte +0x21 into a fresh eoc::PathSettings (constructor
+    // EoCShared.dll+0x3324E0: +4 = 2, +8 = 0) at +4 with the variant index +8 set to 0 - the
+    // uint8_t alternative of PathSettings' Speed (Script Extender: std::variant<uint8_t, float>
+    // Speed) - before putting the BSMove behaviour state on the character. Live 1..4 here; same
+    // default 2 as esv::crowds::SpawnComponent::PathMovementSpeed (game name), and the patrol
+    // request's MovementSpeed is switched on 1..4 with the assert 'Invalid m_PathMovementSpeed
+    // enum %d'.
+    uint8_t MovementSpeed;
 };
 
 struct CrowdsMoveToRequest
@@ -16468,12 +16484,15 @@ struct CrowdsMoveToRequest
     // value+0 (8 bytes) and value+8 (4 bytes) into esv::crowds::MoveToComponent+0 / +8 (a
     // position; the component then gets the proxy transform).
     glm::vec3 Target;
-    // unknown: Copied as a 4-byte value to esv::crowds::MoveToComponent+0x18
-    // (EoCServer.dll+0xD8C530); meaning not established (speed-like).
-    float field_c;
-    // unknown: Copied as one byte to esv::crowds::MoveToComponent+0x21 (EoCServer.dll+0xD8C530);
-    // the merge loop copies the whole dword, so bytes 0x11..0x13 are treated as padding.
-    uint8_t field_10;
+    // inferred: Copied as a 4-byte value to esv::crowds::MoveToComponent +0x18
+    // (EoCServer.dll+0xD8C530), the arrival radius: CharacterMovementSystem::Update ends the order
+    // when the squared distance to Target <= radius^2 and grows it by 0.05 when the character is
+    // stuck for 30 frames.
+    float Radius;
+    // inferred: Copied as one byte to esv::crowds::MoveToComponent +0x21 (EoCServer.dll+0xD8C530),
+    // which becomes the uint8_t Speed of the eoc::PathSettings the move is started with. See
+    // MoveToComponent::MovementSpeed.
+    uint8_t MovementSpeed;
 };
 
 struct MoveToRequestsSingletonComponent : public BaseComponent
@@ -16538,10 +16557,12 @@ struct PatrolComponent : public BaseComponent
     // names the same setting ReversePatrolDirection (savefields.py) - a name of a sibling model,
     // so inferred.
     [[bg3::legacy(field_2A)]] bool ReversePatrolDirection;
-    // unknown: bg3.exe+0x2774600 stores (model +0x3B != 0) at +0x2B; default 1 (the 0x0100FFFF
-    // store at +0x28). Tested before flipping +0x2A (ping-pong/loop flag?). Live 1. Set from
-    // patrol request byte +5.
-    bool field_2B;
+    // inferred: bg3.exe+0x3560EA0 (esv::crowds::PatrolSystem update) steps to the next spline node
+    // with bg3.exe+0x2F5BD40(spline, node, direction +0x2A); when the stepper reports it wrapped
+    // past the end and byte +0x2B is set, it flips +0x2A (direction) and steps again - so with it
+    // set the patrol turns back at the end of the spline instead of wrapping round. Loader
+    // bg3.exe+0x2774600 stores (model +0x3B != 0); default 1.
+    bool ReverseAtEnd;
     // inferred: bg3.exe+0x2774600 copies model +0x3C (1 byte) to +0x2C; default 2; PatrolSystem
     // update sets it from byte +6 of a patrol request (the request's speed byte, cf.
     // DetourPatrolRequest). Live 1 or 2. It is the request's MovementSpeed byte (request +6;
@@ -16556,12 +16577,15 @@ struct CrowdsPatrolMoveToRequest
     // value+0 (8 bytes) and value+8 (4 bytes) into esv::crowds::MoveToComponent+0 / +8 (a
     // position; the component then gets the proxy transform).
     glm::vec3 Target;
-    // unknown: Copied as a 4-byte value to esv::crowds::MoveToComponent+0x18
-    // (EoCServer.dll+0xD8C530); meaning not established (speed-like).
-    float field_c;
-    // unknown: Copied as one byte to esv::crowds::MoveToComponent+0x21 (EoCServer.dll+0xD8C530);
-    // the merge loop copies the whole dword, so bytes 0x11..0x13 are treated as padding.
-    uint8_t field_10;
+    // inferred: Copied as a 4-byte value to esv::crowds::MoveToComponent +0x18
+    // (EoCServer.dll+0xD8C530), the arrival radius: CharacterMovementSystem::Update ends the order
+    // when the squared distance to Target <= radius^2 and grows it by 0.05 when the character is
+    // stuck for 30 frames.
+    float Radius;
+    // inferred: Copied as one byte to esv::crowds::MoveToComponent +0x21 (EoCServer.dll+0xD8C530),
+    // which becomes the uint8_t Speed of the eoc::PathSettings the move is started with. See
+    // MoveToComponent::MovementSpeed.
+    uint8_t MovementSpeed;
 };
 
 struct PatrolMoveToRequestsSingletonComponent : public BaseComponent
@@ -16594,8 +16618,14 @@ struct CrowdsPatrolRequest
     // EoCServer.dll+0xD855F0), which is passed as the bool argument of
     // ls::SplineTemplate::GetClosestLocationInDirection (direction flag).
     bool field_4;
-    // unknown: Copied to PatrolComponent+0x2B (EoCServer.dll+0xD86770); not otherwise read there.
-    uint8_t field_5;
+    // inferred: Copied to esv::crowds::PatrolComponent +0x2B (EoCServer.dll+0xD86770, copy helper
+    // EoCServer.dll+0xD855F0; Windows bg3.exe+0x3560EA0 line 'puVar17+0x2b = request+5').
+    // bg3.exe+0x3560EA0 (esv::crowds::PatrolSystem update) steps to the next spline node with
+    // bg3.exe+0x2F5BD40(spline, node, direction +0x2A); when the stepper reports it wrapped past
+    // the end and byte +0x2B is set, it flips +0x2A (direction) and steps again - so with it set
+    // the patrol turns back at the end of the spline instead of wrapping round. Loader
+    // bg3.exe+0x2774600 stores (model +0x3B != 0); default 1.
+    uint8_t ReverseAtEnd;
     // inferred: Copied to PatrolComponent+0x2C and switched on 1..4 to pick a template speed
     // (template +0x608/+0x610/+0x618/+0x620); otherwise asserts "Invalid m_PathMovementSpeed enum
     // %d" in `anonymous-namespace'::GetCharacterMovementSpeed (CrowdCharacterPatrolSystem.cpp).
@@ -16689,9 +16719,13 @@ struct CrowdsSpawnEvent
     // (EoCServer.dll+0xD711C0) passes SpawnRequest+4 as the transform position of the new proxy
     // and copies +4/+0xC into esv::crowds::SpawnComponent+0x10..+0x1C.
     glm::vec3 Position;
-    // unknown: SpawnRequest+0x10, copied to SpawnComponent+0x1C (EoCServer.dll+0xD711C0); probably
-    // a rotation/yaw, not established.
-    float field_c;
+    // inferred: esv::crowds::SpawnSystem::RequestCrowdProxy(FixedString, Vector3f const&, float,
+    // Vector2f const&, FixedString) (EoCServer.dll+0xD74830) stores the float argument at
+    // SpawnRequest +0x10; ProcessSpawnRequests (EoCServer.dll+0xD72F60) copies request +4..+0x14
+    // into the event (Position, then this float), and CreateCrowdProxy (EoCServer.dll+0xD711C0)
+    // stores request +0x10 at esv::crowds::SpawnComponent +0x1C, the savegame model member
+    // m_SpawnYaw.
+    float SpawnYaw;
 };
 
 struct SpawnEventsSingletonComponent : public BaseComponent
@@ -17792,34 +17826,40 @@ struct AttachProxyAfterInitRequestComponent : public BaseComponent
 
 struct RedirectionTrackingRecord
 {
-    // unknown: bg3.exe+0x2EE5840: local record starts with local_d8 = 0xffc0000000000000 (null
-    // handle) at +0. Line 241 stores local_d8 = the entity of the request (local_e8 = *puVar13,
-    // line 149).
-    EntityHandle field_0;
-    // unknown: local uStack_d0 (+8): an entity handle, replaced by the owner from
-    // esv::status::OwnershipComponent when the source type byte equals 3, then checked alive.
-    // Lines 199-214: checked to be a live entity handle (generation compare in the entity table).
-    EntityHandle field_8;
-    // unknown: bg3.exe+0x2EE5840 lines 231-234: the byte at +4 of the source record is stored here
-    // when it is neither 0 nor 0x0E; the record dword +0x10 is packed as CONCAT13(c5, c6, c7, c8),
-    // i.e. four separate bytes.
-    uint8_t field_10;
-    // unknown: bg3.exe+0x2EE5840: zeroed (line 173), set to 1 together with field_10 (line 233) -
-    // the has-value flag of field_10.
-    bool field_11;
-    // unknown: bg3.exe+0x2EE5840 lines 236-239: the byte at +5 of the source record when neither 0
-    // nor 0x0E.
-    uint8_t field_12;
-    // unknown: bg3.exe+0x2EE5840: zeroed (line 174), set to 1 together with field_12 - the has-
-    // value flag of field_12.
-    bool field_13;
-    // unknown: bg3.exe+0x2EE5840 line 242: `uStack_c4 = *puVar27` - the first 4 bytes of the
-    // source record; stored as the record dword +0x14.
-    uint32_t field_14;
-    // unknown: bg3.exe+0x2EE5840 line 207: low byte of the dword +0x18 = byte +6 of the source
-    // record, which the same function tests `!= 0` to decide whether the record is kept (line
-    // 229).
-    bool field_18;
+    // inferred: Toolkit EoCServer.dll+0x3AFD00
+    // esv::hit::RedirectionSystem::FinalizeTrackingRequests: iterates the entity's RedirectDamage
+    // boosts (BoostsContainerComponent::Get, BoostIteratorSkipUndesiredEntities) and for each kept
+    // boost writes record +0 = local_108 = the boost entity handle from that iterator; record
+    // stride 0x20.
+    EntityHandle Boost;
+    // inferred: EoCServer.dll+0x3AFD00 FinalizeTrackingRequests: record +8 =
+    // eoc::GetBoostCauseOrSource(BoostInfoComponent) of the boost; when the cause type byte (+0x18
+    // of the cause) is 3 it is replaced by the owner from esv::status::OwnershipComponent; the
+    // record is kept only if this entity is alive or RedirectToDamageSource is set.
+    EntityHandle BoostCause;
+    // inferred: EoCServer.dll+0x3AFD00 FinalizeTrackingRequests: byte +4 of
+    // eoc::RedirectDamageBoostComponent (Script Extender: DamageType DamageType1) copied here
+    // unless 0 (None) or 0x0E (DamageType Sentinel); value of an optional (+0x11 is its has-value
+    // flag).
+    uint8_t DamageType1;
+    // inferred: EoCServer.dll+0x3AFD00 FinalizeTrackingRequests: set to 1 in the same store that
+    // writes DamageType1 (CONCAT11(1, damageType)), left 0 when the boost's DamageType1 is None or
+    // Sentinel - the has-value byte of an optional DamageType.
+    bool HasDamageType1;
+    // inferred: EoCServer.dll+0x3AFD00 FinalizeTrackingRequests: byte +5 of
+    // eoc::RedirectDamageBoostComponent (Script Extender: DamageType DamageType2) copied here
+    // unless 0 or 0x0E; value of an optional (+0x13 is its has-value flag).
+    uint8_t DamageType2;
+    // inferred: EoCServer.dll+0x3AFD00 FinalizeTrackingRequests: set to 1 together with
+    // DamageType2 (CONCAT13(1, ...)), 0 when the boost's DamageType2 is None or Sentinel.
+    bool HasDamageType2;
+    // inferred: EoCServer.dll+0x3AFD00 FinalizeTrackingRequests: record +0x14 = *puVar2 = the
+    // first int32 of eoc::RedirectDamageBoostComponent (Script Extender: int32_t Amount).
+    uint32_t Amount;
+    // inferred: EoCServer.dll+0x3AFD00 FinalizeTrackingRequests: record +0x18 = byte +6 of
+    // eoc::RedirectDamageBoostComponent (Script Extender: bool RedirectToDamageSource); the same
+    // byte lets the record be kept when the cause entity is dead.
+    bool RedirectToDamageSource;
 };
 
 // Kept by esv::hit::RedirectionSystem (Toolkit users ProcessTrackingRequests,
@@ -23406,12 +23446,25 @@ struct PlayServerSoundRequestOneFrameComponent : public BaseComponent
     // helper (rejects 2 and >=4); PlayHUDRequest writer stores constant 2. Live: 0..2. Enum name
     // not established (an ESoundObjectType-like value, 4 bytes).
     uint32_t SoundObjectType;
-    // unknown: Both writers copy the request byte at +0xC here (the bool of RequestPlaySound /
-    // RequestPlayHUDSound). Live: 0/1.
-    uint8_t field_10;
-    // unknown: PlayRequest writer copies request byte +0xD (when it is set, object type 1 is
-    // rejected); PlayHUDRequest writer stores 1.
-    uint8_t field_11;
+    // inferred: esv::ServerSoundSystem queues PlayRequest {Entity +0, FixedString +8, u8 +0xC, u8
+    // +0xD} (variant tag 0) and PlayHUDRequest {Entity, FixedString, u8 +0xC} (tag 1). The
+    // exported request functions differ only in that byte: RequestPlaySound
+    // (EoCServer.dll+0x4CA960) and RequestPlayHUDSound (+0x4CA760) write 0 at +0xC,
+    // RequestPlaySoundFromResource (+0x4CAA70) and RequestPlayHUDSoundFromResource (+0x4CA860)
+    // write 1. Both component writers copy request +0xC here; EoCServer.dll+0x845C60 carries it
+    // into PlayServerSoundNotificationRequest +0x10 and bg3.exe+0x2DEE710 stores it at
+    // eoc::notification::PlayServerSoundComponent +0x18, which makes the client resolve the sound
+    // through the sound bank.
+    uint8_t FromResource;
+    // inferred: esv::ServerSoundSystem queues PlayRequest {Entity +0, FixedString +8, u8 +0xC, u8
+    // +0xD} (variant tag 0) and PlayHUDRequest {Entity, FixedString, u8 +0xC} (tag 1). This byte
+    // is RequestPlaySound's bool (EoCServer.dll+0x4CA960 stores param_3 at request +0xD; the
+    // PlayHUDRequest writer stores 1). EoCServer.dll+0x845C60 copies component +0x11 into the
+    // notification request +0x11, and bg3.exe+0x2DEE710 stores it at
+    // eoc::notification::PlayServerSoundComponent +0x19 (LocalPlayerOnly: the client plays it
+    // through PlayerManager::PlaySoundForLocalPlayer); the same function branches on it to pick
+    // the receiving peers.
+    uint8_t LocalPlayerOnly;
 };
 
 DEFINE_ONEFRAME_TAG_COMPONENT(esv::sound, PerformerRemovedEventOneFrameComponent, ServerSoundPerformerRemovedEvent)
@@ -24227,23 +24280,28 @@ struct LifetimeComponent : public BaseComponent
 
 struct SwapPlacesRequestOneFrameRequestData
 {
-    // inferred: bg3.exe+0x2E9E370 line 354: element+0 = first handle of the queued
-    // SwapPlacesRequest (first EntityHandle argument of LEGACY_RequestSwapPlaces); its transform
-    // is read by FUN_140e5a590.
-    EntityHandle Entity1;
-    // inferred: line 355: element+8 = second handle of the request (second argument of
-    // LEGACY_RequestSwapPlaces).
-    EntityHandle Entity2;
-    // unknown: line 356: copied FixedString (FixedString argument of LEGACY_RequestSwapPlaces);
-    // array clear bg3.exe+0x22E5C30 DecRefs +0x10 with stride 0x30.
-    FixedString field_10;
-    // inferred: lines 357-358: +0x14 (8 bytes) and +0x1C (float) = Translate of Entity1's
-    // transform (FUN_140e5a590 result +0x10/+0x18) or the position already assigned to it earlier
-    // in the same frame (local hash map of 12-byte values).
-    glm::vec3 Entity1Position;
-    // inferred: lines 359-360: +0x20 (8 bytes) and +0x28 (float) = Entity2's position, same
-    // source.
-    glm::vec3 Entity2Position;
+    // inferred: Toolkit EoCServer.dll+0x5D7C70 ProcessSwapPlacesRequests: element +0 = first
+    // handle of the queued request; the assert text calls it the 'source' entity ('...but %s
+    // entity doesn't have a TransformComponent', 'source' when the first handle fails, 'target'
+    // otherwise).
+    [[bg3::legacy(Entity1)]] EntityHandle Source;
+    // inferred: EoCServer.dll+0x5D7C70 ProcessSwapPlacesRequests: element +8 = second handle of
+    // the request, called the 'target' entity by the same asserts.
+    [[bg3::legacy(Entity2)]] EntityHandle Target;
+    // inferred: Toolkit EoCServer.dll+0xCFA8A0 esv::EffectManager::ProcessSwapPlacesRequests:
+    // element +0x10 is ToChar'ed, split at ':' (SplitStringFast, up to 2 parts) and each part
+    // played with PlayAndForgetEffect / CreateEffect at element +0x14 and +0x20. It comes from the
+    // SwapPlaces stats functor's first argument (EoCServer.dll+0x162CA70 case 8 passes functor
+    // +0x48 to LEGACY_RequestSwapPlaces; Script Extender calls it SwapPlacesFunctor::Animation);
+    // game data: SwapPlaces(VFX_Spells_Cast_Sorcerer_WildMagic_Swap_PositionEffect_01:...).
+    FixedString Effect;
+    // inferred: EoCServer.dll+0x5D7C70: element +0x14..+0x1F = the source entity's Translate
+    // (TransformComponent +0x10/+0x18, or the position assigned to it earlier in the frame);
+    // EffectManager::ProcessSwapPlacesRequests (EoCServer.dll+0xCFA8A0) plays the effect there.
+    [[bg3::legacy(Entity1Position)]] glm::vec3 SourcePosition;
+    // inferred: EoCServer.dll+0x5D7C70: element +0x20..+0x2B = the target entity's position, same
+    // source; EffectManager::ProcessSwapPlacesRequests plays the effect there too.
+    [[bg3::legacy(Entity2Position)]] glm::vec3 TargetPosition;
 };
 
 // Created by esv::swap_places::RequestSystem (bg3.exe+0x2E9E370 = ProcessSwapPlacesRequests,
@@ -29956,30 +30014,73 @@ struct AnubisSavegameLoadingRawArray
 
 struct AnubisSavegameReader
 {
-    // unknown: bg3.exe+0x3828430 (Reader move) copies it first; live: heap pointer
-    [[bg3::hidden]] void* field_0;
-    // unknown: bg3.exe+0x38284F0 moves 7 Array-shaped members at +0x8..+0x78 of the Reader (ptr,
-    // u32, u32); live +0x10 of the component: heap, 0x3A2/0x3A2
-    AnubisSavegameLoadingRawArray field_8;
-    // unknown: same move function; live 0x20/0x20
-    AnubisSavegameLoadingRawArray field_18;
-    // unknown: same move function; live empty
-    AnubisSavegameLoadingRawArray field_28;
-    // unknown: same move function; live heap, 0x3C2/0x3C2
-    AnubisSavegameLoadingRawArray field_38;
-    // unknown: same move function: pointer zeroed together with a u16 at +0x52 and a u32 at +0x54
-    // (not an ordinary Array)
-    [[bg3::hidden]] void* field_48;
-    // unknown: live 9
-    uint16_t field_50;
-    // unknown: zeroed by the move; live 1
-    uint16_t field_52;
-    // unknown: zeroed by the move; live 0x20
-    uint32_t field_54;
-    // unknown: same move function; live empty
-    AnubisSavegameLoadingRawArray field_58;
-    // unknown: same move function; live heap, 0x20/0x20
-    AnubisSavegameLoadingRawArray field_68;
+    // inferred: Reader +0. ls::anubis::savegame::Writer::Writer(Registry&)
+    // (AnubisFramework.dll+0x105AF0) stores '*(Registry**)this = param_1' before constructing the
+    // Header at +8; macOS Reader::Reader(Writer&&) (bg3_macos_x64+0x6740F00) copies Writer +0 to
+    // Reader +0 first.
+    [[bg3::hidden]] void* Registry;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameLoadingRawArray Scalars;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0x10. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameLoadingRawArray Tables;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0x20. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameLoadingRawArray TableEntries;
+    // inferred: Same Reader as ls::anubis::savegame::ReloadingComponent / RestoringStateComponent
+    // (one move function bg3.exe+0x38284F0, macOS Reader::Reader(Writer&&) bg3_macos_x64+0x6740F00
+    // copies the same offsets); Header +0x30 = DynamicArray<model::Variable> (macOS
+    // Header::~Header bg3_macos_x64+0x667E5F0; Header::Visit key 'Variable').
+    AnubisSavegameLoadingRawArray Variables;
+    // inferred: Same Reader as ls::anubis::savegame::ReloadingComponent / RestoringStateComponent
+    // (one move function bg3.exe+0x38284F0, macOS Reader::Reader(Writer&&) bg3_macos_x64+0x6740F00
+    // copies the same offsets); Header +0x40 = PagedArray<model::Tree> (macOS Header::~Header
+    // RemoveAll on this+0x40, then frees the page pointers counted by the u16 at +0x4a).
+    [[bg3::hidden]] void* TreesPages;
+    // inferred: Same Reader as ls::anubis::savegame::ReloadingComponent / RestoringStateComponent
+    // (one move function bg3.exe+0x38284F0, macOS Reader::Reader(Writer&&) bg3_macos_x64+0x6740F00
+    // copies the same offsets); page-size shift of the Header +0x40 PagedArray<model::Tree>; live
+    // 9.
+    uint16_t TreesPageShift;
+    // inferred: Same Reader as ls::anubis::savegame::ReloadingComponent / RestoringStateComponent
+    // (one move function bg3.exe+0x38284F0, macOS Reader::Reader(Writer&&) bg3_macos_x64+0x6740F00
+    // copies the same offsets); page count of the PagedArray<model::Tree>: macOS Header::~Header
+    // loops over the u16 at Header +0x4a (= Reader +0x52) freeing pages; zeroed by the move.
+    uint16_t TreesPageCount;
+    // inferred: Same Reader as ls::anubis::savegame::ReloadingComponent / RestoringStateComponent
+    // (one move function bg3.exe+0x38284F0, macOS Reader::Reader(Writer&&) bg3_macos_x64+0x6740F00
+    // copies the same offsets); element count of the PagedArray<model::Tree>; zeroed by the move
+    // (macOS Reader::Reader(Writer&&) clears +0x54).
+    uint32_t TreesCount;
+    // inferred: Same Reader as ls::anubis::savegame::ReloadingComponent / RestoringStateComponent
+    // (one move function bg3.exe+0x38284F0, macOS Reader::Reader(Writer&&) bg3_macos_x64+0x6740F00
+    // copies the same offsets); Header +0x50 = DynamicArray<model::Operation> (macOS
+    // Header::~Header reallocates this+0x50 to 0; Header::Visit key 'Operation').
+    AnubisSavegameLoadingRawArray Operations;
+    // inferred: Same Reader as ls::anubis::savegame::ReloadingComponent / RestoringStateComponent
+    // (one move function bg3.exe+0x38284F0, macOS Reader::Reader(Writer&&) bg3_macos_x64+0x6740F00
+    // copies the same offsets); Header +0x60 = DynamicArray<model::Component> (macOS
+    // Header::~Header destroys this+0x60; Header::Visit key 'Component').
+    AnubisSavegameLoadingRawArray Components;
     // unknown: bg3.exe+0x3828430 moves it; macOS Reader::~Reader frees +0x78 after clearing its
     // size; live heap 0x29/0x29
     AnubisSavegameLoadingRawArray field_78;
@@ -30075,18 +30176,38 @@ struct AnubisSavegameReloadingComponentEntry
 
 struct AnubisSavegameReloadingReader
 {
-    // unknown: bg3.exe+0x3828430 (Reader move) copies it first as one qword; same as Writer +0.
-    [[bg3::hidden]] void* field_0;
-    // unknown: Reader +8 = ls::anubis::savegame::model::Header (macOS Reader::~Reader calls
-    // model::Header::~Header(this+8); Windows Reader destructor bg3.exe+0x3828600 ends with the
-    // Header destructor bg3.exe+0x3828670 on +8, the same one
-    // ls::anubis::savegame::StateComponent's Writer uses); Header +0: plain array (Header
-    // destructor frees it with bg3.exe+0x5946C0, no element destructor).
-    AnubisSavegameReloadingRawArray field_8;
-    // unknown: Header +0x10: plain array (bg3.exe+0x3828670 frees it with bg3.exe+0x5946C0).
-    AnubisSavegameReloadingRawArray field_18;
-    // unknown: Header +0x20: plain array (bg3.exe+0x3828670 frees it with bg3.exe+0x5946C0).
-    AnubisSavegameReloadingRawArray field_28;
+    // inferred: Reader +0. ls::anubis::savegame::Writer::Writer(Registry&)
+    // (AnubisFramework.dll+0x105AF0) stores '*(Registry**)this = param_1' before constructing the
+    // Header at +8; macOS Reader::Reader(Writer&&) (bg3_macos_x64+0x6740F00) copies Writer +0 to
+    // Reader +0 first.
+    [[bg3::hidden]] void* Registry;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameReloadingRawArray Scalars;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0x10. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameReloadingRawArray Tables;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0x20. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameReloadingRawArray TableEntries;
     // inferred: Header +0x30 = DynamicArray<ls::anubis::savegame::model::Variable> (macOS
     // ~Header); Windows Header destructor bg3.exe+0x3828670 resizes it to 0 with bg3.exe+0x3839060
     // (0x20-byte elements: STDString + qword).
@@ -30204,18 +30325,38 @@ struct AnubisSavegameRestoringStateComponentEntry
 
 struct AnubisSavegameRestoringStateReader
 {
-    // unknown: bg3.exe+0x3828430 (Reader move) copies it first as one qword; same as Writer +0.
-    [[bg3::hidden]] void* field_0;
-    // unknown: Reader +8 = ls::anubis::savegame::model::Header (macOS Reader::~Reader calls
-    // model::Header::~Header(this+8); Windows Reader destructor bg3.exe+0x3828600 ends with the
-    // Header destructor bg3.exe+0x3828670 on +8, the same one
-    // ls::anubis::savegame::StateComponent's Writer uses); Header +0: plain array (Header
-    // destructor frees it with bg3.exe+0x5946C0, no element destructor).
-    AnubisSavegameRestoringStateRawArray field_8;
-    // unknown: Header +0x10: plain array (bg3.exe+0x3828670 frees it with bg3.exe+0x5946C0).
-    AnubisSavegameRestoringStateRawArray field_18;
-    // unknown: Header +0x20: plain array (bg3.exe+0x3828670 frees it with bg3.exe+0x5946C0).
-    AnubisSavegameRestoringStateRawArray field_28;
+    // inferred: Reader +0. ls::anubis::savegame::Writer::Writer(Registry&)
+    // (AnubisFramework.dll+0x105AF0) stores '*(Registry**)this = param_1' before constructing the
+    // Header at +8; macOS Reader::Reader(Writer&&) (bg3_macos_x64+0x6740F00) copies Writer +0 to
+    // Reader +0 first.
+    [[bg3::hidden]] void* Registry;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameRestoringStateRawArray Scalars;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0x10. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameRestoringStateRawArray Tables;
+    // inferred: Reader +8 is model::Header (macOS Reader::Reader(Writer&&) moves Writer +8..+0x78
+    // member for member); this is Header +0x20. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    AnubisSavegameRestoringStateRawArray TableEntries;
     // inferred: Header +0x30 = DynamicArray<ls::anubis::savegame::model::Variable> (macOS
     // ~Header); Windows Header destructor bg3.exe+0x3828670 resizes it to 0 with bg3.exe+0x3839060
     // (0x20-byte elements: STDString + qword).
@@ -30320,36 +30461,53 @@ struct StateComponent : public BaseComponent
 {
     DEFINE_COMPONENT(AnubisSavegameState, "ls::anubis::savegame::StateComponent")
 
-    // unknown: ls::anubis::savegame::Writer +0 (the component is a Writer moved into the ECS:
-    // macOS EntityCommandBuffer::AddComponentUnchecked<StateComponent, Writer>(Writer&&)); creator
-    // bg3.exe+0x383A360 copies it first as a plain 8-byte value; macOS ~Writer does not free it.
-    // Live: the same heap pointer in all 48 instances (a shared registry/context object).
-    [[bg3::hidden]] void* field_0;
-    // unknown: Writer +8 = ls::anubis::savegame::model::Header (macOS ~Writer calls
-    // model::Header::~Header(this+8)); Header +0: plain array (macOS ~Header frees it without
-    // element destructor; Windows bg3.exe+0x5946C0) - buffer pointer; element size not established
-    // (plain free, no element destructor), so written by its raw parts.
-    [[bg3::hidden]] void* field_8;
-    // inferred: capacity of the same array (moved as uint32 by bg3.exe+0x38284F0).
-    uint32_t field_8Capacity;
-    // inferred: size of the same array.
-    uint32_t field_8Size;
-    // unknown: Header +0x10: plain array (macOS ~Header, Windows bg3.exe+0x5946C0) - buffer
-    // pointer; element size not established (plain free, no element destructor), so written by its
-    // raw parts.
-    [[bg3::hidden]] void* field_18;
-    // inferred: capacity of the same array (moved as uint32 by bg3.exe+0x38284F0).
-    uint32_t field_18Capacity;
-    // inferred: size of the same array.
-    uint32_t field_18Size;
-    // unknown: Header +0x20: plain array (macOS ~Header, Windows bg3.exe+0x5946C0) - buffer
-    // pointer; element size not established (plain free, no element destructor), so written by its
-    // raw parts.
-    [[bg3::hidden]] void* field_28;
-    // inferred: capacity of the same array (moved as uint32 by bg3.exe+0x38284F0).
-    uint32_t field_28Capacity;
-    // inferred: size of the same array.
-    uint32_t field_28Size;
+    // inferred: The component is a Writer (macOS AddComponentUnchecked<StateComponent, Writer>);
+    // ls::anubis::savegame::Writer::Writer(Registry&) (AnubisFramework.dll+0x105AF0) stores
+    // '*(Registry**)this = param_1' before constructing the Header at +8; macOS
+    // Reader::Reader(Writer&&) (bg3_macos_x64+0x6740F00) copies Writer +0 to Reader +0 first.
+    [[bg3::hidden]] void* Registry;
+    // inferred: Writer +8 is model::Header; this is Header +0. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    [[bg3::hidden]] void* Scalars;
+    // inferred: capacity of the Header +0 array (Scalars); moved as uint32 by bg3.exe+0x38284F0.
+    // Name of the array from AnubisFramework.dll+0x1196D0 Header::Visit.
+    uint32_t ScalarsCapacity;
+    // inferred: size of the Header +0 array (Scalars); moved as uint32 by bg3.exe+0x38284F0. Name
+    // of the array from AnubisFramework.dll+0x1196D0 Header::Visit.
+    uint32_t ScalarsSize;
+    // inferred: Writer +8 is model::Header; this is Header +0x10. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    [[bg3::hidden]] void* Tables;
+    // inferred: capacity of the Header +0x10 array (Tables); moved as uint32 by bg3.exe+0x38284F0.
+    // Name of the array from AnubisFramework.dll+0x1196D0 Header::Visit.
+    uint32_t TablesCapacity;
+    // inferred: size of the Header +0x10 array (Tables); moved as uint32 by bg3.exe+0x38284F0.
+    // Name of the array from AnubisFramework.dll+0x1196D0 Header::Visit.
+    uint32_t TablesSize;
+    // inferred: Writer +8 is model::Header; this is Header +0x20. AnubisFramework.dll+0x1196D0
+    // ls::anubis::savegame::model::Header::Visit visits the Header's seven arrays in order with
+    // keys built from string literals: +0 'Scalar' (DAT_1801b0e38, init
+    // AnubisFramework.dll+0x15E50), +0x10 'Table' (+0x16090), +0x20 'TableEntry' (+0x160C0), +0x30
+    // 'Variable', +0x40 tree key, +0x50 'Operation', +0x60 'Component' - the last four match the
+    // arrays already named Variables / Trees / Operations / Components from macOS Header::~Header
+    // (bg3_macos_x64+0x667E5F0).
+    [[bg3::hidden]] void* TableEntries;
+    // inferred: capacity of the Header +0x20 array (TableEntries); moved as uint32 by
+    // bg3.exe+0x38284F0. Name of the array from AnubisFramework.dll+0x1196D0 Header::Visit.
+    uint32_t TableEntriesCapacity;
+    // inferred: size of the Header +0x20 array (TableEntries); moved as uint32 by
+    // bg3.exe+0x38284F0. Name of the array from AnubisFramework.dll+0x1196D0 Header::Visit.
+    uint32_t TableEntriesSize;
     // inferred: Header +0x30 = DynamicArray<ls::anubis::savegame::model::Variable> (macOS
     // ~Header); Windows destructor bg3.exe+0x3828670 resizes it with bg3.exe+0x3839060 (0x20-byte
     // elements: STDString + qword). Live heap, capacity 0x1F..0x80.
