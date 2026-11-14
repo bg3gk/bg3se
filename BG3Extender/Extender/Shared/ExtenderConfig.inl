@@ -34,6 +34,7 @@ void ApplyConfig(ExtenderConfig& config, Document& root)
     ConfigGet(root, "MergeVirtualTextures", config.MergeVirtualTextures);
     ConfigGet(root, "KeepWindowInBackground", config.KeepWindowInBackground);
     ConfigGet(root, "KeepWindowOffScreen", config.KeepWindowOffScreen);
+    ConfigGet(root, "ShiftOpensConsole", config.ShiftOpensConsole);
 
     ConfigGet(root, "DebuggerPort", config.DebuggerPort);
     ConfigGet(root, "LuaDebuggerPort", config.LuaDebuggerPort);
