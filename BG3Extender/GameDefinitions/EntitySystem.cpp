@@ -861,6 +861,7 @@ void ECSChangeLog::Clear()
 void ECSChangeLog::AddEntityChange(EntityHandle entity, EntityChangeFlags flags)
 {
     auto entry = Entities.get_or_add(entity);
+    entry->Entity = entity;
     entry->Flags = entry->Flags | flags;
 }
 
@@ -877,6 +878,7 @@ void ECSChangeLog::AddComponentChange(EntityWorld* world, EntityHandle entity, C
     }
 
     auto entry = Entities.get_or_add(entity);
+    entry->Entity = entity;
     auto componentEntry = entry->Components.get_or_add((uint16_t)type);
 
     if (componentEntry->Flags == (ComponentChangeFlags)0) {

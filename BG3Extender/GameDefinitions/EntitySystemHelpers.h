@@ -71,6 +71,11 @@ struct ECSComponentLog
 
     StringView GetName(lua_State* L) const;
     std::optional<ExtComponentType> GetType(lua_State* L) const;
+    // Flags as one integer (ComponentChangeFlags bits), beside the per-flag booleans
+    inline uint32_t GetFlagMask() const
+    {
+        return (uint32_t)Flags;
+    }
 };
 
 struct ECSEntityLog
@@ -79,6 +84,12 @@ struct ECSEntityLog
     HashMap<uint16_t, ECSComponentLog> Components;
     EntityHandle Entity;
     EntityChangeFlags Flags{ 0 };
+
+    // Flags as one integer (EntityChangeFlags bits), beside the per-flag booleans
+    inline uint32_t GetFlagMask() const
+    {
+        return (uint32_t)Flags;
+    }
 };
 
 struct ECSChangeLog

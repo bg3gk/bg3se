@@ -12189,13 +12189,40 @@ Osi = {}
 --- @field ZoneRange number
 
 
+--- Options of Ext.Entity.SetupTracing; every field is optional.
+--- @class EntityTracingOptions
+--- Log entity and component creation/destruction from the command buffers (default true)
+--- @field TrackECB boolean?
+--- Log immediate world cache writes (default true)
+--- @field TrackImmediateWorldCache boolean?
+--- Log replicated components (default true)
+--- @field TrackReplication boolean?
+--- Log components marked modified (default false)
+--- @field TrackModifications boolean?
+--- Components whose modifications are not logged; engine names or Lua labels
+--- @field ExcludeModificationComponents string[]?
+
+
 --- @class EcsECSChangeLog
 --- @field Entities table<EntityHandle, EcsECSEntityLog>
+--- Running count of ECS frames ended (not reset by ClearTrace)
+--- @field Frame uint32
+--- Running count of ECB flushes seen (not reset by ClearTrace)
+--- @field Flush uint32
 
 
+--- One component's changes in the trace. The flags are readable two ways: one boolean per flag
+--- (Create, Destroy, ...) and all of them as one integer, FlagMask (ComponentChangeFlags bits:
+--- Create 1, Destroy 2, Replicate 4, OneFrame 8, ReplicatedComponent 16, Modify 32).
 --- @class EcsECSComponentLog
 --- @field Create boolean
 --- @field Destroy boolean
+--- @field FlagMask uint32
+--- ECS frame of the first change logged since the trace was last cleared
+--- @field Frame uint32
+--- ECB flush of the first change logged since the trace was last cleared
+--- @field Flush uint32
+--- @field Modify boolean
 --- @field Name StringView
 --- @field OneFrame boolean
 --- @field Replicate boolean
@@ -12203,12 +12230,15 @@ Osi = {}
 --- @field Type ExtComponentType?
 
 
+--- One entity's changes in the trace. Flags as booleans (Create, Destroy, ...) and as one
+--- integer, FlagMask (EntityChangeFlags bits: Create 1, Destroy 2, Immediate 4, Dead 8, Ignore 16).
 --- @class EcsECSEntityLog
 --- @field Components table<uint16, EcsECSComponentLog>
 --- @field Create boolean
 --- @field Dead boolean
 --- @field Destroy boolean
 --- @field Entity EntityHandle
+--- @field FlagMask uint32
 --- @field Ignore boolean
 --- @field Immediate boolean
 
@@ -24168,6 +24198,10 @@ local Ext_Debug = {}
 --- @field OnDestroyOnce fun(a1:ExtComponentType, a2:FunctionRef, a3:EntityHandle?):uint64
 --- @field OnSystemPostUpdate fun(a1:ExtSystemType, a2:FunctionRef, a3:boolean?):uint64
 --- @field OnSystemUpdate fun(a1:ExtSystemType, a2:FunctionRef, a3:boolean?):uint64
+--- Sets what the tracer records (developer mode). The table is optional; missing fields keep
+--- their defaults. Component names are the engine's ("eoc::HealthComponent") or Lua labels
+--- ("Health"); an unknown name is an error and leaves the tracer as it was.
+--- @field SetupTracing fun(options:EntityTracingOptions?)
 --- @field Subscribe fun(a1:ExtComponentType, a2:FunctionRef, a3:EntityHandle?, a4:uint64?):uint64?
 --- @field Unsubscribe fun(a1:uint64):boolean
 --- @field UuidToHandle fun(a1:Guid):EntityHandle

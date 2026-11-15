@@ -126,6 +126,7 @@ END_CLS()
 
 BEGIN_CLS(ecs::ECSComponentLog)
 P_BITMASK(Flags)
+P_GETTER(FlagMask, GetFlagMask)
 P_RO(Frame)
 P_RO(Flush)
 P_GETTER(Name, GetName)
@@ -137,6 +138,7 @@ BEGIN_CLS(ecs::ECSEntityLog)
 P(Components)
 P(Entity)
 P_BITMASK(Flags)
+P_GETTER(FlagMask, GetFlagMask)
 END_CLS()
 
 

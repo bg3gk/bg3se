@@ -240,24 +240,46 @@ bool Unsubscribe(lua_State* L, LuaEntitySubscriptionId handle)
     return EntityEventHelpers::Unsubscribe(L, handle);
 }
 
-void SetupTracing(lua_State* L, EntityTracingOptions options)
+// A component named either as the engine names it ("eoc::HealthComponent") or by its Lua label
+// ("Health"); an unknown name is an error rather than skipped, so a typo cannot pass for a filter.
+static ecs::ComponentTypeIndex ResolveTracedComponent(lua_State* L, ecs::EntitySystemHelpersBase& ecs, STDString const& name)
 {
-    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
-    auto& opts = ecs.GetTracer().GetOptions();
-    opts.TrackECB = options.TrackECB;
-    opts.TrackImmediateWorldCache = options.TrackImmediateWorldCache;
-    opts.TrackReplication = options.TrackReplication;
-    opts.TrackModifications = options.TrackModifications;
-    opts.ExcludeModificationTypes.Clear();
-
-    for (auto const& component : options.ExcludeModificationComponents) {
-        auto componentTypeIndex = ecs.GetComponentIndex(component);
-        if (componentTypeIndex) {
-            if (!ecs::IsOneFrame(*componentTypeIndex)) {
-                opts.ExcludeModificationTypes.Set((unsigned)*componentTypeIndex);
-            }
+    auto index = ecs.GetComponentIndex(name);
+    if (!index) {
+        auto label = EnumInfo<ExtComponentType>::Find(FixedString(name.c_str()));
+        if (label) {
+            index = ecs.GetComponentIndex(*label);
         }
     }
+
+    if (!index) {
+        luaL_error(L, "Unknown component type '%s' (neither an engine name nor a Lua label of this side)", name.c_str());
+    }
+
+    return *index;
+}
+
+void SetupTracing(lua_State* L, std::optional<EntityTracingOptions> options)
+{
+    auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
+    EntityTracingOptions defaults;
+    auto const& o = options ? *options : defaults;
+
+    // Resolve every name before changing anything, so an error leaves the tracer as it was
+    ecs::ComponentTypeMask exclude;
+    for (auto const& component : o.ExcludeModificationComponents) {
+        auto componentTypeIndex = ResolveTracedComponent(L, ecs, component);
+        if (!ecs::IsOneFrame(componentTypeIndex)) {
+            exclude.Set((unsigned)componentTypeIndex);
+        }
+    }
+
+    auto& opts = ecs.GetTracer().GetOptions();
+    opts.TrackECB = o.TrackECB;
+    opts.TrackImmediateWorldCache = o.TrackImmediateWorldCache;
+    opts.TrackReplication = o.TrackReplication;
+    opts.TrackModifications = o.TrackModifications;
+    opts.ExcludeModificationTypes = exclude;
 }
 
 void EnableTracing(lua_State* L, bool enable)
