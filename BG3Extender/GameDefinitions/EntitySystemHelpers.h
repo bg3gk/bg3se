@@ -111,6 +111,21 @@ struct ECSChangeTracerOptions
     bool TrackReplication{ true };
     bool TrackModifications{ false };
     ComponentTypeMask ExcludeModificationTypes;
+    // Filters applied where the changes are read, not afterwards: only these entities (none: every
+    // entity) and only these component types (FilterComponents false: every type).
+    HashSet<EntityHandle> Entities;
+    ComponentTypeMask IncludeTypes;
+    bool FilterComponents{ false };
+
+    inline bool AcceptsEntity(EntityHandle entity) const
+    {
+        return Entities.empty() || Entities.contains(entity);
+    }
+
+    inline bool AcceptsType(ComponentTypeIndex type) const
+    {
+        return !FilterComponents || IncludeTypes[(unsigned)type];
+    }
 };
 
 class ECSChangeTracer

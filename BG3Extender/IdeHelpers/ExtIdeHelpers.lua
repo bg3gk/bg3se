@@ -12201,6 +12201,11 @@ Osi = {}
 --- @field TrackModifications boolean?
 --- Components whose modifications are not logged; engine names or Lua labels
 --- @field ExcludeModificationComponents string[]?
+--- Only these entities are logged, filtered where the changes are read (empty: every entity);
+--- with it, modifications are looked up for these entities only instead of every storage
+--- @field Entities EntityHandle[]?
+--- Only these component types are logged (empty: every type); engine names or Lua labels
+--- @field Components string[]?
 
 
 --- @class EcsECSChangeLog

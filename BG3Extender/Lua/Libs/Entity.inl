@@ -274,12 +274,23 @@ void SetupTracing(lua_State* L, std::optional<EntityTracingOptions> options)
         }
     }
 
+    ecs::ComponentTypeMask include;
+    for (auto const& component : o.Components) {
+        include.Set((unsigned)ResolveTracedComponent(L, ecs, component));
+    }
+
     auto& opts = ecs.GetTracer().GetOptions();
     opts.TrackECB = o.TrackECB;
     opts.TrackImmediateWorldCache = o.TrackImmediateWorldCache;
     opts.TrackReplication = o.TrackReplication;
     opts.TrackModifications = o.TrackModifications;
     opts.ExcludeModificationTypes = exclude;
+    opts.IncludeTypes = include;
+    opts.FilterComponents = !o.Components.empty();
+    opts.Entities.clear();
+    for (auto entity : o.Entities) {
+        opts.Entities.insert(entity);
+    }
 }
 
 void EnableTracing(lua_State* L, bool enable)

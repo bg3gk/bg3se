@@ -1546,12 +1546,15 @@ void ECSChangeTracer::LogECBChanges()
     for (auto& ecb : world->CommandBuffers) {
         for (unsigned i = 0; i < ecb.Data.EntityChanges.size(); i++) {
             auto entityHandle = ecb.Data.EntityChanges.key_at(i);
+            if (!options_.AcceptsEntity(entityHandle)) continue;
+
             auto const& entityChanges = ecb.Data.EntityChanges.Values[i];
 
             log_.AddEntityChange(entityHandle, entityChanges.Flags);
 
             for (unsigned j = 0; j < entityChanges.Store.size(); j++) {
                 auto const& upd = entityChanges.Store[j];
+                if (!options_.AcceptsType(upd.ComponentTypeId)) continue;
 
                 log_.AddComponentChange(world, entityHandle, upd.ComponentTypeId,
                     upd.Index ? ComponentChangeFlags::Create : ComponentChangeFlags::Destroy);
@@ -1569,10 +1572,12 @@ void ECSChangeTracer::LogImmediateWorldCacheChanges()
     auto world = ecs_->GetEntityWorld();
     auto const& changes = world->Cache->WriteChanges;
     for (unsigned i = 0; i < changes.AvailableComponentTypes.NumBits; i++) {
-        if (changes.AvailableComponentTypes[i]) {
+        if (changes.AvailableComponentTypes[i] && options_.AcceptsType(ComponentTypeIndex{ (uint16_t)i })) {
             auto const& changeSet = changes.ComponentsByType[i];
             for (unsigned j = 0; j < changeSet.Components.size(); j++) {
                 auto entityHandle = changeSet.Components.key_at(j);
+                if (!options_.AcceptsEntity(entityHandle)) continue;
+
                 auto const& change = changeSet.Components.Values[j];
 
                 log_.AddComponentChange(world, entityHandle, ComponentTypeIndex{ (uint16_t)i }, change.Ptr ? ComponentChangeFlags::Create : ComponentChangeFlags::Destroy);
@@ -1589,12 +1594,34 @@ void ECSChangeTracer::LogComponentModifications()
 
     auto world = ecs_->GetEntityWorld();
     auto storages = world->Storage;
+
+    if (!options_.Entities.empty()) {
+        // Filtered by entity: look at the storage class of each entity named, not at every one
+        for (auto entity : options_.Entities) {
+            auto storageIndex = storages->GetEntityStorageIndex(entity);
+            if (!storageIndex || !storages->IsEntityStorageDirty(*storageIndex)) continue;
+
+            auto storage = storages->GetEntityStorage(*storageIndex);
+            if (storage == nullptr) continue;
+
+            for (auto componentSlot = storage->ModifiedComponents.FindFirst(); componentSlot; componentSlot = storage->ModifiedComponents.FindNext(*componentSlot)) {
+                auto componentType = storage->ComponentDtors[*componentSlot].ComponentTypeId;
+                if (options_.ExcludeModificationTypes[(unsigned)componentType] || !options_.AcceptsType(componentType)) continue;
+
+                if (storage->WasComponentChanged(entity, componentType)) {
+                    log_.AddComponentChange(world, entity, componentType, ComponentChangeFlags::Modify);
+                }
+            }
+        }
+        return;
+    }
+
     for (auto index = storages->UsedFrameDataStorages.FindFirst(); index; index = storages->UsedFrameDataStorages.FindNext(*index)) {
         auto storage = storages->Storages[*index];
         for (auto componentSlot = storage->ModifiedComponents.FindFirst(); componentSlot; componentSlot = storage->ModifiedComponents.FindNext(*componentSlot)) {
             auto componentType = storage->ComponentDtors[*componentSlot].ComponentTypeId;
 
-            if (!options_.ExcludeModificationTypes[(unsigned)componentType]) {
+            if (!options_.ExcludeModificationTypes[(unsigned)componentType] && options_.AcceptsType(componentType)) {
                 for (unsigned pageIdx = 0; pageIdx < storage->Components.size(); pageIdx++) {
                     auto& page = storage->Components[pageIdx]->Components[*componentSlot];
                     auto handles = storage->Handles[pageIdx];
@@ -1628,10 +1655,11 @@ void ECSChangeTracer::LogReplicatedChanges()
     for (unsigned i = 0; i < buffers->ComponentPools.size(); i++) {
         auto const& pool = buffers->ComponentPools[i];
         if (pool.size() > 0) {
-            for (auto const& entity : pool) {
-                auto type = ecs_->GetComponentIndex(ReplicationTypeIndex{ (uint16_t)i });
+            auto type = ecs_->GetComponentIndex(ReplicationTypeIndex{ (uint16_t)i });
+            if (type == UndefinedComponent || !options_.AcceptsType(type)) continue;
 
-                if (type != UndefinedComponent) {
+            for (auto const& entity : pool) {
+                if (options_.AcceptsEntity(entity.Key())) {
                     log_.AddComponentChange(world, entity.Key(), type, ComponentChangeFlags::Replicate);
                 }
             }
