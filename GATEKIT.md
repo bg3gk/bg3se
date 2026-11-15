@@ -54,6 +54,34 @@ upstream and is rebased onto it rather than carrying a long-lived divergence.
   the game's tick rate is not disturbed. A value can be held fixed (`Freeze`, rewritten each tick).
   Everything is bounds-checked against committed memory; nothing names a function in the extender -
   the caller turns `module+0xRVA` into a name through its own code database.
+- **The instruments made sound and completed** (`v34-instruments`): a watch on reads no longer
+  closes the game (the handler reads through the kernel and stays installed, so clearing never
+  leaves a thread unanswered); a hit's `Before` is a copy taken at arming and after every hit, and
+  its address is named `NextInstruction`, since a data breakpoint fires after the access. Watches
+  and freezes belong to the side (server or client) that made them - `ListWatches`, clearing by
+  owner - and are served from the extender's own tick, so a Lua reset or a load leaves none unserved;
+  hits carry the same ECS frame and flush counters as the tracer's rows. The tracer fills each
+  entry's `Entity`, gives flags also as one `FlagMask`, takes its options as optional and component
+  names as the engine's or as Lua labels (an unknown name is an error), filters by `Entities` and
+  `Components` where the changes are read, counts each entry (`Count`, `LastFrame`, `LastFlush`)
+  with a bounded list of ordered `Events`, and with `TrackSystems` says which system was updating
+  when a filtered component changed. Component event and system update hooks take the Lua lock
+  before looking a subscription up, and defer changes made during a dispatch. Crash dumps can go to
+  a folder of our own, one set per crash, with the faulting `module+0xRVA` in a text file beside
+  the dump and the reporter window optional. Not in this build: property sizes and paths below the
+  top level, a watch over a range, addresses of objects behind any proxy, and a search by value.
+
+## Settings this fork adds
+
+In `ScriptExtenderSettings.json`, beside upstream's:
+
+| Setting | Default | What it does |
+|--|--|--|
+| `KeepWindowInBackground` | false | Refuses the game's attempts to bring its window forward |
+| `KeepWindowOffScreen` | false | Puts the window where no screen reaches when it is created |
+| `ShiftOpensConsole` | true | Holding Shift at start opens the console |
+| `CrashDumpDirectory` | empty | Folder for crash dumps, `<pid>-<yyyymmdd>-<hhmmss>.dmp` and a `.txt` with the faulting `module+0xRVA`; when set, crash reporting is on even with `SendCrashReports` off |
+| `LaunchCrashReporter` | true | Starts the reporter window after a dump |
 
 Every change of meaning — not only of layout — is verified in the running game before it lands.
 What is verified and what is merely deduced is recorded with the change.
@@ -74,3 +102,7 @@ x64, from `fd2239ff`): `gatekit-v34` with the memory instrument merged (`Ext.Deb
 ECS tracer stamps merged (each change in `Ext.Entity.GetTrace()` carries `Frame` and `Flush`, and
 the log itself the running counters) and `GlobalSwitches::SoundSettings` mapped. DLL SHA-256
 `2b983653949938cdcb0044e157dc41dd1e03d2abd0457f948900343cc1eb95bf`.
+
+**Build `v34-instruments`** (normal mode, `Game Release` x64, from `7b9b3ad1` on
+`gatekit-v34-instruments`): the instruments above. DLL SHA-256
+`812f1c948d5a2e62049840bfc38d6e3281c5c2110648d88a75f13259fae1be78`.
