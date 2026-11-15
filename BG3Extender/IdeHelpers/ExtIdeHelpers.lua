@@ -24205,7 +24205,12 @@ local Ext_ClientUI = {}
 --- @field Before int64 The value copied when the watch was armed or at the slot's previous hit
 --- @field After int64 The value read at the hit
 --- @field Changed boolean Before ~= After; a read, or a write of the same value, leaves it false
---- @field Frame int64 Poll counter at the hit
+--- @field Owner string "Server" or "Client": the side that armed the watch
+--- ECS frame and ECB flush of the owning side at the hit, the same counters as the tracer's rows
+--- @field Frame int64
+--- @field Flush int64
+--- The owning side's extender tick count at the hit
+--- @field Poll int64
 --- @field Time int64 QueryPerformanceCounter at the hit
 --- A data breakpoint is a trap: this is the instruction AFTER the one that accessed the field
 --- @field NextInstruction DebugModuleAddress
@@ -24226,16 +24231,20 @@ local Ext_ClientUI = {}
 --- @field SetEntityRuntimeCheckLevel fun(a1:int32)
 --- Developer mode only. Arms a hardware watch on every thread: on writes, or on reads and writes
 --- when readWrite is true. size is 1, 2, 4 or 8 and the address must be aligned to it. Returns
---- the slot (1-4) or nil when all four are taken.
+--- the slot (1-4) or nil when all four are taken. The watch belongs to the calling side: only that
+--- side reads its hits, lists it and clears it.
 --- @field WatchWrite fun(address:int64, size:int32, readWrite:boolean?):int32?
---- Developer mode only. The hits recorded since the last read, oldest first.
+--- Developer mode only. The calling side's hits recorded since its last read, oldest first.
 --- @field ReadWatchHits fun(max:int32?):DebugWatchHit[]
---- Developer mode only. Counts a poll and re-arms threads made since arming (once in 30 polls);
---- returns the number of hits waiting.
+--- Developer mode only. The number of the calling side's hits waiting. Not needed for polling:
+--- the extender counts its ticks, re-arms new threads and applies freezes itself.
 --- @field WatchPoll fun():int64
---- Developer mode only. Clears one slot, or every slot without an argument. A thread still armed
---- with a cleared watch is answered by the handler, which stays installed.
+--- Developer mode only. Clears one slot of the calling side, or all of its slots without an
+--- argument; true if anything was cleared. The other side's watches are left alone.
 --- @field ClearWatch fun(slot:int32?):boolean
+--- Developer mode only. The calling side's watches, or both sides' with all:
+--- { { Slot, Owner, Address, Size, ReadWrite, Value } }
+--- @field ListWatches fun(all:boolean?):table[]
 --- Developer mode only. Address of a component's field: { Address, Offset, ComponentAddress, Type, Size, Scalar }
 --- @field GetFieldAddress fun(entity:EntityHandle, component:string, field:string):table?
 --- Developer mode only. { Address, InlineSize, TotalSize } of a component, mapped or not
@@ -24256,11 +24265,14 @@ local Ext_ClientUI = {}
 --- @field GetSystemAddress fun(name:string):table?
 --- @field GetComponentHolders fun(name:string, max:int32?):EntityHandle[]
 --- @field GetComponentCounts fun():table<string, integer>
---- Developer mode only. Holds a scalar at an address, rewritten every tick; returns the slot or nil
+--- Developer mode only. Holds a scalar at an address, rewritten by the extender every tick of the
+--- calling side; returns the slot or nil
 --- @field Freeze fun(address:int64, type:string, value:number|boolean):int32?
 --- @field FreezeApply fun():int32
---- @field ClearFreezes fun():boolean
---- @field ListFreezes fun():table[]
+--- Clears the calling side's freezes (or one slot of its own)
+--- @field ClearFreezes fun(slot:int32?):boolean
+--- The calling side's freezes, or both sides' with all: { { Slot, Owner, Address, Size } }
+--- @field ListFreezes fun(all:boolean?):table[]
 local Ext_Debug = {}
 
 

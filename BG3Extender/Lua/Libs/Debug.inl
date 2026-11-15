@@ -687,6 +687,10 @@ struct Watchpoint
     // Before is the value just before its write - unless something changed it unseen in between
     // (a thread not armed yet, a write from kernel mode such as file I/O into the buffer).
     uint64_t Copy{ 0 };
+    // The side whose Lua armed it (InstrumentOwner); it lists, reads and clears it
+    uint8_t Owner{ 0 };
+    // That side's tracer log, whose running Frame and Flush counters stamp the hits
+    ecs::ECSChangeLog const* Log{ nullptr };
 };
 
 struct WatchHit
@@ -698,8 +702,19 @@ struct WatchHit
     uint64_t Before{ 0 };
     uint64_t After{ 0 };
     uint32_t Slot{ 0 };
-    uint64_t Frame{ 0 };         // the tick/frame number at the time, if set
+    uint8_t Owner{ 0 };
+    uint64_t Poll{ 0 };          // the owner's extender tick count at the time
+    uint32_t EcsFrame{ 0 };      // the owner's ECS frame and ECB flush, as on the tracer's rows
+    uint32_t EcsFlush{ 0 };
     int64_t Time{ 0 };          // QueryPerformanceCounter, for a hits-per-second rate
+};
+
+// Which side an instrument belongs to: the side whose Lua made it
+enum InstrumentOwner : uint8_t
+{
+    OwnerNone = 0,
+    OwnerServer = 1,
+    OwnerClient = 2
 };
 
 static constexpr uint32_t WatchSlots = 4;
@@ -708,9 +723,13 @@ static constexpr uint32_t HitRingSize = 512;
 Watchpoint gWatches[WatchSlots];
 WatchHit gHitRing[HitRingSize];
 std::atomic<uint64_t> gHitHead{ 0 };     // total hits ever recorded (monotonic)
-std::atomic<uint64_t> gHitRead{ 0 };     // total hits handed to Lua
-std::atomic<uint64_t> gWatchFrame{ 0 };  // tick number set by WatchPoll
+std::atomic<uint64_t> gHitRead[3]{};     // per owner: the next hit to hand to its Lua
+std::atomic<uint64_t> gWatchPoll[3]{};   // per owner: extender ticks counted
 std::atomic_flag gHitLock = ATOMIC_FLAG_INIT;
+// Serialises arming, clearing and freezing between the server's and the client's threads (never
+// taken by the exception handler)
+std::recursive_mutex gInstrumentMutex;
+uint64_t gLastRearm{ 0 };
 void* gVeh{ nullptr };
 bool gWatchActive{ false };
 // Set when the handler first runs on a thread and cleared when it leaves; a nested single-step
@@ -860,7 +879,12 @@ LONG CALLBACK WatchHandler(EXCEPTION_POINTERS* ex)
         hit.Slot = i;
         hit.NextInstruction = ctx->Rip;
         hit.Thread = GetCurrentThreadId();
-        hit.Frame = gWatchFrame.load(std::memory_order_relaxed);
+        hit.Owner = watch.Owner;
+        hit.Poll = gWatchPoll[watch.Owner].load(std::memory_order_relaxed);
+        if (watch.Log != nullptr) {
+            hit.EcsFrame = watch.Log->Frame;
+            hit.EcsFlush = watch.Log->Flush;
+        }
         LARGE_INTEGER t; QueryPerformanceCounter(&t);
         hit.Time = t.QuadPart;
 
@@ -897,12 +921,61 @@ LONG CALLBACK WatchHandler(EXCEPTION_POINTERS* ex)
     return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+// The side a Lua state belongs to, as the owner of what it arms
+static uint8_t OwnerOf(lua_State* L)
+{
+    return State::FromLua(L)->IsClient() ? OwnerClient : OwnerServer;
+}
+
+static char const* OwnerName(uint8_t owner)
+{
+    switch (owner) {
+    case OwnerServer: return "Server";
+    case OwnerClient: return "Client";
+    default: return "None";
+    }
+}
+
+// Arm one slot; the caller holds gInstrumentMutex. Returns the slot index or -1 when none is free.
+static int ArmSlot(lua_State* L, uint64_t address, uint32_t size, bool readWrite)
+{
+    int slot = -1;
+    for (uint32_t i = 0; i < WatchSlots; i++) {
+        if (!gWatches[i].Enabled) { slot = (int)i; break; }
+    }
+    if (slot < 0) return -1;
+
+    auto& watch = gWatches[slot];
+    watch.Address = address;
+    watch.Size = size;
+    watch.ReadWrite = readWrite;
+    // The value before any hit, so the first hit's Before is true too
+    watch.Copy = SafeReadScalar(address, size);
+    watch.Owner = OwnerOf(L);
+    watch.Log = &State::FromLua(L)->GetEntitySystemHelpers().GetTracer().GetLog();
+    watch.Enabled = true;
+
+    if (gVeh == nullptr) {
+        gVeh = AddVectoredExceptionHandler(1, &WatchHandler);
+    }
+    gWatchActive = true;
+    return slot;
+}
+
+static void UpdateWatchActive()
+{
+    bool anyEnabled = false;
+    for (auto const& w : gWatches) anyEnabled = anyEnabled || w.Enabled;
+    gWatchActive = anyEnabled;
+}
+
 } // anonymous namespace
 
 // Ext.Debug.WatchWrite(address, size[, readWrite]) -> slot index (1-4) or nil if none free.
 // Arms a hardware watchpoint: the writing instruction of the next write to this address is recorded.
 // size is 1, 2, 4 or 8; the address must be aligned to its size (the CPU requires it). readWrite
-// true fires on reads as well as writes.
+// true fires on reads as well as writes. The watch belongs to the calling side (server or client):
+// only that side lists its hits, reads them and clears it.
 UserReturn WatchWrite(lua_State* L, int64_t address, int32_t size, std::optional<bool> readWrite)
 {
     RequireDeveloperMode(L, "WatchWrite");
@@ -913,59 +986,47 @@ UserReturn WatchWrite(lua_State* L, int64_t address, int32_t size, std::optional
         return luaL_error(L, "WatchWrite: address must be aligned to its size");
     }
 
-    int slot = -1;
-    for (uint32_t i = 0; i < WatchSlots; i++) {
-        if (!gWatches[i].Enabled) { slot = (int)i; break; }
-    }
+    std::lock_guard _(gInstrumentMutex);
+    auto slot = ArmSlot(L, (uint64_t)address, (uint32_t)size, readWrite.value_or(false));
     if (slot < 0) {
         lua_pushnil(L);
         return 1;
     }
 
-    gWatches[slot].Address = (uint64_t)address;
-    gWatches[slot].Size = (uint32_t)size;
-    gWatches[slot].ReadWrite = readWrite.value_or(false);
-    // The value before any hit, so the first hit's Before is true too
-    gWatches[slot].Copy = SafeReadScalar((uint64_t)address, (uint32_t)size);
-    gWatches[slot].Enabled = true;
-
-    if (gVeh == nullptr) {
-        gVeh = AddVectoredExceptionHandler(1, &WatchHandler);
-    }
-    gWatchActive = true;
     ArmAllThreads();
-
     lua_pushinteger(L, slot + 1);
     return 1;
 }
 
-// Ext.Debug.WatchPoll() -> the number of hits waiting. Re-arms any threads created since the last
-// call (so a new game thread is covered) and advances the frame counter stamped on each hit.
-// The bridge calls this once a tick while a watch is set.
+// Ext.Debug.WatchPoll() -> the number of this side's hits waiting. Polling no longer depends on
+// it: the extender counts its own ticks, re-arms new threads and applies freezes every tick of
+// each side (OnExtenderTick), so a watch left armed across a Lua reset or a load stays served.
 UserReturn WatchPoll(lua_State* L)
 {
     RequireDeveloperMode(L, "WatchPoll");
-    auto frame = gWatchFrame.fetch_add(1, std::memory_order_relaxed);
-    // Arming suspends and resumes every thread, so doing it each tick halves the game's tick rate.
-    // Threads already armed keep catching writes; re-arming only picks up threads created since, so
-    // once a second (about every 30 ticks) is enough and the per-tick cost is gone.
-    if (gWatchActive && (frame % 30) == 0) {
-        ArmAllThreads();
+    auto owner = OwnerOf(L);
+    uint64_t waiting = 0;
+    uint64_t head = gHitHead.load();
+    uint64_t read = gHitRead[owner].load();
+    if (head - read > HitRingSize) read = head - HitRingSize;
+    for (uint64_t n = read; n < head; n++) {
+        if (gHitRing[n % HitRingSize].Owner == owner) waiting++;
     }
-    uint64_t waiting = gHitHead.load() - gHitRead.load();
     lua_pushinteger(L, (lua_Integer)waiting);
     return 1;
 }
 
-// Ext.Debug.ReadWatchHits([max]) -> the hits recorded since the last read, each:
-//   { Slot, Thread, Before, After, Changed, Frame, Time, NextInstruction = {Module, RVA, Address},
-//     Instruction (legacy name of NextInstruction), Return = { {Module, RVA, Address}, ... } }
+// Ext.Debug.ReadWatchHits([max]) -> this side's hits recorded since its last read, each:
+//   { Slot, Owner, Thread, Before, After, Changed, Frame, Flush, Poll, Time,
+//     NextInstruction = {Module, RVA, Address}, Instruction (legacy name of NextInstruction),
+//     Return = { {Module, RVA, Address}, ... } }
 // Before is the value copied at arming or at the slot's previous hit; After is read at the hit.
-// Addresses are resolved to module+0xRVA here. `Dropped` is set on the result's metatable-free
-// field only when the ring overflowed between reads.
+// Frame and Flush are the side's ECS frame and ECB flush, the same counters as on the tracer's
+// rows; Poll is the side's extender tick count.
 UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
 {
     RequireDeveloperMode(L, "ReadWatchHits");
+    auto owner = OwnerOf(L);
 
     auto resolve = [L](uint64_t addr) {
         HMODULE module{ nullptr };
@@ -991,32 +1052,33 @@ UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
     };
 
     uint64_t head = gHitHead.load();
-    uint64_t read = gHitRead.load();
-    uint64_t available = head - read;
-    bool dropped = available > HitRingSize;
-    if (dropped) {
+    uint64_t read = gHitRead[owner].load();
+    if (head - read > HitRingSize) {
         read = head - HitRingSize;          // the oldest kept hit
-        available = HitRingSize;
     }
     uint64_t limit = (uint64_t)max.value_or(0x7fffffff);
-    if (available > limit) available = limit;
 
     lua_newtable(L);
     int index = 1;
-    for (uint64_t n = 0; n < available; n++) {
+    uint64_t n = read;
+    for (; n < head && (uint64_t)(index - 1) < limit; n++) {
         WatchHit hit;
         while (gHitLock.test_and_set(std::memory_order_acquire)) {}
-        hit = gHitRing[(read + n) % HitRingSize];
+        hit = gHitRing[n % HitRingSize];
         gHitLock.clear(std::memory_order_release);
+        if (hit.Owner != owner) continue;
 
         lua_newtable(L);
         settable(L, "Slot", (int32_t)(hit.Slot + 1));
+        settable(L, "Owner", OwnerName(hit.Owner));
         settable(L, "Thread", (int32_t)hit.Thread);
         settable(L, "Before", (int64_t)hit.Before);
         settable(L, "After", (int64_t)hit.After);
         // A read, or a write of the same value, leaves Before == After
         settable(L, "Changed", hit.Before != hit.After);
-        settable(L, "Frame", (int64_t)hit.Frame);
+        settable(L, "Frame", (int64_t)hit.EcsFrame);
+        settable(L, "Flush", (int64_t)hit.EcsFlush);
+        settable(L, "Poll", (int64_t)hit.Poll);
         settable(L, "Time", (int64_t)hit.Time);
 
         // The instruction after the access (a data breakpoint is a trap)
@@ -1039,40 +1101,70 @@ UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
         lua_rawseti(L, -2, index++);
     }
 
-    gHitRead.store(read + available);
+    gHitRead[owner].store(n);
     return 1;
 }
 
-// Ext.Debug.ClearWatch([slot]) -> true. Without a slot, clears every watchpoint and disarms all
-// threads; with a slot (1-4), clears just that one. The handler stays installed, so a thread that
-// still fires for a cleared watch before it is disarmed is answered, not left to crash.
+// Ext.Debug.ClearWatch([slot]) -> true if anything was cleared. Without a slot, clears every watch
+// of the calling side; with a slot (1-4), clears it if the calling side owns it. The other side's
+// watches are left alone. The handler stays installed, so a thread that still fires for a cleared
+// watch before it is disarmed is answered, not left to crash.
 bool ClearWatch(lua_State* L, std::optional<int32_t> slot)
 {
     RequireDeveloperMode(L, "ClearWatch");
-    if (slot) {
-        if (*slot < 1 || *slot > (int)WatchSlots) {
-            luaL_error(L, "ClearWatch: slot must be 1-4");
-            return false;
+    auto owner = OwnerOf(L);
+    if (slot && (*slot < 1 || *slot > (int)WatchSlots)) {
+        luaL_error(L, "ClearWatch: slot must be 1-4");
+        return false;
+    }
+
+    std::lock_guard _(gInstrumentMutex);
+    bool cleared = false;
+    for (uint32_t i = 0; i < WatchSlots; i++) {
+        if (slot && (uint32_t)(*slot - 1) != i) continue;
+        if (gWatches[i].Enabled && gWatches[i].Owner == owner) {
+            gWatches[i] = Watchpoint{};
+            cleared = true;
         }
-        gWatches[*slot - 1] = Watchpoint{};
-    } else {
-        for (auto& w : gWatches) w = Watchpoint{};
     }
 
-    bool anyEnabled = false;
-    for (auto const& w : gWatches) anyEnabled = anyEnabled || w.Enabled;
-
-    ArmAllThreads();                      // writes the new (possibly empty) DR7 to every thread
-    if (!anyEnabled) {
-        gWatchActive = false;
+    if (cleared) {
+        ArmAllThreads();                  // writes the new (possibly empty) DR7 to every thread
+        UpdateWatchActive();
     }
-    return true;
+    return cleared;
+}
+
+// Ext.Debug.ListWatches([all]) -> { { Slot, Owner, Address, Size, ReadWrite, Value } } for the
+// calling side's watches, or for both sides' with all = true. Value is the copy the next hit's
+// Before will be.
+UserReturn ListWatches(lua_State* L, std::optional<bool> all)
+{
+    RequireDeveloperMode(L, "ListWatches");
+    auto owner = OwnerOf(L);
+    std::lock_guard _(gInstrumentMutex);
+    lua_newtable(L);
+    int index = 1;
+    for (uint32_t i = 0; i < WatchSlots; i++) {
+        auto const& w = gWatches[i];
+        if (!w.Enabled || (!all.value_or(false) && w.Owner != owner)) continue;
+        lua_newtable(L);
+        settable(L, "Slot", (int32_t)(i + 1));
+        settable(L, "Owner", OwnerName(w.Owner));
+        settable(L, "Address", (int64_t)w.Address);
+        settable(L, "Size", (int32_t)w.Size);
+        settable(L, "ReadWrite", w.ReadWrite);
+        settable(L, "Value", (int64_t)w.Copy);
+        lua_rawseti(L, -2, index++);
+    }
+    return 1;
 }
 
 // --- Freeze: hold an address at a value ---------------------------------------------------------
-// The value is written back every tick from the bridge's own tick hook (FreezeApply), rather than
-// by turning writes back inside the exception handler: that keeps the handler off the hot path, the
-// watchpoint free for its real job, and a freeze trivially removable. Developer mode only.
+// The value is written back every tick of the owning side by the extender itself (OnExtenderTick),
+// rather than by turning writes back inside the exception handler: that keeps the handler off the
+// hot path, the watchpoint free for its real job, and a freeze trivially removable. Developer mode
+// only.
 
 namespace {
 
@@ -1082,15 +1174,51 @@ struct FreezeHold
     uint32_t Size{ 0 };
     uint8_t Bytes[8]{};
     bool Active{ false };
+    uint8_t Owner{ 0 };
 };
 
 static constexpr uint32_t FreezeSlots = 16;
 FreezeHold gFreezes[FreezeSlots];
 
+uint32_t ApplyFreezes(uint8_t owner)
+{
+    uint32_t written = 0;
+    for (auto& f : gFreezes) {
+        if (!f.Active || f.Owner != owner) continue;
+        if (IsWritableDataRange((uint8_t const*)f.Address, f.Size)) {
+            memcpy((void*)f.Address, f.Bytes, f.Size);
+            written++;
+        }
+    }
+    return written;
+}
+
 } // anonymous namespace
 
+// Called by each side's extension state every tick, whether or not its Lua is running: counts the
+// side's ticks for the hits, re-arms threads made since arming (at most once a second, since
+// arming suspends every thread) and writes the side's frozen values.
+void OnExtenderTick(bool server)
+{
+    uint8_t owner = server ? OwnerServer : OwnerClient;
+    gWatchPoll[owner].fetch_add(1, std::memory_order_relaxed);
+
+    if (!gExtender->GetConfig().DeveloperMode) return;
+
+    std::lock_guard _(gInstrumentMutex);
+    if (gWatchActive) {
+        auto now = GetTickCount64();
+        if (now - gLastRearm >= 1000) {
+            gLastRearm = now;
+            ArmAllThreads();
+        }
+    }
+
+    ApplyFreezes(owner);
+}
+
 // Ext.Debug.Freeze(address, type, value) -> slot index or nil if none free. From now until it is
-// cleared, FreezeApply rewrites this scalar every tick.
+// cleared, the extender rewrites this scalar every tick of the calling side.
 UserReturn HoldValue(lua_State* L, int64_t address, STDString type)
 {
     RequireDeveloperMode(L, "Freeze");
@@ -1099,6 +1227,7 @@ UserReturn HoldValue(lua_State* L, int64_t address, STDString type)
         return luaL_error(L, "Freeze: unknown scalar type '%s'", type.c_str());
     }
 
+    std::lock_guard _(gInstrumentMutex);
     int slot = -1;
     for (uint32_t i = 0; i < FreezeSlots; i++) {
         if (!gFreezes[i].Active) { slot = (int)i; break; }
@@ -1111,47 +1240,55 @@ UserReturn HoldValue(lua_State* L, int64_t address, STDString type)
     gFreezes[slot].Address = (uint64_t)address;
     gFreezes[slot].Size = scalar->Size;
     PackScalar(*scalar, L, 3, gFreezes[slot].Bytes);
+    gFreezes[slot].Owner = OwnerOf(L);
     gFreezes[slot].Active = true;
 
     lua_pushinteger(L, slot + 1);
     return 1;
 }
 
-// Ext.Debug.FreezeApply() -> how many frozen values were written this call. The bridge calls it
-// each tick. A frozen address that is no longer writable is skipped, not an error.
+// Ext.Debug.FreezeApply() -> how many of the calling side's frozen values were written now. Not
+// needed any more (the extender applies them every tick); kept for scripts that call it.
 UserReturn FreezeApply(lua_State* L)
 {
     RequireDeveloperMode(L, "FreezeApply");
-    int written = 0;
-    for (auto& f : gFreezes) {
-        if (!f.Active) continue;
-        if (IsWritableDataRange((uint8_t const*)f.Address, f.Size)) {
-            memcpy((void*)f.Address, f.Bytes, f.Size);
-            written++;
-        }
-    }
-    lua_pushinteger(L, written);
+    std::lock_guard _(gInstrumentMutex);
+    lua_pushinteger(L, ApplyFreezes(OwnerOf(L)));
     return 1;
 }
 
-// Ext.Debug.ClearFreezes() -> true. Stops holding every frozen address.
-bool ClearFreezes(lua_State* L)
+// Ext.Debug.ClearFreezes([slot]) -> true if anything was cleared. Stops holding every address the
+// calling side froze, or just one slot of its own.
+bool ClearFreezes(lua_State* L, std::optional<int32_t> slot)
 {
     RequireDeveloperMode(L, "ClearFreezes");
-    for (auto& f : gFreezes) f = FreezeHold{};
-    return true;
+    auto owner = OwnerOf(L);
+    std::lock_guard _(gInstrumentMutex);
+    bool cleared = false;
+    for (uint32_t i = 0; i < FreezeSlots; i++) {
+        if (slot && (uint32_t)(*slot - 1) != i) continue;
+        if (gFreezes[i].Active && gFreezes[i].Owner == owner) {
+            gFreezes[i] = FreezeHold{};
+            cleared = true;
+        }
+    }
+    return cleared;
 }
 
-// Ext.Debug.ListFreezes() -> { { Slot, Address, Size } } for every address held now.
-UserReturn ListFreezes(lua_State* L)
+// Ext.Debug.ListFreezes([all]) -> { { Slot, Owner, Address, Size } } for every address the calling
+// side holds now, or both sides' with all = true.
+UserReturn ListFreezes(lua_State* L, std::optional<bool> all)
 {
     RequireDeveloperMode(L, "ListFreezes");
+    auto owner = OwnerOf(L);
+    std::lock_guard _(gInstrumentMutex);
     lua_newtable(L);
     int index = 1;
     for (uint32_t i = 0; i < FreezeSlots; i++) {
-        if (!gFreezes[i].Active) continue;
+        if (!gFreezes[i].Active || (!all.value_or(false) && gFreezes[i].Owner != owner)) continue;
         lua_newtable(L);
         settable(L, "Slot", (int32_t)(i + 1));
+        settable(L, "Owner", OwnerName(gFreezes[i].Owner));
         settable(L, "Address", (int64_t)gFreezes[i].Address);
         settable(L, "Size", (int32_t)gFreezes[i].Size);
         lua_rawseti(L, -2, index++);
@@ -1355,6 +1492,7 @@ void RegisterDebugLib()
     MODULE_FUNCTION(WatchPoll)
     MODULE_FUNCTION(ReadWatchHits)
     MODULE_FUNCTION(ClearWatch)
+    MODULE_FUNCTION(ListWatches)
     MODULE_NAMED_FUNCTION("Freeze", HoldValue)
     MODULE_FUNCTION(FreezeApply)
     MODULE_FUNCTION(ClearFreezes)
