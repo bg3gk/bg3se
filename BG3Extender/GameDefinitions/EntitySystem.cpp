@@ -856,6 +856,20 @@ std::optional<ExtComponentType> ECSComponentLog::GetType(lua_State* L) const
 void ECSChangeLog::Clear()
 {
     Entities.clear();
+    SystemChanges.clear();
+    DroppedSystemChanges = 0;
+}
+
+StringView ECSSystemChange::GetComponentName(lua_State* L) const
+{
+    auto name = lua::State::FromLua(L)->GetEntitySystemHelpers().GetComponentName(ComponentType);
+    return name ? *name : StringView{};
+}
+
+StringView ECSSystemChange::GetSystemName(lua_State* L) const
+{
+    auto name = lua::State::FromLua(L)->GetEntitySystemHelpers().GetSystemName(System);
+    return name ? *name : StringView{};
 }
 
 void ECSChangeLog::AddEntityChange(EntityHandle entity, EntityChangeFlags flags)
@@ -2045,11 +2059,100 @@ void EntitySystemHelpersBase::SystemUpdateHook(BaseSystem* system, EntityWorld& 
         hooks.PreUpdate(this, system, time, systemId->second);
     }
 
-    hooks.OriginalUpdateProc(system, world, time);
+    if (tracer_.TracksSystems()) {
+        LARGE_INTEGER start;
+        QueryPerformanceCounter(&start);
+        Array<uint64_t> before;
+        tracer_.SnapshotFiltered(before);
+        hooks.OriginalUpdateProc(system, world, time);
+        tracer_.CompareFiltered(before, systemId->second, (uint64_t)start.QuadPart);
+    } else {
+        hooks.OriginalUpdateProc(system, world, time);
+    }
 
     if (hooks.PostUpdate) {
         hooks.PostUpdate(this, system, time, systemId->second);
     }
+}
+
+void EntitySystemHelpersBase::HookAllSystemsForTracing()
+{
+    auto world = GetEntityWorld();
+    if (world == nullptr) return;
+
+    for (unsigned i = 0; i < systemHooks_.size() && i < world->Systems.Systems.size(); i++) {
+        auto& hook = systemHooks_[i];
+        auto& system = world->Systems.Systems[i];
+        if (hook.OriginalUpdateProc == nullptr && system.System != nullptr && system.UpdateProc != nullptr) {
+            systemToId_.insert(std::make_pair(system.System, SystemTypeIndex{ (uint16_t)i }));
+            hook.OriginalUpdateProc = system.UpdateProc;
+            system.UpdateProc = &StaticSystemUpdateHook;
+        }
+    }
+}
+
+// FNV-1a over the component's bytes; a component stored behind a pointer (TotalSize larger than
+// InlineSize) is followed to the object
+static uint64_t FingerprintComponent(EntityWorld* world, EntityHandle entity, ComponentTypeIndex type)
+{
+    auto entry = world->ComponentRegistry_.Get(type);
+    if (entry == nullptr) return 0;
+    auto ptr = (uint8_t const*)world->GetRawComponent(entity, type, entry->InlineSize);
+    if (ptr == nullptr) return 0;
+    std::size_t size = entry->InlineSize;
+    if (entry->TotalSize > entry->InlineSize && entry->InlineSize == sizeof(void*)) {
+        ptr = *(uint8_t const* const*)ptr;
+        size = entry->TotalSize;
+        if (ptr == nullptr) return 0;
+    }
+
+    uint64_t hash = 0xcbf29ce484222325ull;
+    for (std::size_t i = 0; i < size; i++) {
+        hash = (hash ^ ptr[i]) * 0x100000001b3ull;
+    }
+    return hash;
+}
+
+void ECSChangeTracer::SnapshotFiltered(Array<uint64_t>& out)
+{
+    auto world = ecs_->GetEntityWorld();
+    for (auto entity : options_.Entities) {
+        for (auto type : options_.IncludeTypeList) {
+            out.push_back(FingerprintComponent(world, entity, type));
+        }
+    }
+}
+
+void ECSChangeTracer::CompareFiltered(Array<uint64_t> const& before, SystemTypeIndex system, uint64_t startTicks)
+{
+    auto world = ecs_->GetEntityWorld();
+    unsigned i = 0;
+    for (auto entity : options_.Entities) {
+        for (auto type : options_.IncludeTypeList) {
+            if (i < before.size() && FingerprintComponent(world, entity, type) != before[i]) {
+                std::lock_guard _(systemChangesMutex_);
+                if (log_.SystemChanges.size() < 4096) {
+                    log_.SystemChanges.push_back(ECSSystemChange{
+                        .Entity = entity,
+                        .ComponentType = type,
+                        .System = system,
+                        .Thread = GetCurrentThreadId(),
+                        .Frame = log_.Frame,
+                        .Flush = log_.Flush
+                    });
+                } else {
+                    log_.DroppedSystemChanges++;
+                }
+            }
+            i++;
+        }
+    }
+
+    LARGE_INTEGER now, freq;
+    QueryPerformanceCounter(&now);
+    QueryPerformanceFrequency(&freq);
+    std::lock_guard _(systemChangesMutex_);
+    log_.SystemTrackingMicroseconds += ((uint64_t)now.QuadPart - startTicks) * 1000000ull / (uint64_t)freq.QuadPart;
 }
 
 void EntitySystemHelpersBase::StaticSystemUpdateHook(BaseSystem* system, EntityWorld& world, GameTime const& time)

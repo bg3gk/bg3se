@@ -12208,6 +12208,20 @@ Osi = {}
 --- @field Components string[]?
 --- Events kept per entity and component (default 16, at most 4096); the rest only counted
 --- @field EventLimit uint32?
+--- Compare the filtered components before and after every system update and record which
+--- system changed them, on which thread (needs Entities and Components; an error otherwise).
+--- Costly: every system update fingerprints the filtered set
+--- @field TrackSystems boolean?
+
+
+--- A filtered component that changed during one system's update (TrackSystems).
+--- @class EcsECSSystemChange
+--- @field Entity EntityHandle
+--- @field Component StringView Engine name of the component
+--- @field SystemName StringView Engine name of the system that was updating
+--- @field Thread uint32
+--- @field Frame uint32
+--- @field Flush uint32
 
 
 --- One logged change of a component (EcsECSComponentLog.Events).
@@ -12231,6 +12245,11 @@ Osi = {}
 --- @field Frame uint32
 --- Running count of ECB flushes seen (not reset by ClearTrace)
 --- @field Flush uint32
+--- TrackSystems records, oldest first (at most 4096; the rest counted in DroppedSystemChanges)
+--- @field SystemChanges EcsECSSystemChange[]
+--- @field DroppedSystemChanges uint32
+--- Running time spent in the TrackSystems comparisons, microseconds summed over threads
+--- @field SystemTrackingMicroseconds uint64
 
 
 --- One component's changes in the trace. The flags are readable two ways: one boolean per flag

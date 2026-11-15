@@ -275,8 +275,17 @@ void SetupTracing(lua_State* L, std::optional<EntityTracingOptions> options)
     }
 
     ecs::ComponentTypeMask include;
+    Array<ecs::ComponentTypeIndex> includeList;
     for (auto const& component : o.Components) {
-        include.Set((unsigned)ResolveTracedComponent(L, ecs, component));
+        auto type = ResolveTracedComponent(L, ecs, component);
+        if (!include[(unsigned)type]) {
+            include.Set((unsigned)type);
+            includeList.push_back(type);
+        }
+    }
+
+    if (o.TrackSystems && (o.Entities.empty() || o.Components.empty())) {
+        luaL_error(L, "TrackSystems needs both an Entities and a Components filter");
     }
 
     auto& opts = ecs.GetTracer().GetOptions();
@@ -292,6 +301,11 @@ void SetupTracing(lua_State* L, std::optional<EntityTracingOptions> options)
         opts.Entities.insert(entity);
     }
     ecs.GetTracer().GetLog().EventLimit = std::min(o.EventLimit, 4096u);
+    opts.IncludeTypeList = includeList;
+    opts.TrackSystems = o.TrackSystems;
+    if (o.TrackSystems) {
+        ecs.HookAllSystemsForTracing();
+    }
 }
 
 void EnableTracing(lua_State* L, bool enable)

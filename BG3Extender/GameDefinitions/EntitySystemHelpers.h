@@ -115,9 +115,29 @@ struct ECSEntityLog
     }
 };
 
+// A filtered component whose bytes differed after a system's update from before it (TrackSystems)
+struct ECSSystemChange
+{
+    EntityHandle Entity;
+    ComponentTypeIndex ComponentType{ 0 };
+    SystemTypeIndex System{ 0 };
+    uint32_t Thread{ 0 };
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
+
+    StringView GetComponentName(lua_State* L) const;
+    StringView GetSystemName(lua_State* L) const;
+};
+
 struct ECSChangeLog
 {
     HashMap<EntityHandle, ECSEntityLog> Entities;
+    // TrackSystems: which system was updating when a filtered component changed, oldest first,
+    // up to SystemChangeLimit; the rest only counted
+    Array<ECSSystemChange> SystemChanges;
+    uint32_t DroppedSystemChanges{ 0 };
+    // Time spent comparing the filtered set around system updates, in microseconds (running)
+    uint64_t SystemTrackingMicroseconds{ 0 };
     // Running counters (not reset by Clear): ECS frames ended and ECB flushes seen by the tracer.
     uint32_t Frame{ 0 };
     uint32_t Flush{ 0 };
@@ -143,6 +163,10 @@ struct ECSChangeTracerOptions
     HashSet<EntityHandle> Entities;
     ComponentTypeMask IncludeTypes;
     bool FilterComponents{ false };
+    // Compare the filtered set before and after every system update; only with both an entity
+    // and a component filter
+    bool TrackSystems{ false };
+    Array<ComponentTypeIndex> IncludeTypeList;
 
     inline bool AcceptsEntity(EntityHandle entity) const
     {
@@ -179,6 +203,15 @@ public:
     void LogComponentModifications();
     void LogReplicatedChanges();
 
+    // TrackSystems: a fingerprint of every filtered component, taken around one system update
+    // on the thread that runs it
+    inline bool TracksSystems() const
+    {
+        return tracing_ && options_.TrackSystems && !options_.Entities.empty() && options_.FilterComponents;
+    }
+    void SnapshotFiltered(Array<uint64_t>& out);
+    void CompareFiltered(Array<uint64_t> const& before, SystemTypeIndex system, uint64_t startTicks);
+
     inline void OnFrameEnd()
     {
         log_.Frame++;
@@ -195,6 +228,8 @@ private:
     ECSChangeLog log_;
     bool tracing_{ false };
     ECSChangeTracerOptions options_;
+    // System updates run on several threads at once; their records are appended under this
+    std::mutex systemChangesMutex_;
 };
 
 template <class T>
@@ -449,6 +484,13 @@ public:
     void OnDestroy();
 
     bool SetSystemUpdateHook(SystemTypeIndex system, std::function<SystemHookProc> preUpdate, std::function<SystemHookProc> postUpdate);
+    // Puts the update wrapper on every system that has none yet (pre/post hooks untouched), so the
+    // tracer can tell which system changed its filtered set (TrackSystems)
+    void HookAllSystemsForTracing();
+    inline STDString const* GetSystemName(SystemTypeIndex index) const
+    {
+        return (unsigned)index < systemTypeIdToName_.size() ? systemTypeIdToName_[(unsigned)index] : nullptr;
+    }
 
 protected:
     // Fetch EntityWorld from EocServer/EocClient; needed to bootstrap entity helpers

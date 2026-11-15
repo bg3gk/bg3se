@@ -156,10 +156,23 @@ P_GETTER(FlagMask, GetFlagMask)
 END_CLS()
 
 
+BEGIN_CLS(ecs::ECSSystemChange)
+P_RO(Entity)
+P_GETTER(Component, GetComponentName)
+P_GETTER(SystemName, GetSystemName)
+P_RO(Thread)
+P_RO(Frame)
+P_RO(Flush)
+END_CLS()
+
+
 BEGIN_CLS(ecs::ECSChangeLog)
 P(Entities)
 P_RO(Frame)
 P_RO(Flush)
+P_RO(SystemChanges)
+P_RO(DroppedSystemChanges)
+P_RO(SystemTrackingMicroseconds)
 END_CLS()
 
 

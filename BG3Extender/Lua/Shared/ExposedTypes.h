@@ -15,6 +15,8 @@ struct EntityTracingOptions
     Array<STDString> Components;
     // Events kept per entity and component; the rest are only counted (DroppedEvents)
     uint32_t EventLimit{ 16 };
+    // Which system was updating when a filtered component changed (needs Entities and Components)
+    bool TrackSystems{ false };
 };
 
 END_NS()
