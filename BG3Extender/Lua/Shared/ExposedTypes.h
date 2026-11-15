@@ -13,6 +13,8 @@ struct EntityTracingOptions
     // component types (empty: every type), engine names or Lua labels
     Array<EntityHandle> Entities;
     Array<STDString> Components;
+    // Events kept per entity and component; the rest are only counted (DroppedEvents)
+    uint32_t EventLimit{ 16 };
 };
 
 END_NS()

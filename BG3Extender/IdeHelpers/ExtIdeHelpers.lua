@@ -12206,6 +12206,23 @@ Osi = {}
 --- @field Entities EntityHandle[]?
 --- Only these component types are logged (empty: every type); engine names or Lua labels
 --- @field Components string[]?
+--- Events kept per entity and component (default 16, at most 4096); the rest only counted
+--- @field EventLimit uint32?
+
+
+--- One logged change of a component (EcsECSComponentLog.Events).
+--- @class EcsECSComponentEvent
+--- @field Create boolean
+--- @field Destroy boolean
+--- @field Modify boolean
+--- @field Replicate boolean
+--- @field OneFrame boolean
+--- @field ReplicatedComponent boolean
+--- @field FlagMask uint32
+--- @field Frame uint32
+--- @field Flush uint32
+--- Position among every change the tracer logged inside this flush, from 1
+--- @field Order uint32
 
 
 --- @class EcsECSChangeLog
@@ -12223,6 +12240,14 @@ Osi = {}
 --- @field Create boolean
 --- @field Destroy boolean
 --- @field FlagMask uint32
+--- Times a change was logged (a modification is seen once a flush while its mark is set)
+--- @field Count uint32
+--- ECS frame and ECB flush of the latest change
+--- @field LastFrame uint32
+--- @field LastFlush uint32
+--- The changes one by one, oldest first, up to EventLimit
+--- @field Events EcsECSComponentEvent[]
+--- @field DroppedEvents uint32
 --- ECS frame of the first change logged since the trace was last cleared
 --- @field Frame uint32
 --- ECB flush of the first change logged since the trace was last cleared

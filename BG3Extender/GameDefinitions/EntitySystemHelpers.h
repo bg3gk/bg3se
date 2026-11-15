@@ -60,6 +60,21 @@ private:
     PerECSReplicationData nullReplicationData_;
 };
 
+// One change as it was logged: what it was, when, and its place among the changes of its flush
+struct ECSComponentEvent
+{
+    ComponentChangeFlags Flags{ 0 };
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
+    // Position among every change the tracer logged inside this flush, from 1
+    uint32_t Order{ 0 };
+
+    inline uint32_t GetFlagMask() const
+    {
+        return (uint32_t)Flags;
+    }
+};
+
 struct ECSComponentLog
 {
     ComponentTypeIndex ComponentType{ 0 };
@@ -68,6 +83,14 @@ struct ECSComponentLog
     // was first logged since the log was last cleared: orders one-frame lifetimes inside a tick.
     uint32_t Frame{ 0 };
     uint32_t Flush{ 0 };
+    // How many times a change was logged for this entity and component, and the frame and flush
+    // of the latest. A modification is seen once in every flush in which its mark is still set.
+    uint32_t Count{ 0 };
+    uint32_t LastFrame{ 0 };
+    uint32_t LastFlush{ 0 };
+    // The changes one by one, oldest first, up to the tracer's EventLimit; the rest only counted
+    Array<ECSComponentEvent> Events;
+    uint32_t DroppedEvents{ 0 };
 
     StringView GetName(lua_State* L) const;
     std::optional<ExtComponentType> GetType(lua_State* L) const;
@@ -98,6 +121,10 @@ struct ECSChangeLog
     // Running counters (not reset by Clear): ECS frames ended and ECB flushes seen by the tracer.
     uint32_t Frame{ 0 };
     uint32_t Flush{ 0 };
+    // Changes logged so far inside the current flush (gives each event its Order)
+    uint32_t FlushOrder{ 0 };
+    // Events kept per entity and component (ECSChangeTracerOptions::EventLimit)
+    uint32_t EventLimit{ 16 };
 
     void Clear();
     void AddEntityChange(EntityHandle entity, EntityChangeFlags flags);
@@ -160,6 +187,7 @@ public:
     inline void OnFlush()
     {
         log_.Flush++;
+        log_.FlushOrder = 0;
     }
 
 private:

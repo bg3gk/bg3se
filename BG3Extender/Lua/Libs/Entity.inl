@@ -291,6 +291,7 @@ void SetupTracing(lua_State* L, std::optional<EntityTracingOptions> options)
     for (auto entity : o.Entities) {
         opts.Entities.insert(entity);
     }
+    ecs.GetTracer().GetLog().EventLimit = std::min(o.EventLimit, 4096u);
 }
 
 void EnableTracing(lua_State* L, bool enable)

@@ -888,6 +888,21 @@ void ECSChangeLog::AddComponentChange(EntityWorld* world, EntityHandle entity, C
 
     componentEntry->ComponentType = type;
     componentEntry->Flags = componentEntry->Flags | flags;
+    componentEntry->Count++;
+    componentEntry->LastFrame = Frame;
+    componentEntry->LastFlush = Flush;
+
+    auto order = ++FlushOrder;
+    if (componentEntry->Events.size() < EventLimit) {
+        componentEntry->Events.push_back(ECSComponentEvent{
+            .Flags = flags,
+            .Frame = Frame,
+            .Flush = Flush,
+            .Order = order
+        });
+    } else {
+        componentEntry->DroppedEvents++;
+    }
 }
 
 
