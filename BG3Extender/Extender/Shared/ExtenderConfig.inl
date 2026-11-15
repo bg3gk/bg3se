@@ -20,6 +20,8 @@ void ApplyConfig(ExtenderConfig& config, Document& root)
     ConfigGet(root, "ExtendStory", config.ExtendStory);
     ConfigGet(root, "SendCrashReports", config.SendCrashReports);
     ConfigGet(root, "ForceCrashReporting", config.ForceCrashReporting);
+    ConfigGet(root, "LaunchCrashReporter", config.LaunchCrashReporter);
+    ConfigGet(root, "CrashDumpDirectory", config.CrashDumpDirectory);
     ConfigGet(root, "EnableDebugger", config.EnableDebugger);
     ConfigGet(root, "EnableLuaDebugger", config.EnableLuaDebugger);
     ConfigGet(root, "DeveloperMode", config.DeveloperMode);

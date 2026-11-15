@@ -24221,7 +24221,9 @@ local Ext_ClientUI = {}
 
 
 --- @class Ext_Debug
---- @field Crash fun(a1:int32)
+--- Developer mode only. Closes the game on purpose to test crash reporting: 0 divides by zero,
+--- 1 aborts, 2 writes to a null pointer, 3 overflows the stack
+--- @field Crash fun(type:int32)
 --- @field DebugBreak fun()
 --- @field DebugDumpLifetimes fun()
 --- @field DumpStack fun()

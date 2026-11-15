@@ -1409,10 +1409,22 @@ void LuaDebugBreak(lua_State* L)
     }
 }
 
-// Development-only function for testing crash reporting
-void Crash(int type)
+// Recurses until the stack runs out (Crash(3)); noinline so the optimiser cannot fold it away
+static __declspec(noinline) uint64_t OverflowStack(volatile uint64_t depth)
 {
-#if defined(_DEBUG)
+    volatile uint8_t frame[1024];
+    frame[0] = (uint8_t)depth;
+    return OverflowStack(depth + 1) + frame[0];
+}
+
+// Ext.Debug.Crash(type) - closes the game on purpose, to test crash reporting: 0 divides by zero,
+// 1 aborts, 2 writes to a null pointer, 3 overflows the stack. Developer mode only (debug builds:
+// always).
+void Crash(lua_State* L, int type)
+{
+#if !defined(_DEBUG)
+    RequireDeveloperMode(L, "Crash");
+#endif
     switch (type) {
     case 0:
     {
@@ -1426,10 +1438,13 @@ void Crash(int type)
         break;
 
     case 2:
-        *(uint32_t*)0 = 0;
+        *(uint32_t volatile*)0 = 0;
+        break;
+
+    case 3:
+        OverflowStack(0);
         break;
     }
-#endif
 }
 
 void SetEntityRuntimeCheckLevel(int level)
