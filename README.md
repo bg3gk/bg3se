@@ -1,34 +1,37 @@
-# Norbyte's Baldur's Gate 3 Script Extender
+# GateKit's fork of the Script Extender
 
-[Downloads available here](https://github.com/Norbyte/bg3se/releases)
+This is the [GateKit](https://github.com/bg3gk/gatekit) organisation's fork of Norbyte's Script
+Extender for Baldur's Gate 3; for everything about the Script Extender itself - what it is, how to
+install it, its API and its documentation - go to [Norbyte/bg3se](https://github.com/Norbyte/bg3se).
 
-The Script Extender adds Lua/Osiris scripting support to the game.
-[API Documentation](https://github.com/Norbyte/bg3se/blob/master/Docs/API.md)
+**For developers and tooling.** A player wants upstream's release, not this.
 
-### Configuration
+## What it adds
 
-The following configuration variables can be set in the `ScriptExtenderSettings.json` file:
+- **Instruments for reading the engine** (developer mode only): the memory instrument in
+  `Ext.Debug` - field and component addresses, `module+0xRVA` conversion, checked reads and writes,
+  hardware watches that say which instruction touches a field, freezes, crash dumps of our own; and
+  the entity tracer in `Ext.Entity` with filters by entity and component, counts and ordered events,
+  and which system changed a component.
+- **More of the engine reachable from Lua**: many more components mapped, under the game's own
+  names, with the older names kept as aliases.
+- **What GateKit needs to drive the game**: a frame taken from inside, the frame mirrored to another
+  program, the engine's own frame cap, a window that stays in the background, the sound settings
+  mapped.
 
-| Variable | Type | Default | Description |
-|--|--|--|--|
-| CreateConsole | Boolean | false | Creates a console window that logs extender internals. Mainly useful for debugging. |
-| EnableLogging | Boolean | false | Enable logging of Osiris activity (rule evaluation, queries, etc.) to a log file. |
-| LogRuntime | Boolean | false | Log extender console and script output to a log file. |
-| LogCompile | Boolean | false | Log Osiris story compilation to a log file. |
-| LogFailedCompile | Boolean | true | Log errors during Osiris story compilation to a log file. |
-| LogDirectory | String | `My Documents\OsirisLogs` | Directory where the generated Osiris logs will be stored. |
-| EnableExtensions | Boolean | true | Make the Osiris extension functionality available ingame or in the editor. |
-| SendCrashReports | Boolean | true | Upload minidumps to the crash report collection server after a game crash. |
-| ~~DumpNetworkStrings~~ | Boolean | Not implemented yet | Dumps the NetworkFixedString table to `LogDirectory`. Mainly useful for debugging desync issues. |
-| DeveloperMode | Boolean | false | Enables various debug functionality for development purposes. |
-| DisableModValidation | Boolean | true | Disable module hashing when loading modules. |
-| EnableAchievements | Boolean | true | Re-enable achievements for modded games. |
-| EnableDebugger | Boolean | false | Enables the Osiris debugger interface |
-| DebuggerPort | Integer | 9999 | Port number the Osiris debugger will listen on |
-| EnableLuaDebugger | Boolean | false | Enables the Lua debugger interface |
-| LuaDebuggerPort | Integer | 9998 | Port number the Lua debugger will listen on  |
+The detail is in [GATEKIT.md](GATEKIT.md); what uses it is [GateKit](https://github.com/bg3gk/gatekit).
 
-### Build Instructions
+## Upstream
 
-Run `first-time-setup.bat` from the MSVC x64 Native Tools cmdline after cloning the repo ensure that all external dependencies are set up correctly.
-Afterwards you can build/develop the solution using normal Visual Studio tools.
+Based on upstream's v34 line and following it: `gatekit-v34` is the live branch, `main` tracks
+upstream.
+
+## Building
+
+`gatekit/setup-externals.cmd` fetches what the build needs, `gatekit/build.cmd` builds
+`BG3ScriptExtender.dll` (`Game Release`, x64).
+
+## Licence and credit
+
+The Script Extender is Norbyte's work. The licence ([LICENSE](LICENSE)) and every notice are
+upstream's, kept as they are. The changes here are offered back upstream where they fit.
