@@ -24161,6 +24161,30 @@ local Ext_ClientUI = {}
 
 
 
+--- An address resolved to the module that holds it.
+--- @class DebugModuleAddress
+--- @field Module string? Module file name (bg3_dx11.exe); nil when no module holds the address
+--- @field RVA int64? Offset inside the module
+--- @field Address int64 Absolute address
+
+
+--- One hit of a hardware watch (Ext.Debug.ReadWatchHits).
+--- @class DebugWatchHit
+--- @field Slot int32 Watch slot, 1-4
+--- @field Thread int32 Thread that made the access
+--- @field Before int64 The value copied when the watch was armed or at the slot's previous hit
+--- @field After int64 The value read at the hit
+--- @field Changed boolean Before ~= After; a read, or a write of the same value, leaves it false
+--- @field Frame int64 Poll counter at the hit
+--- @field Time int64 QueryPerformanceCounter at the hit
+--- A data breakpoint is a trap: this is the instruction AFTER the one that accessed the field
+--- @field NextInstruction DebugModuleAddress
+--- Legacy name of NextInstruction
+--- @field Instruction DebugModuleAddress
+--- Return chain from the interrupted context, up to six frames; [1] is NextInstruction
+--- @field Return DebugModuleAddress[]
+
+
 --- @class Ext_Debug
 --- @field Crash fun(a1:int32)
 --- @field DebugBreak fun()
@@ -24170,6 +24194,43 @@ local Ext_ClientUI = {}
 --- @field IsDeveloperMode fun():boolean
 --- @field Reset fun(a1:boolean?, a2:boolean?)
 --- @field SetEntityRuntimeCheckLevel fun(a1:int32)
+--- Developer mode only. Arms a hardware watch on every thread: on writes, or on reads and writes
+--- when readWrite is true. size is 1, 2, 4 or 8 and the address must be aligned to it. Returns
+--- the slot (1-4) or nil when all four are taken.
+--- @field WatchWrite fun(address:int64, size:int32, readWrite:boolean?):int32?
+--- Developer mode only. The hits recorded since the last read, oldest first.
+--- @field ReadWatchHits fun(max:int32?):DebugWatchHit[]
+--- Developer mode only. Counts a poll and re-arms threads made since arming (once in 30 polls);
+--- returns the number of hits waiting.
+--- @field WatchPoll fun():int64
+--- Developer mode only. Clears one slot, or every slot without an argument. A thread still armed
+--- with a cleared watch is answered by the handler, which stays installed.
+--- @field ClearWatch fun(slot:int32?):boolean
+--- Developer mode only. Address of a component's field: { Address, Offset, ComponentAddress, Type, Size, Scalar }
+--- @field GetFieldAddress fun(entity:EntityHandle, component:string, field:string):table?
+--- Developer mode only. { Address, InlineSize, TotalSize } of a component, mapped or not
+--- @field GetComponentAddress fun(entity:EntityHandle, component:string):table?
+--- Developer mode only. { Module, RVA, Base, Size } of the module holding the address
+--- @field ModuleFromAddress fun(address:int64):table?
+--- Developer mode only. Absolute address of module+rva
+--- @field AddressFromModule fun(module:string, rva:int64):int64?
+--- Developer mode only. A scalar (int8..uint64, float, double, bool) read from committed memory
+--- @field ReadValue fun(address:int64, type:string):number|boolean|nil
+--- Developer mode only. A scalar written to committed writable data memory (never a code page)
+--- @field WriteValue fun(address:int64, type:string, value:number|boolean):boolean
+--- @field ReadMemory fun(address:int64, size:int32):string?
+--- @field WriteMemory fun(address:int64, bytes:string):boolean
+--- @field GetModuleInfo fun():table
+--- @field GetComponentTypes fun():table[]
+--- @field GetSystemTypes fun():table[]
+--- @field GetSystemAddress fun(name:string):table?
+--- @field GetComponentHolders fun(name:string, max:int32?):EntityHandle[]
+--- @field GetComponentCounts fun():table<string, integer>
+--- Developer mode only. Holds a scalar at an address, rewritten every tick; returns the slot or nil
+--- @field Freeze fun(address:int64, type:string, value:number|boolean):int32?
+--- @field FreezeApply fun():int32
+--- @field ClearFreezes fun():boolean
+--- @field ListFreezes fun():table[]
 local Ext_Debug = {}
 
 

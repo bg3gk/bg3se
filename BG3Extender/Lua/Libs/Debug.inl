@@ -664,6 +664,16 @@ bool WriteValue(lua_State* L, int64_t address, STDString type)
 // passed on untouched. Threads created after arming are picked up by re-arming on each WatchPoll.
 // The debug registers belong to whoever holds the thread last: another debugger or anti-tamper
 // would contend, but this game ships with none.
+//
+// The handler never reads the watched address itself: it reads through the kernel
+// (ReadProcessMemory), where the user-mode debug registers are not live, so a watch on reads does
+// not trap again inside its own handler. Once installed the handler stays installed: a thread whose
+// registers still hold a cleared watch (not yet disarmed, or armed with an older set) is answered
+// and given the current registers, never left with an exception nobody claims.
+//
+// A hardware data breakpoint is a trap: it fires after the access, so the address the CPU reports
+// is the instruction that FOLLOWS the one that accessed the field (NextInstruction). The accessing
+// instruction is the one before it in the function's listing.
 
 namespace {
 
@@ -673,14 +683,16 @@ struct Watchpoint
     uint32_t Size{ 0 };          // 1, 2, 4 or 8
     bool ReadWrite{ false };     // false: on write only; true: on read or write
     bool Enabled{ false };
-    uint64_t Last{ 0 };          // last value seen, for before/after across hits
-    bool HasLast{ false };
+    // The value as last seen: copied when the watch is armed and after every hit, so a hit's
+    // Before is the value just before its write - unless something changed it unseen in between
+    // (a thread not armed yet, a write from kernel mode such as file I/O into the buffer).
+    uint64_t Copy{ 0 };
 };
 
 struct WatchHit
 {
-    uint64_t Instruction{ 0 };   // absolute address of the writing instruction (ctx.Rip)
-    uint64_t Frames[6]{};        // return chain, absolute addresses (Frames[0] == Instruction)
+    uint64_t NextInstruction{ 0 }; // absolute address of the instruction after the access (ctx.Rip)
+    uint64_t Frames[6]{};        // return chain, absolute addresses (Frames[0] == NextInstruction)
     uint32_t FrameCount{ 0 };
     uint32_t Thread{ 0 };
     uint64_t Before{ 0 };
@@ -701,6 +713,9 @@ std::atomic<uint64_t> gWatchFrame{ 0 };  // tick number set by WatchPoll
 std::atomic_flag gHitLock = ATOMIC_FLAG_INIT;
 void* gVeh{ nullptr };
 bool gWatchActive{ false };
+// Set when the handler first runs on a thread and cleared when it leaves; a nested single-step
+// on the same thread is the handler's own doing and is only acknowledged.
+thread_local bool tInWatchHandler{ false };
 
 // Build the DR7 value for the current enabled watches.
 uint64_t ComposeDr7()
@@ -769,12 +784,14 @@ void ArmAllThreads()
     CloseHandle(snap);
 }
 
-// Read up to `size` bytes at `address` into a 64-bit value if the range is readable, else 0.
+// Read up to `size` bytes at `address` into a 64-bit value, or 0 if they cannot be read. The copy is
+// made by the kernel, where this thread's user-mode debug registers do not fire: reading a field
+// under a read watch from here does not trap.
 uint64_t SafeReadScalar(uint64_t address, uint32_t size)
 {
-    if (!IsReadableRange((uint8_t const*)address, size)) return 0;
     uint64_t v = 0;
-    memcpy(&v, (void const*)address, size);
+    SIZE_T read{ 0 };
+    if (!ReadProcessMemory(GetCurrentProcess(), (LPCVOID)address, &v, size, &read) || read != size) return 0;
     return v;
 }
 
@@ -815,30 +832,42 @@ LONG CALLBACK WatchHandler(EXCEPTION_POINTERS* ex)
     auto ctx = ex->ContextRecord;
     uint64_t status = ctx->Dr6 & 0xf;              // B0-B3: which watchpoint fired
     if (status == 0) return EXCEPTION_CONTINUE_SEARCH;
+    // Nothing of ours was ever armed: the debug registers are someone else's
+    if (gVeh == nullptr) return EXCEPTION_CONTINUE_SEARCH;
 
-    // Only the bits that correspond to one of our enabled watches are ours.
-    uint64_t ours = 0;
-    for (uint32_t i = 0; i < WatchSlots; i++) {
-        if ((status & (1ull << i)) && gWatches[i].Enabled) ours |= (1ull << i);
+    if (tInWatchHandler) {
+        // Our own access, made from inside the handler on this thread (the stack walk reading a
+        // watched stack slot, say): acknowledge it and go on.
+        ctx->Dr6 = 0;
+        return EXCEPTION_CONTINUE_EXECUTION;
     }
-    if (ours == 0) return EXCEPTION_CONTINUE_SEARCH;
+    tInWatchHandler = true;
+
+    // Whether the interrupted thread's registers came with the context: then a slot is ours only
+    // if the thread was armed with the address the slot holds now (a thread armed with an older
+    // set may fire for an address that was cleared or replaced since).
+    bool haveRegisters = (ctx->ContextFlags & CONTEXT_DEBUG_REGISTERS) == CONTEXT_DEBUG_REGISTERS;
+    uint64_t const armedAt[WatchSlots] = { ctx->Dr0, ctx->Dr1, ctx->Dr2, ctx->Dr3 };
+    uint32_t recorded = 0;
 
     for (uint32_t i = 0; i < WatchSlots; i++) {
-        if (!(ours & (1ull << i))) continue;
+        if (!(status & (1ull << i))) continue;
+        auto& watch = gWatches[i];
+        if (!watch.Enabled) continue;              // cleared: answered below, not recorded
+        if (haveRegisters && armedAt[i] != watch.Address) continue;
 
         WatchHit hit;
         hit.Slot = i;
-        hit.Instruction = ctx->Rip;
+        hit.NextInstruction = ctx->Rip;
         hit.Thread = GetCurrentThreadId();
         hit.Frame = gWatchFrame.load(std::memory_order_relaxed);
         LARGE_INTEGER t; QueryPerformanceCounter(&t);
         hit.Time = t.QuadPart;
 
-        uint64_t after = SafeReadScalar(gWatches[i].Address, gWatches[i].Size);
-        hit.Before = gWatches[i].HasLast ? gWatches[i].Last : after;
+        uint64_t after = SafeReadScalar(watch.Address, watch.Size);
+        hit.Before = watch.Copy;
         hit.After = after;
-        gWatches[i].Last = after;
-        gWatches[i].HasLast = true;
+        watch.Copy = after;
 
         // A safe x64 stack walk from the interrupted context: a few frames, guarded.
         hit.FrameCount = SafeStackWalk(ctx, hit.Frames, 6);
@@ -848,9 +877,23 @@ LONG CALLBACK WatchHandler(EXCEPTION_POINTERS* ex)
         gHitRing[head % HitRingSize] = hit;
         gHitHead.store(head + 1, std::memory_order_relaxed);
         gHitLock.clear(std::memory_order_release);
+        recorded++;
     }
 
+    // A trap-flag single step (BS) with only stale B0-B3 bits is someone else's: pass it on.
+    if (recorded == 0 && (ctx->Dr6 & 0x4000) != 0) {
+        tInWatchHandler = false;
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    // Every single-step with a B0-B3 bit is answered while the handler is installed, ours or a
+    // leftover of a cleared watch; the thread leaves with the registers as they are now, so a
+    // cleared watch stops firing on it.
+    if (haveRegisters) {
+        ApplyToContext(*ctx);
+    }
     ctx->Dr6 = 0;                                  // acknowledge
+    tInWatchHandler = false;
     return EXCEPTION_CONTINUE_EXECUTION;
 }
 
@@ -882,8 +925,9 @@ UserReturn WatchWrite(lua_State* L, int64_t address, int32_t size, std::optional
     gWatches[slot].Address = (uint64_t)address;
     gWatches[slot].Size = (uint32_t)size;
     gWatches[slot].ReadWrite = readWrite.value_or(false);
+    // The value before any hit, so the first hit's Before is true too
+    gWatches[slot].Copy = SafeReadScalar((uint64_t)address, (uint32_t)size);
     gWatches[slot].Enabled = true;
-    gWatches[slot].HasLast = false;
 
     if (gVeh == nullptr) {
         gVeh = AddVectoredExceptionHandler(1, &WatchHandler);
@@ -914,7 +958,9 @@ UserReturn WatchPoll(lua_State* L)
 }
 
 // Ext.Debug.ReadWatchHits([max]) -> the hits recorded since the last read, each:
-//   { Slot, Thread, Before, After, Frame, Instruction = {Module, RVA}, Return = { {Module, RVA}, ... } }
+//   { Slot, Thread, Before, After, Changed, Frame, Time, NextInstruction = {Module, RVA, Address},
+//     Instruction (legacy name of NextInstruction), Return = { {Module, RVA, Address}, ... } }
+// Before is the value copied at arming or at the slot's previous hit; After is read at the hit.
 // Addresses are resolved to module+0xRVA here. `Dropped` is set on the result's metatable-free
 // field only when the ring overflowed between reads.
 UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
@@ -968,11 +1014,18 @@ UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
         settable(L, "Thread", (int32_t)hit.Thread);
         settable(L, "Before", (int64_t)hit.Before);
         settable(L, "After", (int64_t)hit.After);
+        // A read, or a write of the same value, leaves Before == After
+        settable(L, "Changed", hit.Before != hit.After);
         settable(L, "Frame", (int64_t)hit.Frame);
         settable(L, "Time", (int64_t)hit.Time);
 
+        // The instruction after the access (a data breakpoint is a trap)
+        lua_pushstring(L, "NextInstruction");
+        resolve(hit.NextInstruction);
+        lua_rawset(L, -3);
+        // Legacy name of NextInstruction
         lua_pushstring(L, "Instruction");
-        resolve(hit.Instruction);
+        resolve(hit.NextInstruction);
         lua_rawset(L, -3);
 
         lua_pushstring(L, "Return");
@@ -990,8 +1043,9 @@ UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
     return 1;
 }
 
-// Ext.Debug.ClearWatch([slot]) -> true. Without a slot, clears every watchpoint, disarms all
-// threads and removes the handler; with a slot (1-4), clears just that one.
+// Ext.Debug.ClearWatch([slot]) -> true. Without a slot, clears every watchpoint and disarms all
+// threads; with a slot (1-4), clears just that one. The handler stays installed, so a thread that
+// still fires for a cleared watch before it is disarmed is answered, not left to crash.
 bool ClearWatch(lua_State* L, std::optional<int32_t> slot)
 {
     RequireDeveloperMode(L, "ClearWatch");
@@ -1011,10 +1065,6 @@ bool ClearWatch(lua_State* L, std::optional<int32_t> slot)
     ArmAllThreads();                      // writes the new (possibly empty) DR7 to every thread
     if (!anyEnabled) {
         gWatchActive = false;
-        if (gVeh != nullptr) {
-            RemoveVectoredExceptionHandler(gVeh);
-            gVeh = nullptr;
-        }
     }
     return true;
 }
