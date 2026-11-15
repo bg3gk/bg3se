@@ -40,6 +40,8 @@ private:
         ecs::ComponentTypeIndex Type;
         RegistryEntry Hook;
         EntityHandle Entity;
+        // Unsubscribed while a dispatch was running; freed when the dispatch ends
+        bool Removed{ false };
     };
 
     struct ComponentHooks
@@ -66,7 +68,17 @@ private:
     ecs::EntityWorld* world_{ nullptr };
     Array<DeferredEvent> deferredEvents_;
     Array<SubscriptionIndex> deferredUnsubscriptions_;
+    // Subscriptions made while a dispatch was running; added to the hook lists when it ends,
+    // so that the lists a dispatch walks never change under it
+    Array<SubscriptionIndex> pendingSubscriptions_;
+    // Number of dispatches running on the thread that holds the Lua lock (nested when a
+    // handler creates or destroys a component)
+    uint32_t dispatchDepth_{ 0 };
 
+    void BeginDispatch();
+    void EndDispatch();
+    void AddToHookLists(SubscriptionIndex index, ComponentHook& sub);
+    void RemoveSubscription(SubscriptionIndex index);
     void CallHandler(EntityHandle entity, ecs::ComponentTypeIndex type, EntityComponentEvent events, void* component, ComponentHook& hook, SubscriptionIndex index);
     void CallHandlerUnsafe(EntityHandle entity, ecs::ComponentTypeIndex type, EntityComponentEvent events, void* component, ComponentHook& hook, SubscriptionIndex index);
     void DeferHandler(EntityHandle entity, ecs::ComponentTypeIndex type, EntityComponentEvent events, SubscriptionIndex index);

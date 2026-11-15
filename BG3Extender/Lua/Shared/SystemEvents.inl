@@ -28,7 +28,7 @@ void SystemEventHooks::FireDeferredEvents()
 {
     OPTICK_EVENT();
     for (auto index : deferredUnsubscriptions_) {
-        Unsubscribe(index);
+        RemoveSubscription(index);
     }
 
     deferredUnsubscriptions_.clear();
@@ -60,16 +60,32 @@ std::optional<SystemEventHooks::SubscriptionIndex> SystemEventHooks::Subscribe(e
     sub->Once = once;
     sub->Active = true;
 
-    auto pool = TryAddSystemType(system);
-    if (!pool) return {};
+    if (dispatchDepth_ > 0) {
+        // A hook run is walking the lists; the subscription takes effect when it ends
+        pendingSubscriptions_.push_back(index);
+        return index;
+    }
 
-    if (postUpdate) {
+    if (!AddToHookLists(index, *sub)) {
+        subscriptions_.Free(index);
+        return {};
+    }
+
+    return index;
+}
+
+bool SystemEventHooks::AddToHookLists(SubscriptionIndex index, SystemHook& sub)
+{
+    auto pool = TryAddSystemType(sub.System);
+    if (!pool) return false;
+
+    if (sub.PostUpdate) {
         pool->PostUpdateHooks.push_back(index);
     } else {
         pool->PreUpdateHooks.push_back(index);
     }
 
-    return index;
+    return true;
 }
 
 bool SystemEventHooks::Unsubscribe(SubscriptionIndex index)
@@ -77,6 +93,26 @@ bool SystemEventHooks::Unsubscribe(SubscriptionIndex index)
     auto sub = subscriptions_.Find(index);
     if (sub == nullptr) {
         return false;
+    }
+
+    if (dispatchDepth_ > 0) {
+        // Never runs again; freed when the hook run that walks the list ends
+        if (!sub->Active && !sub->Once) return false;
+        sub->Active = false;
+        sub->Once = false;
+        deferredUnsubscriptions_.push_back(index);
+        return true;
+    }
+
+    RemoveSubscription(index);
+    return true;
+}
+
+void SystemEventHooks::RemoveSubscription(SubscriptionIndex index)
+{
+    auto sub = subscriptions_.Find(index);
+    if (sub == nullptr) {
+        return;
     }
 
     auto& pool = hookedSystems_[(unsigned)sub->System];
@@ -97,41 +133,57 @@ bool SystemEventHooks::Unsubscribe(SubscriptionIndex index)
     }
 
     subscriptions_.Free(index);
-    return true;
+}
+
+void SystemEventHooks::EndDispatch()
+{
+    se_assert(dispatchDepth_ > 0);
+    if (--dispatchDepth_ > 0) return;
+
+    Array<SubscriptionIndex> pending;
+    std::swap(pending, pendingSubscriptions_);
+    for (auto index : pending) {
+        auto sub = subscriptions_.Find(index);
+        if (sub != nullptr && !AddToHookLists(index, *sub)) {
+            subscriptions_.Free(index);
+        }
+    }
+
+    Array<SubscriptionIndex> removals;
+    std::swap(removals, deferredUnsubscriptions_);
+    for (auto index : removals) {
+        RemoveSubscription(index);
+    }
 }
 
 void SystemEventHooks::OnSystemPreUpdate(ecs::EntitySystemHelpersBase*, BaseSystem*, GameTime const&, ecs::SystemTypeIndex systemType)
 {
     assert(hookedSystemMask_[(unsigned)systemType]);
-    auto& hooks = hookedSystems_[(unsigned)systemType];
-
-    if (!hooks.PreUpdateHooks.empty()) {
-        RunHooks(systemType, hooks.PreUpdateHooks);
-    }
+    RunHooks(systemType, hookedSystems_[(unsigned)systemType].PreUpdateHooks);
 }
 
 void SystemEventHooks::OnSystemPostUpdate(ecs::EntitySystemHelpersBase*, BaseSystem*, GameTime const&, ecs::SystemTypeIndex systemType)
 {
     assert(hookedSystemMask_[(unsigned)systemType]);
-    auto& hooks = hookedSystems_[(unsigned)systemType];
-
-    if (!hooks.PostUpdateHooks.empty()) {
-        RunHooks(systemType, hooks.PostUpdateHooks);
-    }
+    RunHooks(systemType, hookedSystems_[(unsigned)systemType].PostUpdateHooks);
 }
 
 void SystemEventHooks::RunHooks(ecs::SystemTypeIndex type, Array<SubscriptionIndex> const& hooks)
 {
+    if (hooks.empty()) return;
+
     ContextGuardAnyThread _(context_);
     LuaVirtualPin lua(state_.GetExtensionState());
 
     if (lua) {
+        dispatchDepth_++;
         for (auto index : hooks) {
             auto hook = subscriptions_.Find(index);
             if (hook != nullptr) {
                 CallHandler(type, *hook, index);
             }
         }
+        EndDispatch();
     }
 }
 
@@ -153,6 +205,7 @@ void SystemEventHooks::CallHandler(ecs::SystemTypeIndex type, SystemHook& hook, 
     if (hook.Once) {
         deferredUnsubscriptions_.push_back(index);
         hook.Active = false;
+        hook.Once = false;
     }
 
     CallHandlerUnsafe(type, hook, index);
