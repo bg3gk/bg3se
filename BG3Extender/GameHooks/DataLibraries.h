@@ -54,6 +54,12 @@ namespace bg3se {
             return symbolMapper_;
         }
 
+        // GateKit: the symbols by name, for Ext.Debug.GetSymbolAddress
+        inline SymbolMappings const& Mappings() const
+        {
+            return mappings_;
+        }
+
     private:
         void PreRegisterLibraries(SymbolMappingLoader& loader);
         void RegisterLibraries(SymbolMapper& mapper);

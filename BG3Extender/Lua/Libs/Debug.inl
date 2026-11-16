@@ -2,6 +2,15 @@
 #include <Lua/Debugger/LuaDebugger.h>
 #include <tlhelp32.h>
 #include <atomic>
+#include <intrin.h>
+#include <array>
+#include <utility>
+#include <detours.h>
+#include <deque>
+#include <thread>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 /// <lua_module>Debug</lua_module>
 BEGIN_NS(lua::debug)
@@ -228,17 +237,14 @@ bool IsDeveloperMode()
 // the game's own process, so an address that is not mapped (or not writable) makes the call
 // fail instead of crashing the game. Addresses are plain integers.
 
-void RequireDeveloperMode(lua_State* L, char const* function)
-{
-    if (!gExtender->GetConfig().DeveloperMode) {
-        luaL_error(L, "Ext.Debug.%s() is only available in developer mode", function);
-    }
-}
 
 // Ext.Debug.ReadMemory(address, size) -> string of `size` bytes, or nil if any of them cannot be read
 UserReturn ReadMemory(lua_State* L, int64_t address, int32_t size)
 {
-    RequireDeveloperMode(L, "ReadMemory");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ReadMemory() is only available in developer mode");
+        return 0;
+    }
     if (size <= 0 || size > 0x100000) {
         return luaL_error(L, "Size must be between 1 and 1048576 bytes");
     }
@@ -259,7 +265,10 @@ UserReturn ReadMemory(lua_State* L, int64_t address, int32_t size)
 // Nothing checks what is being overwritten: a wrong address corrupts the game.
 bool WriteMemory(lua_State* L, int64_t address, StringView bytes)
 {
-    RequireDeveloperMode(L, "WriteMemory");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("WriteMemory() is only available in developer mode");
+        return 0;
+    }
     if (bytes.empty() || bytes.size() > 0x100000) {
         luaL_error(L, "Between 1 and 1048576 bytes can be written at once");
     }
@@ -272,7 +281,10 @@ bool WriteMemory(lua_State* L, int64_t address, StringView bytes)
 // Ext.Debug.GetModuleInfo() -> { Base = address, Size = bytes } of the game executable
 UserReturn GetModuleInfo(lua_State* L)
 {
-    RequireDeveloperMode(L, "GetModuleInfo");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetModuleInfo() is only available in developer mode");
+        return 0;
+    }
     auto base = (uint8_t const*)GetModuleHandleW(NULL);
     auto dos = (IMAGE_DOS_HEADER const*)base;
     auto nt = (IMAGE_NT_HEADERS const*)(base + dos->e_lfanew);
@@ -288,7 +300,10 @@ UserReturn GetModuleInfo(lua_State* L)
 // Mapped tells whether the extender has a layout for it (entity.<Name> works).
 UserReturn GetComponentTypes(lua_State* L)
 {
-    RequireDeveloperMode(L, "GetComponentTypes");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetComponentTypes() is only available in developer mode");
+        return 0;
+    }
     auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
     auto world = ecs.GetEntityWorld();
 
@@ -317,7 +332,10 @@ UserReturn GetComponentTypes(lua_State* L)
 // Ext.Debug.GetSystemTypes() -> { { Name, Index, Mapped } } for every system the game registered on this side
 UserReturn GetSystemTypes(lua_State* L)
 {
-    RequireDeveloperMode(L, "GetSystemTypes");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetSystemTypes() is only available in developer mode");
+        return 0;
+    }
     auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
 
     lua_newtable(L);
@@ -338,7 +356,10 @@ UserReturn GetSystemTypes(lua_State* L)
 // TotalSize the entity stores a pointer: the component itself is at the address read from there.
 UserReturn GetComponentAddress(lua_State* L, EntityHandle entity, STDString name)
 {
-    RequireDeveloperMode(L, "GetComponentAddress");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetComponentAddress() is only available in developer mode");
+        return 0;
+    }
     auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
     auto world = ecs.GetEntityWorld();
     auto type = ecs.GetComponentIndex(name);
@@ -421,7 +442,10 @@ static bool IsReadableRange(uint8_t const* address, std::size_t size)
 // pointer is dereferenced when the type is a proxy, so Address points at the live field either way.
 UserReturn GetFieldAddress(lua_State* L, EntityHandle entity, STDString component, STDString field)
 {
-    RequireDeveloperMode(L, "GetFieldAddress");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetFieldAddress() is only available in developer mode");
+        return 0;
+    }
     auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
     auto world = ecs.GetEntityWorld();
     auto index = (world != nullptr) ? ecs.GetComponentIndex(component) : std::optional<ecs::ComponentTypeIndex>{};
@@ -484,7 +508,10 @@ UserReturn GetFieldAddress(lua_State* L, EntityHandle entity, STDString componen
 // holds the address, and the offset inside it. This is the `module+0xRVA` the decompiler speaks.
 UserReturn ModuleFromAddress(lua_State* L, int64_t address)
 {
-    RequireDeveloperMode(L, "ModuleFromAddress");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ModuleFromAddress() is only available in developer mode");
+        return 0;
+    }
     HMODULE module{ nullptr };
     if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
             (LPCWSTR)address, &module) || module == nullptr) {
@@ -518,7 +545,10 @@ UserReturn ModuleFromAddress(lua_State* L, int64_t address)
 // is not loaded or the offset is past its image. `module` is a loaded module's name (bg3_dx11.exe).
 UserReturn AddressFromModule(lua_State* L, STDString module, int64_t rva)
 {
-    RequireDeveloperMode(L, "AddressFromModule");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("AddressFromModule() is only available in developer mode");
+        return 0;
+    }
     auto handle = GetModuleHandleW(FromUTF8(module).c_str());
     if (handle == nullptr || rva < 0) {
         lua_pushnil(L);
@@ -542,7 +572,10 @@ UserReturn AddressFromModule(lua_State* L, STDString module, int64_t rva)
 // Bounds-checked against committed readable memory, so a wrong address returns nil, never a crash.
 UserReturn ReadValue(lua_State* L, int64_t address, STDString type)
 {
-    RequireDeveloperMode(L, "ReadValue");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ReadValue() is only available in developer mode");
+        return 0;
+    }
     auto scalar = FindScalarType(type);
     if (scalar == nullptr) {
         return luaL_error(L, "ReadValue: unknown scalar type '%s'", type.c_str());
@@ -632,7 +665,10 @@ static void PackScalar(ScalarType const& scalar, lua_State* L, int index, uint8_
 // only that the bytes are safe to store, not that they mean anything there.
 bool WriteValue(lua_State* L, int64_t address, STDString type)
 {
-    RequireDeveloperMode(L, "WriteValue");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("WriteValue() is only available in developer mode");
+        return 0;
+    }
     auto scalar = FindScalarType(type);
     if (scalar == nullptr) {
         luaL_error(L, "WriteValue: unknown scalar type '%s'", type.c_str());
@@ -978,7 +1014,10 @@ static void UpdateWatchActive()
 // only that side lists its hits, reads them and clears it.
 UserReturn WatchWrite(lua_State* L, int64_t address, int32_t size, std::optional<bool> readWrite)
 {
-    RequireDeveloperMode(L, "WatchWrite");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("WatchWrite() is only available in developer mode");
+        return 0;
+    }
     if (size != 1 && size != 2 && size != 4 && size != 8) {
         return luaL_error(L, "WatchWrite: size must be 1, 2, 4 or 8");
     }
@@ -1003,7 +1042,10 @@ UserReturn WatchWrite(lua_State* L, int64_t address, int32_t size, std::optional
 // each side (OnExtenderTick), so a watch left armed across a Lua reset or a load stays served.
 UserReturn WatchPoll(lua_State* L)
 {
-    RequireDeveloperMode(L, "WatchPoll");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("WatchPoll() is only available in developer mode");
+        return 0;
+    }
     auto owner = OwnerOf(L);
     uint64_t waiting = 0;
     uint64_t head = gHitHead.load();
@@ -1025,7 +1067,10 @@ UserReturn WatchPoll(lua_State* L)
 // rows; Poll is the side's extender tick count.
 UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
 {
-    RequireDeveloperMode(L, "ReadWatchHits");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ReadWatchHits() is only available in developer mode");
+        return 0;
+    }
     auto owner = OwnerOf(L);
 
     auto resolve = [L](uint64_t addr) {
@@ -1111,7 +1156,10 @@ UserReturn ReadWatchHits(lua_State* L, std::optional<int32_t> max)
 // watch before it is disarmed is answered, not left to crash.
 bool ClearWatch(lua_State* L, std::optional<int32_t> slot)
 {
-    RequireDeveloperMode(L, "ClearWatch");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ClearWatch() is only available in developer mode");
+        return 0;
+    }
     auto owner = OwnerOf(L);
     if (slot && (*slot < 1 || *slot > (int)WatchSlots)) {
         luaL_error(L, "ClearWatch: slot must be 1-4");
@@ -1140,7 +1188,10 @@ bool ClearWatch(lua_State* L, std::optional<int32_t> slot)
 // Before will be.
 UserReturn ListWatches(lua_State* L, std::optional<bool> all)
 {
-    RequireDeveloperMode(L, "ListWatches");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ListWatches() is only available in developer mode");
+        return 0;
+    }
     auto owner = OwnerOf(L);
     std::lock_guard _(gInstrumentMutex);
     lua_newtable(L);
@@ -1198,6 +1249,8 @@ uint32_t ApplyFreezes(uint8_t owner)
 // Called by each side's extension state every tick, whether or not its Lua is running: counts the
 // side's ticks for the hits, re-arms threads made since arming (at most once a second, since
 // arming suspends every thread) and writes the side's frozen values.
+void CoverTick();      // Lua/Libs/DebugCover.inl
+
 void OnExtenderTick(bool server)
 {
     uint8_t owner = server ? OwnerServer : OwnerClient;
@@ -1215,13 +1268,17 @@ void OnExtenderTick(bool server)
     }
 
     ApplyFreezes(owner);
+    CoverTick();
 }
 
 // Ext.Debug.Freeze(address, type, value) -> slot index or nil if none free. From now until it is
 // cleared, the extender rewrites this scalar every tick of the calling side.
 UserReturn HoldValue(lua_State* L, int64_t address, STDString type)
 {
-    RequireDeveloperMode(L, "Freeze");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("Freeze() is only available in developer mode");
+        return 0;
+    }
     auto scalar = FindScalarType(type);
     if (scalar == nullptr) {
         return luaL_error(L, "Freeze: unknown scalar type '%s'", type.c_str());
@@ -1251,7 +1308,10 @@ UserReturn HoldValue(lua_State* L, int64_t address, STDString type)
 // needed any more (the extender applies them every tick); kept for scripts that call it.
 UserReturn FreezeApply(lua_State* L)
 {
-    RequireDeveloperMode(L, "FreezeApply");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("FreezeApply() is only available in developer mode");
+        return 0;
+    }
     std::lock_guard _(gInstrumentMutex);
     lua_pushinteger(L, ApplyFreezes(OwnerOf(L)));
     return 1;
@@ -1261,7 +1321,10 @@ UserReturn FreezeApply(lua_State* L)
 // calling side froze, or just one slot of its own.
 bool ClearFreezes(lua_State* L, std::optional<int32_t> slot)
 {
-    RequireDeveloperMode(L, "ClearFreezes");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ClearFreezes() is only available in developer mode");
+        return 0;
+    }
     auto owner = OwnerOf(L);
     std::lock_guard _(gInstrumentMutex);
     bool cleared = false;
@@ -1279,7 +1342,10 @@ bool ClearFreezes(lua_State* L, std::optional<int32_t> slot)
 // side holds now, or both sides' with all = true.
 UserReturn ListFreezes(lua_State* L, std::optional<bool> all)
 {
-    RequireDeveloperMode(L, "ListFreezes");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("ListFreezes() is only available in developer mode");
+        return 0;
+    }
     auto owner = OwnerOf(L);
     std::lock_guard _(gInstrumentMutex);
     lua_newtable(L);
@@ -1302,7 +1368,10 @@ UserReturn ListFreezes(lua_State* L, std::optional<bool> all)
 // pointer and the EntityWorld pointer every system starts with.
 UserReturn GetSystemAddress(lua_State* L, STDString name)
 {
-    RequireDeveloperMode(L, "GetSystemAddress");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetSystemAddress() is only available in developer mode");
+        return 0;
+    }
     auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
     auto world = ecs.GetEntityWorld();
 
@@ -1336,7 +1405,10 @@ UserReturn GetSystemAddress(lua_State* L, STDString name)
 // classes, not the entities, so it is cheap enough to call every tick.
 Array<EntityHandle> GetComponentHolders(lua_State* L, STDString name, std::optional<int32_t> max)
 {
-    RequireDeveloperMode(L, "GetComponentHolders");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetComponentHolders() is only available in developer mode");
+        return {};
+    }
     Array<EntityHandle> entities;
     auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
     auto world = ecs.GetEntityWorld();
@@ -1368,7 +1440,10 @@ Array<EntityHandle> GetComponentHolders(lua_State* L, STDString name, std::optio
 // for every component type that has at least one holder, mapped by the extender or not.
 UserReturn GetComponentCounts(lua_State* L)
 {
-    RequireDeveloperMode(L, "GetComponentCounts");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("GetComponentCounts() is only available in developer mode");
+        return 0;
+    }
     auto& ecs = State::FromLua(L)->GetEntitySystemHelpers();
     auto world = ecs.GetEntityWorld();
 
@@ -1423,7 +1498,10 @@ static __declspec(noinline) uint64_t OverflowStack(volatile uint64_t depth)
 void Crash(lua_State* L, int type)
 {
 #if !defined(_DEBUG)
-    RequireDeveloperMode(L, "Crash");
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("Crash() is only available in developer mode");
+        return;
+    }
 #endif
     switch (type) {
     case 0:
@@ -1480,6 +1558,9 @@ void Reset(std::optional<bool> server, std::optional<bool> client)
     }
 }
 
+#include <Lua/Libs/DebugProbe.inl>
+#include <Lua/Libs/DebugCover.inl>
+
 void RegisterDebugLib()
 {
     DECLARE_MODULE(Debug, Both)
@@ -1512,6 +1593,22 @@ void RegisterDebugLib()
     MODULE_FUNCTION(FreezeApply)
     MODULE_FUNCTION(ClearFreezes)
     MODULE_FUNCTION(ListFreezes)
+    MODULE_FUNCTION(AddProbe)
+    MODULE_FUNCTION(SetProbeRule)
+    MODULE_FUNCTION(GetProbeHits)
+    MODULE_FUNCTION(GetProbes)
+    MODULE_FUNCTION(RemoveProbe)
+    MODULE_FUNCTION(GetProbeTestAddress)
+    MODULE_FUNCTION(CallProbeTest)
+    MODULE_FUNCTION(GetObjectAddress)
+    MODULE_FUNCTION(GetSymbolAddress)
+    MODULE_FUNCTION(GetSymbolNames)
+    MODULE_FUNCTION(GetPropertyAddress)
+    MODULE_FUNCTION(GetElementAddress)
+    MODULE_FUNCTION(StartCoverage)
+    MODULE_FUNCTION(GetCoverageStatus)
+    MODULE_FUNCTION(SaveCoverage)
+    MODULE_FUNCTION(StopCoverage)
     MODULE_FUNCTION(SetEntityRuntimeCheckLevel)
     MODULE_FUNCTION(Crash)
     MODULE_FUNCTION(Reset)
