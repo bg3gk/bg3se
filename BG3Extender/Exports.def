@@ -2,3 +2,6 @@ LIBRARY BG3ScriptExtender
 
 EXPORTS
     DWriteCreateFactory=WrappedDWriteCreateFactory @1
+    GateKitSymbolAddress @2
+    GateKitSymbolCount @3
+    GateKitSymbolName @4

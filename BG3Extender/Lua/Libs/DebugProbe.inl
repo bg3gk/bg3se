@@ -898,18 +898,30 @@ UserReturn GetObjectAddress(lua_State* L)
 
 // Ext.Debug.GetSymbolAddress(name) -> address, or nil and why. The address the extender found
 // for one of its own symbols (the names of GameHooks/DataLibrariesBG3Game.cpp, such as
-// "stats__DealDamageFunctor__ApplyDamage"): a function's entry, or the place of a global.
+// "stats__DealDamageFunctor__ApplyDamage"): a function's entry, or the place of a global. A name
+// of GateKit's registry table (RegistryMappings.xml beside the DLL; a registry id such as
+// "esv::combat::System::CheckForSurprise") is answered too.
 UserReturn GetSymbolAddress(lua_State* L, STDString name)
 {
     if (!gExtender->GetConfig().DeveloperMode) {
         ERR("GetSymbolAddress() is only available in developer mode");
         return 0;
     }
+    auto const& named = gExtender->GetLibraryManager().Mappings().Named;
+    if (auto n = named.find(std::string(name.c_str())); n != named.end()) {
+        if (n->second == nullptr) {
+            lua_pushnil(L);
+            lua_pushstring(L, "the registry's pattern for this name was not found in this executable");
+            return 2;
+        }
+        lua_pushinteger(L, (lua_Integer)(uint64_t)n->second);
+        return 1;
+    }
     auto const& symbols = gExtender->GetLibraryManager().Mappings().StaticSymbols;
     auto it = symbols.find(std::string(name.c_str()));
     if (it == symbols.end()) {
         lua_pushnil(L);
-        lua_pushstring(L, "the extender has no symbol of this name");
+        lua_pushstring(L, "neither the extender nor the registry's table has a symbol of this name");
         return 2;
     }
 
@@ -925,7 +937,7 @@ UserReturn GetSymbolAddress(lua_State* L, STDString name)
 }
 
 // Ext.Debug.GetSymbolNames() -> the names GetSymbolAddress knows, sorted, each with whether it was
-// found: { { Name, Found } }.
+// found and where the name comes from: { { Name, Found, Source = "extender" | "registry" } }.
 UserReturn GetSymbolNames(lua_State* L)
 {
     if (!gExtender->GetConfig().DeveloperMode) {
@@ -933,16 +945,19 @@ UserReturn GetSymbolNames(lua_State* L)
         return 0;
     }
     auto const& symbols = gExtender->GetLibraryManager().Mappings().StaticSymbols;
-    std::vector<std::string> names;
-    for (auto const& entry : symbols) names.push_back(entry.first);
+    auto const& named = gExtender->GetLibraryManager().Mappings().Named;
+    std::vector<std::pair<std::string, bool>> names;
+    for (auto const& entry : symbols) names.push_back({ entry.first, false });
+    for (auto const& entry : named) names.push_back({ entry.first, true });
     std::sort(names.begin(), names.end());
     lua_newtable(L);
     int index = 1;
-    for (auto const& name : names) {
-        auto address = *(void**)((uint8_t*)&GetStaticSymbols() + symbols.at(name).Offset);
+    for (auto const& [name, fromRegistry] : names) {
+        auto address = fromRegistry ? named.at(name) : *(void**)((uint8_t*)&GetStaticSymbols() + symbols.at(name).Offset);
         lua_newtable(L);
         settable(L, "Name", name.c_str());
         settable(L, "Found", address != nullptr);
+        settable(L, "Source", fromRegistry ? "registry" : "extender");
         lua_rawseti(L, -2, index++);
     }
     return 1;

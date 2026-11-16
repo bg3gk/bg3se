@@ -138,6 +138,9 @@ struct SymbolMappings
         std::string NextSymbol;
         int32_t NextSymbolSeekSize{ 0 };
         std::string EngineCallback;
+        // A target of a table that names its places itself (GateKit's registry): the place found is
+        // kept under Name in SymbolMappings::Named, not written into a symbol declared in code.
+        bool Named{ false };
     };
 
     struct Patch
@@ -207,6 +210,8 @@ struct SymbolMappings
     std::vector<Mapping*> OrderedMappings;
     std::unordered_map<std::string, DllImport> DllImports;
     std::unordered_map<std::string, StaticSymbol> StaticSymbols;
+    // The places of a named table (GateKit's registry), by the table's names: nullptr until found.
+    std::unordered_map<std::string, void*> Named;
 };
 
 class SymbolMappingLoader
@@ -219,10 +224,15 @@ public:
     void AddKnownModule(std::string const& name);
     bool LoadBuiltinMappings(int resourceId);
     bool LoadMappings(tinyxml2::XMLDocument* doc);
+    // A table read from a file, whose targets name their places themselves (Name, no Symbol):
+    // GateKit's registry writes one with `gatekit registry mappings write`. False when the file
+    // is absent or cannot be read; the extender's own table is not touched either way.
+    bool LoadNamedMappings(std::wstring const& path);
 
 private:
     SymbolMappings& mappings_;
     std::unordered_set<std::string> knownModules_;
+    bool named_{ false };
 
     bool LoadMappingsNode(tinyxml2::XMLElement* mappingsNode);
     bool LoadMapping(tinyxml2::XMLElement* mapping, SymbolMappings::Mapping& sym);
