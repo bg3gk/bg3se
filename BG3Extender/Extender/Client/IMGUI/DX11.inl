@@ -403,7 +403,14 @@ private:
 
         // The game's frame is finished and nothing of the extender's has been drawn into it yet,
         // so this is the only moment at which a picture of the game alone can be taken
-        TakeScreenshotIfRequested();
+        TakeScreenshotIfRequested(false);
+        // A picture asked for with the extender's layer is taken when this hook is left, whether
+        // the layer was drawn this frame or there was nothing to draw
+        struct OverlayShot
+        {
+            DX11Backend* Self;
+            ~OverlayShot() { Self->TakeScreenshotIfRequested(true); }
+        } overlayShot{ this };
         // The same frame, handed to another program on the card instead of brought back into
         // memory: one CopyResource and nothing else on this thread
         frameShare_.OnPresent(device_, context_, pSwapChain, info_.HDR10);
@@ -453,11 +460,11 @@ private:
         ImGui_ImplDX11_RenderDrawData(&vp.DrawDataP);
     }
 
-    bool RequestScreenshot(StringView path) override
+    bool RequestScreenshot(StringView path, bool withOverlay) override
     {
         // Without the swap chain nothing would ever fill the request
         if (swapChain_ == nullptr || device_ == nullptr || context_ == nullptr) return false;
-        return screenshots_.Request(path);
+        return screenshots_.Request(path, withOverlay);
     }
 
     bool ScreenshotPending() override
@@ -481,9 +488,9 @@ private:
 
     // The rendering thread, inside the present hook: fills a screenshot request, if there is one,
     // from the frame the swap chain is about to show
-    void TakeScreenshotIfRequested()
+    void TakeScreenshotIfRequested(bool afterOverlay)
     {
-        auto path = screenshots_.Take();
+        auto path = screenshots_.Take(afterOverlay);
         if (!path) return;
 
         uint32_t width{ 0 }, height{ 0 };

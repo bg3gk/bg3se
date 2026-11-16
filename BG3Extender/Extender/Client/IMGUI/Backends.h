@@ -77,7 +77,8 @@ public:
     // extender's is drawn over it. The path is below the Script Extender folder of the player's
     // profile, as Ext.IO.SaveFile() takes it. False when one is already on its way, or from a
     // backend that cannot read its frames.
-    virtual bool RequestScreenshot(StringView path) { return false; }
+    // With `withOverlay` the frame is taken after the extender's own layer has been drawn into it.
+    virtual bool RequestScreenshot(StringView path, bool withOverlay = false) { return false; }
     // Whether a requested screenshot has still to be taken or written
     virtual bool ScreenshotPending() { return false; }
     // Starts or stops copying every finished frame into a texture another program can open on the

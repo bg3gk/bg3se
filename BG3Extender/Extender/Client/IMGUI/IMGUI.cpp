@@ -19,6 +19,7 @@
 #include <Extender/Client/ExtensionStateClient.h>
 #include <Extender/Shared/ScriptHelpers.h>
 #include <CoreLib/Wrappers.h>
+#include <fstream>
 
 // #define IMGUI_DEBUG(msg, ...) DEBUG("[IMGUI] " msg, __VA_ARGS__)
 #define IMGUI_DEBUG(msg, ...)
@@ -2776,7 +2777,7 @@ bool IMGUIManager::LoadFont(FontData& request)
     return true;
 }
 
-std::optional<TextureLoadResult> IMGUIManager::RegisterFileTexture(FixedString const& path)
+std::optional<TextureLoadResult> IMGUIManager::RegisterFileTexture(FixedString const& path, bool fromDisk)
 {
     auto loaded = fileTextures_.try_get(path);
     if (loaded) {
@@ -2787,7 +2788,23 @@ std::optional<TextureLoadResult> IMGUIManager::RegisterFileTexture(FixedString c
 
     if (!initialized_ || !renderer_) return {};
 
-    auto blob = script::LoadExternalFile(path.GetStringView(), PathRootType::Data);
+    std::optional<STDString> blob;
+    if (fromDisk) {
+        // GateKit: a file anywhere on the disk, read directly. The game's file system reaches only
+        // its own data; this is the extender reading a file itself.
+        std::ifstream f(FromUTF8(path.GetStringView()).c_str(), std::ios::in | std::ios::binary);
+        if (f.good()) {
+            STDString body;
+            f.seekg(0, std::ios::end);
+            body.resize((unsigned)f.tellg());
+            f.seekg(0, std::ios::beg);
+            f.read(body.data(), body.size());
+            blob = std::move(body);
+        }
+    } else {
+        blob = script::LoadExternalFile(path.GetStringView(), PathRootType::Data);
+    }
+
     if (!blob) {
         OsiError("Failed to open image file: " << path.GetString());
         return {};
@@ -2887,9 +2904,9 @@ void IMGUIManager::SetPaperWhite(float nits)
     renderer_->SetPaperWhite(nits);
 }
 
-bool IMGUIManager::RequestScreenshot(StringView path)
+bool IMGUIManager::RequestScreenshot(StringView path, bool withOverlay)
 {
-    return renderer_ ? renderer_->RequestScreenshot(path) : false;
+    return renderer_ ? renderer_->RequestScreenshot(path, withOverlay) : false;
 }
 
 bool IMGUIManager::ScreenshotPending()

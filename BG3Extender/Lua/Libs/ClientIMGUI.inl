@@ -55,6 +55,33 @@ std::optional<glm::vec2> GetImageSize(FixedString name)
     return image.Size;
 }
 
+// Ext.IMGUI.LoadImageFile(path) -> { width, height } in pixels, or nil.
+// GateKit, a convenience of the extender and not something the game does: `path` is a path of the
+// machine's file system ("E:/pictures/logo.png"), read directly from the disk, where AddImage()
+// alone reads only through the game's data. Once loaded the picture is known under that same
+// path: AddImage(path), SetBackgroundImage(path) and GetImageSize(path) take it. It stays loaded
+// until UnloadImageFile(path).
+std::optional<glm::vec2> LoadImageFile(FixedString path)
+{
+    if (!gExtender->IMGUI().WasUIInitialized()) return {};
+
+    if (!extui::ImageReference::IsFilePath(path)) {
+        OsiError("Not an image file path (png, jpg, tga and bmp are supported): " << path.GetString());
+        return {};
+    }
+
+    auto result = gExtender->IMGUI().RegisterFileTexture(path, true);
+    if (!result) return {};
+    return glm::vec2((float)result->Width, (float)result->Height);
+}
+
+// Ext.IMGUI.UnloadImageFile(path): gives up what one LoadImageFile(path) holds; the texture is
+// released once nothing shows it any more.
+void UnloadImageFile(FixedString path)
+{
+    gExtender->IMGUI().UnregisterFileTexture(path);
+}
+
 // Names of the fonts that can be assigned to an element's Font
 Array<FixedString> GetFontNames()
 {
@@ -166,6 +193,8 @@ void RegisterIMGUILib()
     MODULE_FUNCTION(LoadFont)
     MODULE_FUNCTION(GetFontNames)
     MODULE_FUNCTION(GetImageSize)
+    MODULE_FUNCTION(LoadImageFile)
+    MODULE_FUNCTION(UnloadImageFile)
     MODULE_FUNCTION(SetScale)
     MODULE_FUNCTION(SetUIScaleMultiplier)
     MODULE_FUNCTION(SetFontScaleMultiplier)
