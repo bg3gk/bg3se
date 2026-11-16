@@ -84,7 +84,10 @@ void GenomeVariant::Release()
 {
     if (Type) {
         if (Type->Destroy) {
-            Type->Destroy(&Value);
+            // GateKit: a value larger than a pointer lives behind `Value`; only a small one lives
+            // in it. Handing &Value for a large one made the game take the pointer for the object
+            // (a set's virtual table was then called as code).
+            Type->Destroy(Type->Size > sizeof(Value) ? Value : (void*)&Value);
         }
         if (Type->Size > sizeof(Value)) {
             GameFree(Value);
