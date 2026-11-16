@@ -12,7 +12,10 @@ install it, its API and its documentation - go to [Norbyte/bg3se](https://github
   `Ext.Debug` - field and component addresses, `module+0xRVA` conversion, checked reads and writes,
   hardware watches that say which instruction touches a field, freezes, crash dumps of our own; and
   the entity tracer in `Ext.Entity` with filters by entity and component, counts and ordered events,
-  and which system changed a component.
+  and which system changed a component; addresses of objects, properties and array elements;
+  probes on any function of the game; and coverage counters that say which functions run.
+- **Roll events for mods** (`Ext.Events.BeforeRoll`, `Ext.Events.Roll`): every check, attack,
+  saving throw and damage roll can be seen and changed, as damage can.
 - **More of the engine reachable from Lua**: many more components mapped, under the game's own
   names, with the older names kept as aliases.
 - **What GateKit needs to drive the game**: a frame taken from inside, the frame mirrored to another
