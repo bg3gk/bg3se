@@ -603,6 +603,182 @@
       <Target Type="Absolute" Offset="@start" Symbol="eoc__spell__CalculateModifiableSpellRollChance" />
     </Mapping>
 
+    <!-- A client-only figure, as the timeline system builds its dummies (Ext.ClientVisual.CreateDummy). bg3_dx11.exe RVAs beside each. -->
+    <!-- +0x4234D20 -->
+    <Mapping Name="ecl::TLPreviewDummyHelpers::CreateDummy" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      48 89 6c 24 18 // mov qword ptr [rsp + 0x18], rbp
+      48 89 74 24 20 // mov qword ptr [rsp + 0x20], rsi
+      57 // push rdi
+      48 83 ec 40 // sub rsp, 0x40
+      48 8b 05 ?? ?? ?? ?? // mov rax, qword ptr [rip + ...]
+      0f b6 ea // movzx ebp, dl
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__TLPreviewDummyHelpers__CreateDummy" />
+    </Mapping>
+
+    <!-- +0x4233C80 -->
+    <Mapping Name="ecl::TLPreviewDummyHelpers::SetupDummy" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
+      48 89 7c 24 20 // mov qword ptr [rsp + 0x20], rdi
+      55 // push rbp
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d ac 24 70 ff ff ff // lea rbp, [rsp - 0x90]
+      48 81 ec 90 01 00 00 // sub rsp, 0x190
+      48 8b 05 ?? ?? ?? ?? // mov rax, qword ptr [rip + ...]
+      48 33 c4 // xor rax, rsp
+      48 89 85 88 00 00 00 // mov qword ptr [rbp + 0x88], rax
+      44 88 4c 24 40 // mov byte ptr [rsp + 0x40], r9b
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__TLPreviewDummyHelpers__SetupDummy" />
+    </Mapping>
+
+    <!-- +0x4235720 -->
+    <Mapping Name="ecl::TLPreviewDummyHelpers::PrePrepareDummy" AllowFail="true">
+      @start 40 55 // push rbp
+      53 // push rbx
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 e9 // lea rbp, [rsp - 0x17]
+      48 81 ec e8 00 00 00 // sub rsp, 0xe8
+      48 8b 05 ?? ?? ?? ?? // mov rax, qword ptr [rip + ...]
+      48 33 c4 // xor rax, rsp
+      48 89 45 07 // mov qword ptr [rbp + 7], rax
+      49 8b f9 // mov rdi, r9
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__TLPreviewDummyHelpers__PrePrepareDummy" />
+    </Mapping>
+
+    <!-- +0x4235B20 -->
+    <Mapping Name="ecl::TLPreviewDummyHelpers::LoadDummy" AllowFail="true">
+      @start 40 55 // push rbp
+      53 // push rbx
+      56 // push rsi
+      57 // push rdi
+      41 55 // push r13
+      41 56 // push r14
+      48 8d ac 24 e8 fe ff ff // lea rbp, [rsp - 0x118]
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__TLPreviewDummyHelpers__LoadDummy" />
+    </Mapping>
+
+    <!-- +0x4235F50 -->
+    <Mapping Name="ecl::TLPreviewDummyHelpers::AttachDummyToScene" AllowFail="true">
+      @start 48 8b c4 // mov rax, rsp
+      55 // push rbp
+      48 81 ec 90 00 00 00 // sub rsp, 0x90
+      83 7a 54 ff // cmp dword ptr [rdx + 0x54], 0xffffffff
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__TLPreviewDummyHelpers__AttachDummyToScene" />
+    </Mapping>
+
+    <!-- +0x1D3CAA0 -->
+    <Mapping Name="ecl::TLPreviewDummyHelpers::DestroyDummy" AllowFail="true">
+      @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
+      57 // push rdi
+      48 83 ec 30 // sub rsp, 0x30
+      4c 8b 19 // mov r11, qword ptr [rcx]
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__TLPreviewDummyHelpers__DestroyDummy" />
+    </Mapping>
+
+    <!-- +0x1BC4F00: ls::AnimationBlueprintSystem::TriggerGameplayEvent<EoCGE::ASAnimation>. The code of
+         one instantiation of the template differs from another's only in the event's id, so the
+         id read at @fs decides. -->
+    <Mapping Name="ls::AnimationBlueprintSystem::TriggerGameplayEvent_ASAnimation" AllowFail="true">
+      @start 48 89 5c 24 20 // mov qword ptr [rsp + 0x20], rbx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d ac 24 30 ff ff ff // lea rbp, [rsp - 0xd0]
+      48 81 ec d0 01 00 00 // sub rsp, 0x1d0
+      0f 29 b4 24 c0 01 00 00 // movaps xmmword ptr [rsp + 0x1c0], xmm6
+      48 8b 05 ?? ?? ?? ?? // mov rax, qword ptr [rip + ...]
+      48 33 c4 // xor rax, rsp
+      48 89 85 b0 00 00 00 // mov qword ptr [rbp + 0xb0], rax
+      4d 8b f8 // mov r15, r8
+      4c 8b e2 // mov r12, rdx
+      4c 8b f1 // mov r14, rcx
+      c7 44 24 40 ff ff ff ff // mov dword ptr [rsp + 0x40], 0xffffffff
+      48 8d 44 24 48 // lea rax, [rsp + 0x48]
+      48 89 44 24 30 // mov qword ptr [rsp + 0x30], rax
+      4c 8d 2d ?? ?? ?? ?? // lea r13, [rip + ...]
+      4c 89 6c 24 48 // mov qword ptr [rsp + 0x48], r13
+      48 8d 05 ?? ?? ?? ?? // lea rax, [rip + ...]
+      48 89 44 24 20 // mov qword ptr [rsp + 0x20], rax
+      4c 8d 0d ?? ?? ?? ?? // lea r9, [rip + ...]
+      ba 10 00 00 00 // mov edx, 0x10
+      44 8d 42 06 // lea r8d, [rdx + 6]
+      48 8d 4c 24 50 // lea rcx, [rsp + 0x50]
+      e8 ?? ?? ?? ?? // call ...
+      90 // nop
+      8b 44 24 40 // mov eax, dword ptr [rsp + 0x40]
+      @fs 8b 1d ?? ?? ?? ?? // mov ebx, dword ptr [rip + EoCGE::ASAnimation::s_ID]
+      3b c3 // cmp eax, ebx
+      <Condition Type="FixedString" Offset="@fs" Value="d6c855f3-a9c0-45dc-86dd-d3da429e33b1" />
+      <Target Type="Absolute" Offset="@start" Symbol="ls__AnimationBlueprintSystem__TriggerASAnimation" />
+    </Mapping>
+
+    <!-- +0x3B1CC30 -->
+    <Mapping Name="ls::EffectsManager::PlayEffect" AllowFail="true">
+      @start 40 53 // push rbx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 56 // push r14
+      41 57 // push r15
+      48 81 ec b0 00 00 00 // sub rsp, 0xb0
+      48 8b 05 ?? ?? ?? ?? // mov rax, qword ptr [rip + ...]
+      48 33 c4 // xor rax, rsp
+      48 89 84 24 a0 00 00 00 // mov qword ptr [rsp + 0xa0], rax
+      49 8b d9 // mov rbx, r9
+      48 8b fa // mov rdi, rdx
+      4c 8b f1 // mov r14, rcx
+      <Target Type="Absolute" Offset="@start" Symbol="ls__EffectsManager__PlayEffect" />
+    </Mapping>
+
+    <!-- +0x1BC4D50: ls::AnimationBlueprintSystem::TriggerGameplayEvent<EoCGE::ASCancelAnimation> -->
+    <Mapping Name="ls::AnimationBlueprintSystem::TriggerGameplayEvent_ASCancelAnimation" AllowFail="true">
+      @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 56 // push r14
+      41 57 // push r15
+      48 81 ec c0 01 00 00 // sub rsp, 0x1c0
+      48 8b 05 ?? ?? ?? ?? // mov rax, qword ptr [rip + ...]
+      48 33 c4 // xor rax, rsp
+      48 89 84 24 b0 01 00 00 // mov qword ptr [rsp + 0x1b0], rax
+      49 8b f8 // mov rdi, r8
+      48 8b ea // mov rbp, rdx
+      48 8b f1 // mov rsi, rcx
+      c7 44 24 40 ff ff ff ff // mov dword ptr [rsp + 0x40], 0xffffffff
+      48 8d 44 24 48 // lea rax, [rsp + 0x48]
+      48 89 44 24 30 // mov qword ptr [rsp + 0x30], rax
+      4c 8d 35 ?? ?? ?? ?? // lea r14, [rip + ...]
+      4c 89 74 24 48 // mov qword ptr [rsp + 0x48], r14
+      4c 8d 3d ?? ?? ?? ?? // lea r15, [rip + ...]
+      4c 89 7c 24 20 // mov qword ptr [rsp + 0x20], r15
+      4c 8d 0d ?? ?? ?? ?? // lea r9, [rip + ...]
+      ba 10 00 00 00 // mov edx, 0x10
+      44 8d 42 06 // lea r8d, [rdx + 6]
+      48 8d 4c 24 50 // lea rcx, [rsp + 0x50]
+      e8 ?? ?? ?? ?? // call ...
+      90 // nop
+      8b 44 24 40 // mov eax, dword ptr [rsp + 0x40]
+      @fs 8b 1d ?? ?? ?? ?? // mov ebx, dword ptr [rip + EoCGE::ASCancelAnimation::s_ID]
+      3b c3 // cmp eax, ebx
+      <Condition Type="FixedString" Offset="@fs" Value="e131c8d9-6049-40a6-a565-73038fedc938" />
+      <Target Type="Absolute" Offset="@start" Symbol="ls__AnimationBlueprintSystem__TriggerASCancelAnimation" />
+    </Mapping>
+
     <!-- Sig: call from osi::ApplyDamage -->
     <Mapping Name="eoc::DealDamageFunctor::ApplyDamage">
       48 8d 4d a0 // lea     rcx, [rbp+70h+var_D0]

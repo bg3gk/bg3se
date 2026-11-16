@@ -192,6 +192,15 @@ namespace bg3se
         SYM_OFF(thoth__shared__ContextData__Construct);
         SYM_OFF(thoth__shared__ContextData__Destroy);
         SYM_OFF(eoc__spell__CalculateModifiableSpellRollChance);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__CreateDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__SetupDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__PrePrepareDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__LoadDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__AttachDummyToScene);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__DestroyDummy);
+        SYM_OFF(ls__AnimationBlueprintSystem__TriggerASAnimation);
+        SYM_OFF(ls__AnimationBlueprintSystem__TriggerASCancelAnimation);
+        SYM_OFF(ls__EffectsManager__PlayEffect);
 
         SYM_OFF(esv__ExecuteStatsFunctor_AttackTargetContext);
         SYM_OFF(esv__ExecuteStatsFunctor_AttackPositionContext);

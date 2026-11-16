@@ -204,3 +204,42 @@ using CalculateModifiableSpellRollChanceProc = float (void* condition, void* con
     void* stats, void* machine);
 
 END_NS()
+
+BEGIN_SE()
+struct GameObjectTemplate;
+struct ResourceManager;
+END_SE()
+
+BEGIN_NS(ecs)
+struct EntityWorld;
+END_NS()
+
+BEGIN_NS(ecl)
+
+struct TLPreviewDummy;
+
+// The pieces the game's timeline system builds a client-only figure with (a timeline dummy):
+// see Ext.ClientVisual.CreateDummy. `world` is the address of a pointer to the client's entity
+// world; `scene` is the current level's visual scene.
+using TLPreviewDummyHelpers__CreateDummyProc = TLPreviewDummy* (Guid const* uuid, uint8_t timelineType);
+using TLPreviewDummyHelpers__SetupDummyProc = void (EntityHandle const* dummy, uint32_t components, void* source, uint8_t timelineType);
+using TLPreviewDummyHelpers__PrePrepareDummyProc = void (ecs::EntityWorld** world, ResourceManager* resources, void* scene,
+    TLPreviewDummy* dummy, GameObjectTemplate* tmpl);
+using TLPreviewDummyHelpers__LoadDummyProc = void (ecs::EntityWorld** world, TLPreviewDummy* dummy, void** callback);
+using TLPreviewDummyHelpers__AttachDummyToSceneProc = void (ecs::EntityWorld** world, TLPreviewDummy* dummy, void* scene);
+using TLPreviewDummyHelpers__DestroyDummyProc = void (ecs::EntityWorld** world, uint64_t dummy);
+
+// The two gameplay events the client's "play an animation" action state (ecl::ASAnimation) sends
+// to an entity's animation blueprint: see Ext.ClientVisual.PlayAnimation. `system` is the client's
+// ls::AnimationBlueprintSystem; `event` is the game's EoCGE::ASAnimation (three sets of animation
+// short names, a float and a flag) or the one flag of EoCGE::ASCancelAnimation.
+using AnimationBlueprintSystem__TriggerASAnimationProc = void (void* system, EntityHandle const* entity, void* event);
+using AnimationBlueprintSystem__TriggerASCancelAnimationProc = void (void* system, EntityHandle const* entity, bool const* event);
+
+// ls::EffectsManager::PlayEffect(FixedString const&, EntityHandle level, Scene*, Vector3 const&,
+// Quaternion const&, float): makes an effect entity from an effect resource and starts it; `made`
+// receives the game's reference to the new entity. See Ext.ClientVisual.PlayEffect.
+using EffectsManager__PlayEffectProc = void* (void* manager, void* made, FixedString const* effect, uint64_t level, void* scene,
+    glm::vec3 const* position, glm::quat const* rotation, float scale);
+
+END_NS()

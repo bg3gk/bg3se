@@ -103,6 +103,20 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     eoc::spell::ConditionContext__DestroyProc* thoth__shared__ContextData__Destroy{ nullptr };
     eoc::spell::CalculateModifiableSpellRollChanceProc* eoc__spell__CalculateModifiableSpellRollChance{ nullptr };
 
+    // A client-only figure built the way the timeline system builds its dummies (Ext.ClientVisual.CreateDummy)
+    ecl::TLPreviewDummyHelpers__CreateDummyProc* ecl__TLPreviewDummyHelpers__CreateDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__SetupDummyProc* ecl__TLPreviewDummyHelpers__SetupDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__PrePrepareDummyProc* ecl__TLPreviewDummyHelpers__PrePrepareDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__LoadDummyProc* ecl__TLPreviewDummyHelpers__LoadDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__AttachDummyToSceneProc* ecl__TLPreviewDummyHelpers__AttachDummyToScene{ nullptr };
+    ecl::TLPreviewDummyHelpers__DestroyDummyProc* ecl__TLPreviewDummyHelpers__DestroyDummy{ nullptr };
+
+    // The animation events of the client's ASAnimation action state (Ext.ClientVisual.PlayAnimation)
+    ecl::AnimationBlueprintSystem__TriggerASAnimationProc* ls__AnimationBlueprintSystem__TriggerASAnimation{ nullptr };
+    ecl::AnimationBlueprintSystem__TriggerASCancelAnimationProc* ls__AnimationBlueprintSystem__TriggerASCancelAnimation{ nullptr };
+    // An effect entity made and started on the client (Ext.ClientVisual.PlayEffect)
+    ecl::EffectsManager__PlayEffectProc* ls__EffectsManager__PlayEffect{ nullptr };
+
     stats::ExecuteFunctorProc<stats::AttackTargetContextData>* esv__ExecuteStatsFunctor_AttackTargetContext{ nullptr };
     stats::ExecuteFunctorProc<stats::AttackPositionContextData>* esv__ExecuteStatsFunctor_AttackPositionContext{ nullptr };
     stats::ExecuteFunctorProc<stats::MoveContextData>* esv__ExecuteStatsFunctor_MoveContext{ nullptr };
