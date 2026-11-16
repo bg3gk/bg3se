@@ -398,6 +398,106 @@ BoostPrototype* GetCachedBoost(lua_State * L, Guid id)
     return proto ? *proto : nullptr;
 }
 
+// The game's own working-out of a spell roll's chance, with everything it needs built as the
+// game's AI builds it before an attack exists: the spell's roll condition, a condition context
+// naming the caster and the target, a fresh hit description. Kept free of C++ objects so that a
+// fault inside the game's code is caught rather than taken down with the process.
+static bool CalculateSpellRollChance(StaticSymbols const& sym, SpellPrototype* proto, uint32_t spellIndex, uint64_t caster,
+    uint64_t target, glm::vec3* casterPosition, glm::vec3* targetPosition, void* modifications, void* rpgStats, void* machine, float* chance)
+{
+    struct Condition { uint32_t Id; uint32_t Pad; void* Meta; uint32_t Capacity; uint32_t Size; };
+    struct Attack { int32_t Damage; int32_t Heal; uint8_t HPPercentage; uint8_t Pad[7]; void* List; uint32_t Capacity; uint32_t Size; };
+    constexpr uint64_t NullHandle = 0xffc0000000000000ull;
+
+    __try {
+        alignas(16) uint8_t hit[0x800];
+        alignas(16) uint8_t context[0x400];
+        memset(hit, 0, sizeof(hit));
+        memset(context, 0, sizeof(context));
+        Condition condition{ 0xffffffffu, 0, nullptr, 0, 0 };
+        Attack attack{};
+        attack.HPPercentage = 100;
+        uint64_t noSource = NullHandle;
+        uint32_t noStatus = FixedString::NullIndex;
+
+        sym.eoc__HitDesc__Construct(hit);
+        // the hit says which spell it is of, as the client's own preview sets it
+        FixedString::StaticIncRef(spellIndex);
+        *reinterpret_cast<uint32_t*>(hit + 0x150) = spellIndex;
+
+        auto textKey = sym.eoc__SpellPrototype__GetDefaultTextKey(proto, nullptr);
+        sym.eoc__SpellPrototype__GetSpellConditions(proto, &condition, 1, textKey);
+        sym.thoth__shared__ContextData__Construct(context, caster, NullHandle, target, NullHandle, casterPosition, targetPosition,
+            hit, &attack, 0, &noSource, &noStatus, 3, 0, 0, 0x13);
+
+        *chance = sym.eoc__spell__CalculateModifiableSpellRollChance(&condition, context,
+            reinterpret_cast<FixedString*>(reinterpret_cast<uint8_t*>(proto) + 8), modifications, rpgStats, machine);
+
+        sym.thoth__shared__ContextData__Destroy(context);
+        if (condition.Capacity != 0 && condition.Meta != nullptr) GameFree(condition.Meta);
+        if (attack.Capacity != 0 && attack.List != nullptr) GameFree(attack.List);
+        sym.eoc__HitDesc__Destroy(hit);
+        return true;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
+/// The chance, from 0 to 1, that the roll of a spell succeeds for a caster against a target, as
+/// the game itself works it out (the number its combat AI weighs and its cursor shows): an attack
+/// roll's chance to hit, advantage and disadvantage folded in. A weapon attack is worked out with the
+/// weapons of the caster's active weapon set (WeaponSet component), as the game itself does: a melee
+/// attack asked while the ranged set is active counts no melee weapon.
+/// Server only. Nothing is rolled.
+std::optional<float> GetSpellRollChance(lua_State* L, EntityHandle caster, FixedString spell, EntityHandle target)
+{
+    if (GetCurrentContextType() != ContextType::Server) {
+        ERR("GetSpellRollChance() is only available on the server");
+        return {};
+    }
+
+    auto const& sym = GetStaticSymbols();
+    if (sym.eoc__SpellPrototype__GetDefaultTextKey == nullptr || sym.eoc__SpellPrototype__GetSpellConditions == nullptr
+        || sym.eoc__HitDesc__Construct == nullptr || sym.eoc__HitDesc__Destroy == nullptr
+        || sym.thoth__shared__ContextData__Construct == nullptr || sym.thoth__shared__ContextData__Destroy == nullptr
+        || sym.eoc__spell__CalculateModifiableSpellRollChance == nullptr
+        || sym.eoc__SpellPrototypeManager == nullptr || *sym.eoc__SpellPrototypeManager == nullptr
+        || sym.esv__EoCServer == nullptr || *sym.esv__EoCServer == nullptr) {
+        ERR("GetSpellRollChance(): not available in this version of the game");
+        return {};
+    }
+
+    auto proto = (*sym.eoc__SpellPrototypeManager)->Spells.try_get(spell);
+    if (proto == nullptr || *proto == nullptr) {
+        ERR("GetSpellRollChance(): no spell '%s'", spell.GetString());
+        return {};
+    }
+
+    auto& helpers = State::FromLua(L)->GetEntitySystemHelpers();
+    auto casterTransform = helpers.GetComponent<TransformComponent>(caster);
+    auto targetTransform = helpers.GetComponent<TransformComponent>(target);
+    if (casterTransform == nullptr || targetTransform == nullptr) {
+        ERR("GetSpellRollChance(): the caster and the target must be entities in the world");
+        return {};
+    }
+
+    auto casterPosition = casterTransform->Transform.Translate;
+    auto targetPosition = targetTransform->Transform.Translate;
+    void* modifications = helpers.GetComponent<spell::SpellModificationContainerComponent>(caster);
+    // The server's condition machine
+    auto machine = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(*sym.esv__EoCServer) + 0x2C8);
+    if (machine == nullptr) return {};
+
+    float chance = 0.0f;
+    if (!CalculateSpellRollChance(sym, *proto, spell.Index, caster.Handle, target.Handle, &casterPosition, &targetPosition,
+            modifications, sym.GetStats(), machine, &chance)) {
+        ERR("GetSpellRollChance(): the game failed to work out the chance");
+        return {};
+    }
+
+    return chance;
+}
+
 SpellPrototype* GetCachedSpell(lua_State * L, FixedString name)
 {
     auto proto = (*GetStaticSymbols().eoc__SpellPrototypeManager)->Spells.try_get(name);
@@ -663,6 +763,7 @@ void RegisterStatsLib()
     MODULE_FUNCTION(Get)
     MODULE_FUNCTION(GetCachedBoost)
     MODULE_FUNCTION(GetCachedSpell)
+    MODULE_FUNCTION(GetSpellRollChance)
     MODULE_FUNCTION(GetCachedStatus)
     MODULE_FUNCTION(GetCachedPassive)
     MODULE_FUNCTION(GetCachedInterrupt)

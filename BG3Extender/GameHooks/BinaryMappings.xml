@@ -513,6 +513,96 @@
       <Target Type="Absolute" Offset="@start" Symbol="esv__interrupt__AdjustConditionRoll" />
     </Mapping>
 
+    <!-- The chance of a spell's roll (Ext.Stats.GetSpellRollChance). bg3_dx11.exe RVAs beside each. -->
+    <!-- +0x1050590 -->
+    <Mapping Name="eoc::SpellPrototype::GetDefaultTextKey" AllowFail="true">
+      @start 48 89 5c 24 08 // mov qword ptr [rsp + 8], rbx
+      89 54 24 10 // mov dword ptr [rsp + 0x10], edx
+      57 // push rdi
+      48 83 ec 20 // sub rsp, 0x20
+      48 8b f9 // mov rdi, rcx
+      c7 44 24 38 ff ff ff ff // mov dword ptr [rsp + 0x38], 0xffffffff
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__SpellPrototype__GetDefaultTextKey" />
+    </Mapping>
+
+    <!-- +0x104C5A0 -->
+    <Mapping Name="eoc::SpellPrototype::GetSpellConditions" AllowFail="true">
+      @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
+      48 89 74 24 20 // mov qword ptr [rsp + 0x20], rsi
+      55 // push rbp
+      57 // push rdi
+      41 54 // push r12
+      41 56 // push r14
+      41 57 // push r15
+      48 8b ec // mov rbp, rsp
+      48 83 ec 40 // sub rsp, 0x40
+      4d 8b f1 // mov r14, r9
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__SpellPrototype__GetSpellConditions" />
+    </Mapping>
+
+    <!-- +0xF10CC0 -->
+    <Mapping Name="eoc::HitDesc::HitDesc" AllowFail="true">
+      @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
+      48 89 74 24 20 // mov qword ptr [rsp + 0x20], rsi
+      48 89 4c 24 08 // mov qword ptr [rsp + 8], rcx
+      57 // push rdi
+      48 83 ec 20 // sub rsp, 0x20
+      48 8b f9 // mov rdi, rcx
+      33 f6 // xor esi, esi
+      89 31 // mov dword ptr [rcx], esi
+      66 89 71 04 // mov word ptr [rcx + 4], si
+      40 88 71 06 // mov byte ptr [rcx + 6], sil
+      c7 41 08 ff ff 7f 7f // mov dword ptr [rcx + 8], 0x7f7fffff
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__HitDesc__Construct" />
+    </Mapping>
+
+    <!-- +0x5F09A0 -->
+    <Mapping Name="eoc::HitDesc::~HitDesc" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      57 // push rdi
+      48 83 ec 20 // sub rsp, 0x20
+      48 8b f9 // mov rdi, rcx
+      48 81 c1 a0 01 00 00 // add rcx, 0x1a0
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__HitDesc__Destroy" />
+    </Mapping>
+
+    <!-- +0x1057AA0 -->
+    <Mapping Name="thoth::shared::ContextData::ContextData" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      48 89 6c 24 18 // mov qword ptr [rsp + 0x18], rbp
+      48 89 74 24 20 // mov qword ptr [rsp + 0x20], rsi
+      57 // push rdi
+      48 83 ec 30 // sub rsp, 0x30
+      48 8b d9 // mov rbx, rcx
+      48 89 11 // mov qword ptr [rcx], rdx
+      4c 89 41 08 // mov qword ptr [rcx + 8], r8
+      <Target Type="Absolute" Offset="@start" Symbol="thoth__shared__ContextData__Construct" />
+    </Mapping>
+
+    <!-- +0xEF7BC0 -->
+    <Mapping Name="thoth::shared::ContextData::~ContextData" AllowFail="true">
+      @start 40 53 // push rbx
+      48 83 ec 20 // sub rsp, 0x20
+      48 8b d9 // mov rbx, rcx
+      8b 81 5c 01 00 00 // mov eax, dword ptr [rcx + 0x15c]
+      <Target Type="Absolute" Offset="@start" Symbol="thoth__shared__ContextData__Destroy" />
+    </Mapping>
+
+    <!-- +0xFCE460 -->
+    <Mapping Name="eoc::spell::CalculateModifiableSpellRollChance" AllowFail="true">
+      @start 40 55 // push rbp
+      53 // push rbx
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 e9 // lea rbp, [rsp - 0x17]
+      48 81 ec c0 00 00 00 // sub rsp, 0xc0
+      0f 29 b4 24 b0 00 00 00 // movaps xmmword ptr [rsp + 0xb0], xmm6
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__spell__CalculateModifiableSpellRollChance" />
+    </Mapping>
+
     <!-- Sig: call from osi::ApplyDamage -->
     <Mapping Name="eoc::DealDamageFunctor::ApplyDamage">
       48 8d 4d a0 // lea     rcx, [rbp+70h+var_D0]

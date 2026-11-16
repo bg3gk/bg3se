@@ -185,6 +185,13 @@ namespace bg3se
         SYM_OFF(eoc__roll__stream__RollManager__RollDiceWithBoostsAgainstDC);
         SYM_OFF(thoth__shared__Machine__CheckStaticCondition);
         SYM_OFF(esv__interrupt__AdjustConditionRoll);
+        SYM_OFF(eoc__SpellPrototype__GetDefaultTextKey);
+        SYM_OFF(eoc__SpellPrototype__GetSpellConditions);
+        SYM_OFF(eoc__HitDesc__Construct);
+        SYM_OFF(eoc__HitDesc__Destroy);
+        SYM_OFF(thoth__shared__ContextData__Construct);
+        SYM_OFF(thoth__shared__ContextData__Destroy);
+        SYM_OFF(eoc__spell__CalculateModifiableSpellRollChance);
 
         SYM_OFF(esv__ExecuteStatsFunctor_AttackTargetContext);
         SYM_OFF(esv__ExecuteStatsFunctor_AttackPositionContext);

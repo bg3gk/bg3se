@@ -183,3 +183,24 @@ BEGIN_NS(esv::interrupt)
 using AdjustConditionRollProc = bool (void* adjustments, ConditionRoll* roll);
 
 END_NS()
+
+BEGIN_NS(stats)
+struct SpellPrototype;
+END_NS()
+
+BEGIN_NS(eoc::spell)
+
+// The pieces the game itself uses to work out the chance of a spell's roll (an attack roll or a
+// saving throw) for a caster and a target: see Ext.Stats.GetSpellRollChance.
+using SpellPrototype__GetDefaultTextKeyProc = FixedString* (stats::SpellPrototype* self, void* unused);
+using SpellPrototype__GetSpellConditionsProc = void* (stats::SpellPrototype* self, void* condition, uint8_t type, FixedString* textKey);
+using HitDesc__ConstructProc = void* (void* hit);
+using HitDesc__DestroyProc = void (void* hit);
+using ConditionContext__ConstructProc = void* (void* self, uint64_t source, uint64_t sourceProxy, uint64_t target, uint64_t targetProxy,
+    glm::vec3* sourcePosition, glm::vec3* targetPosition, void* hit, void* attack, uint32_t statusEvent, uint64_t* statusSource,
+    uint32_t* status, uint8_t removeCause, uint64_t flags, uint8_t ability, uint8_t skill);
+using ConditionContext__DestroyProc = void (void* self);
+using CalculateModifiableSpellRollChanceProc = float (void* condition, void* context, FixedString* spell, void* modifications,
+    void* stats, void* machine);
+
+END_NS()

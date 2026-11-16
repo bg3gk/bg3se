@@ -94,6 +94,15 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     thoth::shared::Machine__CheckStaticConditionProc* thoth__shared__Machine__CheckStaticCondition{ nullptr };
     esv::interrupt::AdjustConditionRollProc* esv__interrupt__AdjustConditionRoll{ nullptr };
 
+    // The chance of a spell's roll, as the game works it out (Ext.Stats.GetSpellRollChance)
+    eoc::spell::SpellPrototype__GetDefaultTextKeyProc* eoc__SpellPrototype__GetDefaultTextKey{ nullptr };
+    eoc::spell::SpellPrototype__GetSpellConditionsProc* eoc__SpellPrototype__GetSpellConditions{ nullptr };
+    eoc::spell::HitDesc__ConstructProc* eoc__HitDesc__Construct{ nullptr };
+    eoc::spell::HitDesc__DestroyProc* eoc__HitDesc__Destroy{ nullptr };
+    eoc::spell::ConditionContext__ConstructProc* thoth__shared__ContextData__Construct{ nullptr };
+    eoc::spell::ConditionContext__DestroyProc* thoth__shared__ContextData__Destroy{ nullptr };
+    eoc::spell::CalculateModifiableSpellRollChanceProc* eoc__spell__CalculateModifiableSpellRollChance{ nullptr };
+
     stats::ExecuteFunctorProc<stats::AttackTargetContextData>* esv__ExecuteStatsFunctor_AttackTargetContext{ nullptr };
     stats::ExecuteFunctorProc<stats::AttackPositionContextData>* esv__ExecuteStatsFunctor_AttackPositionContext{ nullptr };
     stats::ExecuteFunctorProc<stats::MoveContextData>* esv__ExecuteStatsFunctor_MoveContext{ nullptr };
