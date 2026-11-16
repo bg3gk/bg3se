@@ -23,11 +23,51 @@ void LuaTriggerFunctorPostExecEvent(State& state, bg3se::stats::Functors* self, 
     state.GetExtensionState().ThrowEvent<AfterExecuteFunctorEvent>(evt);
 }
 
+// What the rolls thrown inside a functor are for: the parties, the spell and the status of its context
+template <class TParams>
+RollCause CauseOf(TParams* params)
+{
+    RollCause cause;
+    cause.Status = params->Originator.StatusId.Index;
+    return cause;
+}
+
+RollCause CauseOf(bg3se::stats::AttackTargetContextData* params)
+{
+    RollCause cause;
+    cause.Source = params->Caster.Handle;
+    cause.Target = params->Target.Handle;
+    cause.Spell = params->SpellId.Prototype.Index;
+    cause.Status = params->Originator.StatusId.Index;
+    return cause;
+}
+
+RollCause CauseOf(bg3se::stats::AttackPositionContextData* params)
+{
+    RollCause cause;
+    cause.Source = params->Caster.Handle;
+    cause.Spell = params->SpellId.Prototype.Index;
+    cause.Status = params->Originator.StatusId.Index;
+    return cause;
+}
+
+RollCause CauseOf(bg3se::stats::TargetContextData* params)
+{
+    RollCause cause;
+    cause.Source = params->Source.Handle;
+    cause.Spell = params->SpellId.Prototype.Index;
+    cause.Status = params->StatusId ? params->StatusId.Index : params->Originator.StatusId.Index;
+    return cause;
+}
+
 template <class TParams>
 void FunctorEventHooks::OnFunctorExecute(bg3se::stats::ExecuteFunctorProc<TParams>* next, HitResult* hit, bg3se::stats::Functors* self, TParams* params)
 {
     LuaTriggerFunctorPreExecEvent<TParams>(state_, self, params);
+    auto& causes = RollCauses();
+    causes.push_back(CauseOf(params));
     next(hit, self, params);
+    causes.pop_back();
     LuaTriggerFunctorPostExecEvent<TParams>(state_, self, params, hit);
 }
 

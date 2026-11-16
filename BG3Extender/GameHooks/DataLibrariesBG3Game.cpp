@@ -179,6 +179,13 @@ namespace bg3se
         SYM_OFF(stats__DealDamageFunctor__ApplyDamage);
         SYM_OFF(esv__StatsSystem__ThrowDamageEvent);
 
+        SYM_OFF(eoc__roll__stream__DrawNumber);
+        SYM_OFF(eoc__roll__stream__RollManager__InternalRollDice);
+        SYM_OFF(eoc__roll__stream__RollManager__InternalRollDiceWithBoosts);
+        SYM_OFF(eoc__roll__stream__RollManager__RollDiceWithBoostsAgainstDC);
+        SYM_OFF(thoth__shared__Machine__CheckStaticCondition);
+        SYM_OFF(esv__interrupt__AdjustConditionRoll);
+
         SYM_OFF(esv__ExecuteStatsFunctor_AttackTargetContext);
         SYM_OFF(esv__ExecuteStatsFunctor_AttackPositionContext);
         SYM_OFF(esv__ExecuteStatsFunctor_MoveContext);

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <GameHooks/EngineHooks.h>
 #include <GameDefinitions/Symbols.h>
+#include <Extender/ScriptExtender.h>
 
 namespace bg3se
 {
@@ -23,6 +24,7 @@ void EngineHooks::HookAll()
 #define HOOK_DEFN(name, sym, defn) if (GetStaticSymbols().sym != nullptr) { name.Wrap(GetStaticSymbols().sym); }
 #include <GameHooks/EngineHooks.inl>
 #undef HOOK_DEFN
+
 
     //sym.CharStatsGetters.WrapAll();
 

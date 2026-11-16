@@ -86,6 +86,14 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     stats::DealDamageFunctor__ApplyDamageProc* stats__DealDamageFunctor__ApplyDamage{ nullptr };
     esv::StatsSystem__ThrowDamageEventProc* esv__StatsSystem__ThrowDamageEvent{ nullptr };
 
+    // The dice of the roll manager and the condition their rolls are asked from
+    eoc::roll::stream::DrawNumberProc* eoc__roll__stream__DrawNumber{ nullptr };
+    eoc::roll::stream::RollManager__InternalRollDiceProc* eoc__roll__stream__RollManager__InternalRollDice{ nullptr };
+    eoc::roll::stream::RollManager__InternalRollDiceWithBoostsProc* eoc__roll__stream__RollManager__InternalRollDiceWithBoosts{ nullptr };
+    eoc::roll::stream::RollManager__RollDiceWithBoostsAgainstDCProc* eoc__roll__stream__RollManager__RollDiceWithBoostsAgainstDC{ nullptr };
+    thoth::shared::Machine__CheckStaticConditionProc* thoth__shared__Machine__CheckStaticCondition{ nullptr };
+    esv::interrupt::AdjustConditionRollProc* esv__interrupt__AdjustConditionRoll{ nullptr };
+
     stats::ExecuteFunctorProc<stats::AttackTargetContextData>* esv__ExecuteStatsFunctor_AttackTargetContext{ nullptr };
     stats::ExecuteFunctorProc<stats::AttackPositionContextData>* esv__ExecuteStatsFunctor_AttackPositionContext{ nullptr };
     stats::ExecuteFunctorProc<stats::MoveContextData>* esv__ExecuteStatsFunctor_MoveContext{ nullptr };

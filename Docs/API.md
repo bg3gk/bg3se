@@ -2029,3 +2029,6 @@ You can listen to SE and engine events with `Ext.Events.<EVENT_NAME>:Subscribe(f
 | `ResetCompleted` | Thrown when `Ext.Debug.Reset()` or `reset` console command completes on the client or server.<br/>Indicates that the Lua state was reloaded. |
 | `GameStateChanged` | Indicates that the server/client game state changed (e.g., loading save, paused, main menu, etc.). |
 | `Tick` | Thrown after each game engine tick on both the client and the server.<br/>Server logic runs at ~30hz, so this event is thrown roughly every 33ms.<br/>Helper: `Ext.OnNextTick(fun)` registers a handler that is only called on the next tick and is unregistered afterwards. |
+| `BeforeRoll` | Server only. Thrown before the game rolls dice for a check, attack, saving throw, damage, heal or initiative.<br/>`Bonus`, `Advantage`, `Disadvantage` and `DC` can be changed and apply to this roll only. |
+| `Roll` | Server only. Thrown after the roll with every die thrown (`Dice`) and the result.<br/>`Natural`, `Total`, `Discarded` and `Critical` can be changed; changing `Natural` adjusts `Total` and `Critical` accordingly. |
+| `RollAdjusted` | Server only. Thrown when an interrupt has changed a roll after it was thrown (set, adjusted or rerolled it), with the old and the new `Natural`, `Total` and `Critical`. |

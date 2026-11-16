@@ -442,6 +442,77 @@
       <Target Type="Indirect" Offset="@ref1" Symbol="esv__StatsSystem__ThrowDamageEvent" />
     </Mapping>
 
+    <!-- The dice of the roll manager (Lua/Server/RollEvents.inl).
+         Prologues; each is unique in bg3_dx11.exe and in bg3.exe of build 25605617
+         (dx11 / vulkan RVAs given beside each). AllowFail: a patch that moves them costs the roll events only. -->
+    <!-- bg3_dx11.exe+0x105AAB0 / bg3.exe+0x105BAD0 -->
+    <Mapping Name="eoc::roll::stream::DrawNumber" AllowFail="true">
+      @start 4c 89 44 24 18 // mov qword ptr [rsp + 0x18], r8
+      48 89 54 24 10 // mov qword ptr [rsp + 0x10], rdx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      48 83 ec 30 // sub rsp, 0x30
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__roll__stream__DrawNumber" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x105C9B0 / bg3.exe+0x105D9D0 -->
+    <Mapping Name="eoc::roll::stream::RollManager::InternalRollDice" AllowFail="true">
+      @start 40 55 // push rbp
+      57 // push rdi
+      b8 18 14 00 00 // mov eax, 0x1418
+      e8 ?? ?? ?? ?? // call __chkstk
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__roll__stream__RollManager__InternalRollDice" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x105CCA0 / bg3.exe+0x105DCC0 -->
+    <Mapping Name="eoc::roll::stream::RollManager::InternalRollDiceWithBoosts" AllowFail="true">
+      @start 40 55 // push rbp
+      53 // push rbx
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d ac 24 68 ec ff ff // lea rbp, [rsp - 0x1398]
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__roll__stream__RollManager__InternalRollDiceWithBoosts" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x105B800 / bg3.exe+0x105C820 -->
+    <Mapping Name="eoc::roll::stream::RollManager::RollDiceWithBoostsAgainstDC" AllowFail="true">
+      @start 40 53 // push rbx
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      48 81 ec c8 00 00 00 // sub rsp, 0xc8
+      <Target Type="Absolute" Offset="@start" Symbol="eoc__roll__stream__RollManager__RollDiceWithBoostsAgainstDC" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0xEFFB50 / bg3.exe+0xF00B70 -->
+    <Mapping Name="thoth::shared::Machine::CheckStaticCondition" AllowFail="true">
+      @start 48 89 5c 24 08 // mov qword ptr [rsp + 8], rbx
+      48 89 54 24 10 // mov qword ptr [rsp + 0x10], rdx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 90 // lea rbp, [rsp - 0x70]
+      <Target Type="Absolute" Offset="@start" Symbol="thoth__shared__Machine__CheckStaticCondition" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x37B4990 / bg3.exe+0x37B47E0 -->
+    <Mapping Name="esv::interrupt::AdjustConditionRoll" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      57 // push rdi
+      48 83 ec 50 // sub rsp, 0x50
+      80 79 4c 00 // cmp byte ptr [rcx + 0x4c], 0
+      <Target Type="Absolute" Offset="@start" Symbol="esv__interrupt__AdjustConditionRoll" />
+    </Mapping>
+
     <!-- Sig: call from osi::ApplyDamage -->
     <Mapping Name="eoc::DealDamageFunctor::ApplyDamage">
       48 8d 4d a0 // lea     rcx, [rbp+70h+var_D0]

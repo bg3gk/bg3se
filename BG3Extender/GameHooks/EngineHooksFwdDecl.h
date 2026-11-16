@@ -84,6 +84,36 @@ using ParseStaticBoostsProc = bool(LSStringView& str, Array<Guid>& boosts, void*
 
 END_NS()
 
+BEGIN_SE()
+struct Roll;
+struct RollDefinition;
+struct StatsRollResult;
+END_SE()
+
+BEGIN_NS(eoc::roll::stream)
+
+struct RollManager;
+struct Stream;
+
+// The dice of the roll manager (Lua/Server/RollEvents.inl).
+// One die: the generator is the Mersenne Twister of the dice set, whose +0x1390 points at the
+// stream's NumRolls.
+using DrawNumberProc = uint64_t (void* generator, uint64_t min, uint64_t max);
+// One set of dice from a stream; result and perDie (Array<uint8_t>*) may be null.
+using RollManager__InternalRollDiceProc = int32_t (RollManager* self, Stream* stream, RollDefinition* dice,
+    bool updateDebts, int32_t dc, bool side, float probability, bool maximize, StatsRollResult* result, void* perDie);
+// A d20 formula with the roller's boosts (dice doubled for a d20, min/max/reroll boosts, one kept).
+// roller is a 0x38-byte reference: +0 EntityHandle, +8 EntityWorld*, +0x10 cached boosts, +0x30 fetch flag.
+using RollManager__InternalRollDiceWithBoostsProc = int32_t (RollManager* self, void* env, void* roller, void* worldView,
+    Stream* stream, Roll* roll, bool updateDebts, int32_t dc, bool side, float probability, int32_t critRange,
+    bool maximize, StatsRollResult* result);
+// Finds the stream by its key, then rolls (through the weighted path or RollDiceWithBoosts).
+using RollManager__RollDiceWithBoostsAgainstDCProc = int32_t (RollManager* self, void* env, uint64_t streamKey,
+    void* roller, void* worldView, Roll* roll, int32_t dc, bool side, uint8_t* critFlags, int32_t critRange,
+    bool maximize, StatsRollResult* result);
+
+END_NS()
+
 BEGIN_NS(ecs)
 
 struct EntityWorld;
@@ -131,5 +161,25 @@ struct DeferredPredicatesManager;
 
 using DataContextProvider__ExecuteCommandQueuesProc = void(DataContextProvider*, void* /* ls::AnyView* */);
 using DeferredPredicatesManager__UpdateFromUIProc = void(DeferredPredicatesManager*);
+
+END_NS()
+
+BEGIN_NS(thoth::shared)
+
+// Evaluates one compiled stats condition against a context (the caster, the target, the hit,
+// the status). The condition's rolls are thrown inside it. Further arguments, if any, are passed on.
+using Machine__CheckStaticConditionProc = uint64_t (void* machine, void* result, int32_t index, void* context, uint64_t a5, uint64_t a6);
+
+END_NS()
+
+BEGIN_SE()
+struct ConditionRoll;
+END_SE()
+
+BEGIN_NS(esv::interrupt)
+
+// Writes what the interrupts used on a roll resolved to (a set roll, an adjustment, a reroll)
+// into the roll; answers whether the roll's outcome changed.
+using AdjustConditionRollProc = bool (void* adjustments, ConditionRoll* roll);
 
 END_NS()

@@ -15,6 +15,7 @@
 #include <GameDefinitions/Level.h>
 
 #include <Lua/Server/FunctorEvents.inl>
+#include <Lua/Server/RollEvents.inl>
 #include <Lua/Server/ServerEntityReplicationEvents.inl>
 
 namespace bg3se::esv::lua
@@ -164,6 +165,7 @@ namespace bg3se::esv::lua
         : State(state, generationId, true),
         osiris_(state),
         functorHooks_(*this),
+        rollHooks_(state),
         replicationHooks_(*this)
     {}
 
