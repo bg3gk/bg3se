@@ -17,6 +17,8 @@ struct KeyInputEventParams : public lua::EventBase
     SDLKeyModifier Modifiers;
     bool Pressed;
     bool Repeat;
+    // GateKit: the event was put in by Ext.Input.Inject* and did not come from a device
+    bool Injected;
 };
 
 struct MouseButtonEventParams : public lua::EventBase
@@ -26,6 +28,7 @@ struct MouseButtonEventParams : public lua::EventBase
     int Clicks;
     int X;
     int Y;
+    bool Injected;
 };
 
 struct MouseWheelEventParams : public lua::EventBase
@@ -34,6 +37,7 @@ struct MouseWheelEventParams : public lua::EventBase
     float ScrollY;
     int X;
     int Y;
+    bool Injected;
 };
 
 struct ControllerAxisEventParams : public lua::EventBase

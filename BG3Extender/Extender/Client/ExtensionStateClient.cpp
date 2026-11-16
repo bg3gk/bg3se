@@ -102,7 +102,7 @@ bool IsEventCancelable(SDL_Event* event)
         || event->type == SDL_CONTROLLERBUTTONUP;
 }
 
-void ExtensionState::FireInputEvent(SDL_Event* event, int* result)
+void ExtensionState::FireInputEvent(SDL_Event* event, int* result, bool injected)
 {
     EventResult res{ EventResult::Successful };
     bool canPrevent = (result != nullptr) && IsEventCancelable(event);
@@ -114,6 +114,7 @@ void ExtensionState::FireInputEvent(SDL_Event* event, int* result)
             .Modifiers = (SDLKeyModifier)event->key.keysym.mod,
             .Pressed = event->key.state == SDL_PRESSED,
             .Repeat = event->key.repeat != 0,
+            .Injected = injected,
         };
         res = ThrowEvent<KeyInputEvent>(params, canPrevent);
 
@@ -124,6 +125,7 @@ void ExtensionState::FireInputEvent(SDL_Event* event, int* result)
             .Clicks = event->button.clicks,
             .X = event->button.x,
             .Y = event->button.y,
+            .Injected = injected,
         };
         res = ThrowEvent<MouseButtonInputEvent>(params, canPrevent);
 
@@ -133,6 +135,7 @@ void ExtensionState::FireInputEvent(SDL_Event* event, int* result)
             .ScrollY = event->wheel.preciseY,
             .X = event->wheel.x,
             .Y = event->wheel.y,
+            .Injected = injected,
         };
         res = ThrowEvent<MouseWheelInputEvent>(params, canPrevent);
 
@@ -177,14 +180,14 @@ void ExtensionState::FireInputEvents()
     }
 }
 
-void ExtensionState::OnInputEvent(SDL_Event* event, int& result)
+void ExtensionState::OnInputEvent(SDL_Event* event, int& result, bool injected)
 {
-    // Only dispatch cancelable events from the SDL thread 
-    // (i.e. where we need immediate feedback from Lua code); 
+    // Only dispatch cancelable events from the SDL thread
+    // (i.e. where we need immediate feedback from Lua code);
     // others are deferred to the client update loop
     if (Lua && IsEventCancelable(event)) {
         ContextGuard ctx(ContextType::Client);
-        FireInputEvent(event, &result);
+        FireInputEvent(event, &result, injected);
     } else {
         deferredInputEvents_.push(*event);
     }
