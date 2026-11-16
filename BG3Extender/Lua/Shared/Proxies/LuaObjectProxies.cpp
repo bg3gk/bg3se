@@ -103,6 +103,7 @@ void InheritProperties(GenericPropertyMap const& base, GenericPropertyMap& child
         auto const& p = prop.Value();
         child.AddRawProperty(prop.Key().GetString(), p.Get, p.Set, p.Serialize, p.Offset, p.Flag, 
             p.PendingNotifications, p.NewName, p.Iterable, true);
+        child.SetRawPropertySize(prop.Key().GetString(), p.Size);
     }
 
     for (auto const& prop : base.Validators) {
@@ -232,6 +233,7 @@ struct PropertyMapPropertyEntry
     PropertyNotification Notification{ PropertyNotification::None };
     char const* NewName{ nullptr };
     bool Iterable{ true };
+    uint32_t Size{ 0 };              // GateKit: sizeof the field
 };
 
 struct PropertyMapBitfieldEntry
@@ -397,6 +399,7 @@ void ProcessPropertyMapDefinitions(PropertyMapRegistrationEntry const* defn)
                 p.Validate, p.Serialize, p.Offset, p.Flag,
                 p.Notification, p.NewName, p.Iterable, false
             );
+            pm->SetRawPropertySize(p.Name, p.Size);
             break;
         }
 
@@ -540,7 +543,8 @@ inline constexpr RawPropertyAccessors::Serializer* PickPropertySerializer()
             .Serialize = PickPropertySerializer<decltype(ObjectType::prop)>(), \
             .Offset = offsetof(ObjectType, prop), \
             .Flag = 0, \
-            .Notification = PropertyNotification::None \
+            .Notification = PropertyNotification::None, \
+            .Size = (uint32_t)sizeof(decltype(ObjectType::prop)) \
         } },
 
 #define PN_RO(name, prop) \
@@ -552,7 +556,8 @@ inline constexpr RawPropertyAccessors::Serializer* PickPropertySerializer()
             .Serialize = PickPropertySerializer<decltype(ObjectType::prop)>(), \
             .Offset = offsetof(ObjectType, prop), \
             .Flag = 0, \
-            .Notification = PropertyNotification::None \
+            .Notification = PropertyNotification::None, \
+            .Size = (uint32_t)sizeof(decltype(ObjectType::prop)) \
         } },
 
 #define P(prop) PN(prop, prop)
@@ -566,7 +571,8 @@ inline constexpr RawPropertyAccessors::Serializer* PickPropertySerializer()
             .Serialize = PickPropertySerializer<decltype(ObjectType::prop)>(), \
             .Offset = offsetof(ObjectType, prop), \
             .Flag = 0, \
-            .Notification = PropertyNotification::notify \
+            .Notification = PropertyNotification::notify, \
+            .Size = (uint32_t)sizeof(decltype(ObjectType::prop)) \
         } },
         
 #define P_RENAMED(prop, oldName) \
@@ -581,7 +587,8 @@ inline constexpr RawPropertyAccessors::Serializer* PickPropertySerializer()
             .Flag = 0, \
             .Notification = PropertyNotification::Renamed, \
             .NewName = #prop, \
-            .Iterable = false \
+            .Iterable = false, \
+            .Size = (uint32_t)sizeof(decltype(ObjectType::prop)) \
         } },
 
 #define P_RO(prop) PN_RO(prop, prop)
