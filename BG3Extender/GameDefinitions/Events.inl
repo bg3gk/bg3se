@@ -30,3 +30,7 @@ EVENT_NS(AfterExecuteFunctor, AfterExecuteFunctor, esv::lua, AfterExecuteFunctor
 EVENT_NS(BeforeDealDamage, BeforeDealDamage, esv::lua, BeforeDealDamageEventParams, Server, false, lua::RestrictionFlag::None)
 EVENT_NS(DealDamage, DealDamage, esv::lua, DealDamageEventParams, Server, false, lua::RestrictionFlag::None)
 EVENT_NS(DealtDamage, DealtDamage, esv::lua, DealtDamageEventParams, Server, false, lua::RestrictionFlag::None)
+EVENT_NS(BeforeRoll, BeforeRoll, esv::lua, BeforeRollEventParams, Server, false, lua::RestrictionFlag::None)
+EVENT_NS(Roll, Roll, esv::lua, RollEventParams, Server, false, lua::RestrictionFlag::None)
+EVENT_NS(RollDie, RollDie, esv::lua, RollDieEventParams, Server, false, lua::RestrictionFlag::None)
+EVENT_NS(RollAdjusted, RollAdjusted, esv::lua, RollAdjustedEventParams, Server, false, lua::RestrictionFlag::None)

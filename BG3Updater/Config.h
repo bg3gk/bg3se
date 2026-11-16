@@ -22,6 +22,8 @@ struct UpdaterConfig
     bool ValidateSignature{ true };
     bool IPv4Only{ false };
     bool DisableUpdates{ false };
+    // Holding Shift as the game starts turns Debug (and its console) on; off for a tool's copies.
+    bool ShiftOpensConsole{ true };
 };
 
 void LoadConfigFile(std::wstring const& configPath, UpdaterConfig& config);

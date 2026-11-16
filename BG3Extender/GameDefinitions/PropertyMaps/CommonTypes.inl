@@ -124,8 +124,25 @@ P(Influence)
 END_CLS()
 
 
+BEGIN_CLS(ecs::ECSComponentEvent)
+P_BITMASK(Flags)
+P_GETTER(FlagMask, GetFlagMask)
+P_RO(Frame)
+P_RO(Flush)
+P_RO(Order)
+END_CLS()
+
+
 BEGIN_CLS(ecs::ECSComponentLog)
 P_BITMASK(Flags)
+P_GETTER(FlagMask, GetFlagMask)
+P_RO(Frame)
+P_RO(Flush)
+P_RO(Count)
+P_RO(LastFrame)
+P_RO(LastFlush)
+P_RO(Events)
+P_RO(DroppedEvents)
 P_GETTER(Name, GetName)
 P_GETTER(Type, GetType)
 END_CLS()
@@ -135,11 +152,27 @@ BEGIN_CLS(ecs::ECSEntityLog)
 P(Components)
 P(Entity)
 P_BITMASK(Flags)
+P_GETTER(FlagMask, GetFlagMask)
+END_CLS()
+
+
+BEGIN_CLS(ecs::ECSSystemChange)
+P_RO(Entity)
+P_GETTER(Component, GetComponentName)
+P_GETTER(SystemName, GetSystemName)
+P_RO(Thread)
+P_RO(Frame)
+P_RO(Flush)
 END_CLS()
 
 
 BEGIN_CLS(ecs::ECSChangeLog)
 P(Entities)
+P_RO(Frame)
+P_RO(Flush)
+P_RO(SystemChanges)
+P_RO(DroppedSystemChanges)
+P_RO(SystemTrackingMicroseconds)
 END_CLS()
 
 

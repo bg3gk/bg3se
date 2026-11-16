@@ -1,0 +1,2 @@
+# The ImGui patches are applied with git apply to LF files: keep their bytes as they are.
+*.diff -text

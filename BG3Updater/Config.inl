@@ -38,6 +38,7 @@ void ApplyConfig(UpdaterConfig& config, Document& root)
 #endif
     ConfigGet(root, "IPv4Only", config.IPv4Only);
     ConfigGet(root, "DisableUpdates", config.DisableUpdates);
+    ConfigGet(root, "ShiftOpensConsole", config.ShiftOpensConsole);
 }
 
 void LoadConfigFile(std::wstring const& configPath, UpdaterConfig& config)

@@ -407,3 +407,14 @@ void ProcessPropertyNotifications(RawPropertyAccessors const& prop, bool isWriti
 }
 
 END_NS()
+
+BEGIN_NS(lua)
+
+// GateKit: the size of a property's field, set after the property is added (the instruments of
+// Ext.Debug answer it with the field's address)
+void GenericPropertyMap::SetRawPropertySize(char const* prop, uint32_t size)
+{
+    auto existing = Properties.try_get(FixedStringUnhashed{ prop });
+    if (existing) existing->Size = size;
+}
+END_NS()

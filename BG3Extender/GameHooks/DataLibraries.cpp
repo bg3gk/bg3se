@@ -10,6 +10,42 @@
 #include <DbgHelp.h>
 #include "resource.h"
 
+// GateKit: a plain C entry for a native mod in any language (loaded by any native loader, found by
+// GetModuleHandle + GetProcAddress on this DLL) - the address of a function or global the game has,
+// by name: the extender's own symbols and the names of GateKit's registry table. Read only; the
+// names are filled when the extender has mapped the game (before that every answer is null / 0).
+extern "C" void* GateKitSymbolAddress(char const* name)
+{
+    if (name == nullptr || bg3se::gExtender == nullptr) return nullptr;
+    auto const& mappings = bg3se::gExtender->GetLibraryManager().Mappings();
+    if (auto n = mappings.Named.find(name); n != mappings.Named.end()) return n->second;
+    if (auto s = mappings.StaticSymbols.find(name); s != mappings.StaticSymbols.end())
+        return *(void**)((uint8_t*)&bg3se::GetStaticSymbols() + s->second.Offset);
+    return nullptr;
+}
+
+// The number of names of GateKit's registry table the extender read (found or not).
+extern "C" int GateKitSymbolCount()
+{
+    if (bg3se::gExtender == nullptr) return 0;
+    return (int)bg3se::gExtender->GetLibraryManager().Mappings().Named.size();
+}
+
+// The name at an index of GateKit's registry table, in a stable order (sorted), or null past the end.
+// The pointer stays valid while the extender lives.
+extern "C" char const* GateKitSymbolName(int index)
+{
+    static std::vector<std::string> sorted;
+    if (bg3se::gExtender == nullptr || index < 0) return nullptr;
+    auto const& named = bg3se::gExtender->GetLibraryManager().Mappings().Named;
+    if (sorted.size() != named.size()) {
+        sorted.clear();
+        for (auto const& entry : named) sorted.push_back(entry.first);
+        std::sort(sorted.begin(), sorted.end());
+    }
+    return index < (int)sorted.size() ? sorted[index].c_str() : nullptr;
+}
+
 namespace bg3se
 {
     _Post_writable_byte_size_(size) void* BG3Alloc(std::size_t size)
@@ -46,6 +82,21 @@ namespace bg3se
         if (!loader.LoadBuiltinMappings(IDR_BINARY_MAPPINGS)) {
             ERR("Failed to load symbol mapping table");
             CriticalInitFailed = true;
+        }
+
+        // GateKit: the registry's own table beside this DLL, if there is one (RegistryMappings.xml):
+        // every function the registry names and places, found by its pattern and kept by its name.
+        {
+            wchar_t path[1024];
+            auto len = GetModuleFileNameW(gCoreLibPlatformInterface.ThisModule, path, (DWORD)std::size(path));
+            if (len > 0 && len < std::size(path)) {
+                std::wstring file(path, len);
+                auto sep = file.find_last_of(L"\\/");
+                if (sep != std::wstring::npos) {
+                    file = file.substr(0, sep + 1) + L"RegistryMappings.xml";
+                    loader.LoadNamedMappings(file);
+                }
+            }
         }
 
 #if defined(_DEBUG)

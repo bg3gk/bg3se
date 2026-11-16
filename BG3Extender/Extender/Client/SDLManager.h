@@ -3,6 +3,7 @@
 #include <GameDefinitions/Base/Base.h>
 #include <CoreLib/Wrappers.h>
 #include <mutex>
+#include <atomic>
 #include <SDL.h>
 
 BEGIN_SE()
@@ -48,6 +49,8 @@ private:
     int SDLPollEventInternal(SDL_Event* event, int result);
     int SDLPollEventSEH(SDL_Event* event, int result);
     bool InjectedEventConsumedByUI(SDL_Event* event);
+    bool InjectedEventPreventedByLua(SDL_Event* event);
+    void FireInjectedEventSEH(SDL_Event* event, int& result);
     void SDLIsTextInputActiveHooked(SDL_bool active);
     void SDLStartTextInputHooked(SDLStartTextInputProc* wrapped);
     void SDLStopTextInputHooked(SDLStartTextInputProc* wrapped);
@@ -57,6 +60,9 @@ private:
     std::recursive_mutex mutex_;
     std::recursive_mutex injectedEventMutex_;
     Array<SDL_Event> injectedEvents_;
+    Array<SDL_Event> deferredInjectedEvents_;
+    // The thread that is raising the Lua events of an injected event, 0 when none is
+    std::atomic<uint32_t> firingInjectedThread_{ 0 };
 
     SDLCreateWindowHookType CreateWindowHook_;
     SDLPollEventHookType PollEventHook_;

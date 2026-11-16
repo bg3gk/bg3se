@@ -518,6 +518,22 @@ public:
 
     static std::wstring GetMiniDumpPath()
     {
+        auto const& dir = gExtender->GetConfig().CrashDumpDirectory;
+        if (!dir.empty()) {
+            // One set of files per crash: <pid>-<yyyymmdd>-<hhmmss>.dmp, never overwritten
+            CreateDirectoryW(dir.c_str(), NULL);
+            SYSTEMTIME t;
+            GetLocalTime(&t);
+            wchar_t name[64];
+            swprintf_s(name, L"%u-%04u%02u%02u-%02u%02u%02u.dmp", GetCurrentProcessId(),
+                t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+            std::wstring path = dir;
+            if (path.back() != L'\\' && path.back() != L'/') path += L"\\";
+            path += name;
+            CRASHDBG("Writing minidump to: %s", ToStdUTF8(path).c_str());
+            return path;
+        }
+
         std::wstring tempPath;
         DWORD tempPathLen = GetTempPathW(0, NULL);
         tempPath.resize(tempPathLen);
@@ -619,6 +635,15 @@ public:
 
         moduleStart = moduleInfo.lpBaseOfDll;
         moduleEnd = (uint8_t *)moduleStart + moduleInfo.SizeOfImage;
+
+        // On a stack overflow the thread has almost no stack left: walking it here would overflow
+        // again before a dump is written. The dump is written by a thread of its own anyway.
+        if (exceptionInfo != nullptr
+            && exceptionInfo->ExceptionRecord->ExceptionCode == 0xC00000FD
+            && gExtender->GetConfig().ForceCrashReporting) {
+            CRASHDBG("Stack overflow, ForceCrashReporting --> true");
+            return true;
+        }
 
         Dumper.SnapshotThread();
 
@@ -827,14 +852,58 @@ public:
         }
     }
 
+    // A small text file beside the dump: the exception, and the faulting address as module+0xRVA,
+    // readable without opening the dump.
+    static void CreateFaultFile(CrashReporterThreadParams* params, std::wstring const& dumpPath)
+    {
+        std::wstring path = dumpPath;
+        auto dot = path.find_last_of(L'.');
+        if (dot != std::wstring::npos) path.resize(dot);
+        path += L".txt";
+
+        char text[512];
+        if (params->ExceptionInfo == nullptr || params->ExceptionInfo->ExceptionRecord == nullptr) {
+            sprintf_s(text, "Exception: none (terminate)\r\nThread: %u\r\n", params->ThreadId);
+        } else {
+            auto rec = params->ExceptionInfo->ExceptionRecord;
+            auto address = (uint8_t const*)rec->ExceptionAddress;
+            HMODULE module{ nullptr };
+            char moduleName[MAX_PATH] = "?";
+            uint64_t rva = (uint64_t)address;
+            if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                    (LPCWSTR)address, &module) && module != nullptr) {
+                char full[MAX_PATH];
+                if (GetModuleFileNameA(module, full, (DWORD)std::size(full)) > 0) {
+                    auto slash = strrchr(full, '\\');
+                    strcpy_s(moduleName, slash ? slash + 1 : full);
+                }
+                rva = (uint64_t)(address - (uint8_t const*)module);
+            }
+            sprintf_s(text, "Exception: 0x%08X\r\nAddress: %s+0x%llX\r\nAbsolute: 0x%llX\r\nThread: %u\r\n",
+                (unsigned)rec->ExceptionCode, moduleName, (unsigned long long)rva,
+                (unsigned long long)address, params->ThreadId);
+        }
+
+        HANDLE f = CreateFileW(path.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (f != INVALID_HANDLE_VALUE) {
+            DWORD written{ 0 };
+            WriteFile(f, text, (DWORD)strlen(text), &written, NULL);
+            CloseHandle(f);
+        }
+    }
+
     static DWORD WINAPI CrashReporterThread(LPVOID userData)
     {
         auto params = (CrashReporterThreadParams *)userData;
         auto dumpPath = GetMiniDumpPath();
+        // First, before anything that may fail on a broken process
+        CreateFaultFile(params, dumpPath);
         if (CreateMiniDump(params, dumpPath)) {
             CreateCrashReportFile(dumpPath);
             CreateBacktraceFile(dumpPath);
-            LaunchCrashReporter(dumpPath);
+            if (gExtender->GetConfig().LaunchCrashReporter) {
+                LaunchCrashReporter(dumpPath);
+            }
         }
 
 #if defined(DEBUG_CRASH_REPORTER)

@@ -13,6 +13,11 @@
 
 #include <Lua/Client/ClientEntityReplicationEvents.inl>
 
+BEGIN_NS(ecl::lua::visual)
+// Lua/Libs/ClientVisual.inl
+void UpdateDummies(ecs::EntitySystemHelpersBase& helpers);
+END_NS()
+
 BEGIN_NS(ecl::lua)
 
 using namespace bg3se::lua;
@@ -92,6 +97,7 @@ bool ClientState::IsClient()
 void ClientState::OnUpdate(GameTime const& time)
 {
     State::OnUpdate(time);
+    visual::UpdateDummies(GetEntitySystemHelpers());
     replicationHooks_.PostUpdate();
     deferredUIEvents_.PostUpdate();
     boxedValues_.clear();

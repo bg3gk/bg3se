@@ -87,7 +87,9 @@ public:
     std::optional<ImTextureID> BindTexture(TextureOpaqueHandle opaqueHandle);
     // Textures from image files (png, jpg, tga, bmp) in the game's data, a mod's pak included.
     // Counted by use; an unused one is kept for a while before its texture is released.
-    std::optional<TextureLoadResult> RegisterFileTexture(FixedString const& path);
+    // `fromDisk` (GateKit, a convenience of the extender): `path` is a path of the machine's file
+    // system, read as it is and not through the game's data; asked for by Ext.IMGUI.LoadImageFile() only.
+    std::optional<TextureLoadResult> RegisterFileTexture(FixedString const& path, bool fromDisk = false);
     void UnregisterFileTexture(FixedString const& path);
     bool LoadFont(FixedString const& name, char const* path, float size,
         char const* mergePath = nullptr, uint32_t mergeFirst = 0, uint32_t mergeLast = 0);
@@ -101,7 +103,7 @@ public:
     void SetPaperWhite(float nits);
     // A picture of the game alone, written as a PNG below the Script Extender folder of the
     // player's profile once the next frame has been shown (see ScreenshotWriter)
-    bool RequestScreenshot(StringView path);
+    bool RequestScreenshot(StringView path, bool withOverlay = false);
     bool ScreenshotPending();
     // Every finished frame copied into a texture another program can open on the graphics card
     // (see FrameShare.inl), and what that mirror is doing

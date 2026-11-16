@@ -5,6 +5,12 @@
 #include <fstream>
 #include <CoreLib/JsonLibs.h>
 
+namespace bg3se::lua::debug
+{
+    // Lua/Libs/Debug.inl
+    void OnExtenderTick(bool server);
+}
+
 namespace bg3se
 {
     std::unordered_set<std::string_view> ExtensionStateBase::sAllFeatureFlags = {
@@ -266,6 +272,10 @@ namespace bg3se
     void ExtensionStateBase::OnUpdate(GameTime const& time)
     {
         time_ = time;
+
+        // The memory instrument's watches and freezes are served every tick, with or without a
+        // Lua state, so a load or a reset does not leave one armed and unserved
+        lua::debug::OnExtenderTick(server_);
 
         LuaVirtualPin lua(*this);
         if (lua) {

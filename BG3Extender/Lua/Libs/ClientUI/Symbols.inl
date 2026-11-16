@@ -39,6 +39,8 @@ struct StaticTypes
     TypeInfo Single;
     TypeInfo Double;
     TypeInfo Bool;
+    TypeInfo NullableBool;
+    TypeInfo TimeSpan;
     TypeInfo Symbol;
     TypeInfo String;
     TypeInfo Uri;
@@ -74,6 +76,10 @@ struct StaticTypes
         Single.Setup("Single");
         Double.Setup("Double");
         Bool.Setup("Bool");
+        // GateKit: the three-state flag of a toggle (ToggleButton.IsChecked)
+        NullableBool.Setup("Nullable<Bool>");
+        // GateKit: a length of time, a count of 100 ns ticks (NsGui/TimeSpan.h); seconds in Lua
+        TimeSpan.Setup("TimeSpan");
         Symbol.Setup("Symbol");
         String.Setup("String");
         Uri.Setup("Uri");

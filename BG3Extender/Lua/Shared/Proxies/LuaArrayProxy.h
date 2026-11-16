@@ -16,6 +16,12 @@ public:
     virtual TypeInformation const& GetContainerType() const = 0;
     virtual TypeInformation const& GetElementType() const = 0;
     virtual bool GetElement(lua_State* L, CppObjectMetadata& self, unsigned arrayIndex) = 0;
+    // GateKit: where an element lies and how wide it is, for the instruments of Ext.Debug
+    // (nullptr and 0 from a kind of array that cannot say)
+    virtual void* GetElementAddress(CppObjectMetadata& self, unsigned arrayIndex) { return nullptr; }
+    virtual unsigned GetElementSize() const { return 0; }
+    // The bit an element is inside its word, for an array of bits; -1 for any other array
+    virtual int GetElementBit(unsigned arrayIndex) const { return -1; }
     virtual bool SetElement(lua_State* L, CppObjectMetadata& self, unsigned arrayIndex, int luaIndex) = 0;
     virtual int Next(lua_State* L, CppObjectMetadata& self, int key) = 0;
     virtual unsigned Length(CppObjectMetadata& self) = 0;
@@ -49,6 +55,20 @@ public:
     TypeInformation const& GetElementType() const override
     {
         return GetTypeInfo<T>();
+    }
+
+    void* GetElementAddress(CppObjectMetadata& self, unsigned arrayIndex) override
+    {
+        auto obj = reinterpret_cast<TContainer*>(self.Ptr);
+        if (arrayIndex > 0 && arrayIndex <= (unsigned)obj->size()) {
+            return (void*)&(*obj)[arrayIndex - 1];
+        }
+        return nullptr;
+    }
+
+    unsigned GetElementSize() const override
+    {
+        return (unsigned)sizeof(T);
     }
 
     bool GetElement(lua_State* L, CppObjectMetadata& self, unsigned arrayIndex) override
@@ -152,6 +172,20 @@ public:
     TypeInformation const& GetElementType() const override
     {
         return GetTypeInfo<T>();
+    }
+
+    void* GetElementAddress(CppObjectMetadata& self, unsigned arrayIndex) override
+    {
+        auto obj = reinterpret_cast<TContainer*>(self.Ptr);
+        if (arrayIndex > 0 && arrayIndex <= (unsigned)obj->Size()) {
+            return (void*)&(*obj)[arrayIndex - 1];
+        }
+        return nullptr;
+    }
+
+    unsigned GetElementSize() const override
+    {
+        return (unsigned)sizeof(T);
     }
 
     bool GetElement(lua_State* L, CppObjectMetadata& self, unsigned arrayIndex) override
@@ -349,6 +383,20 @@ public:
         return GetTypeInfo<bool>();
     }
 
+    void* GetElementAddress(CppObjectMetadata& self, unsigned arrayIndex) override
+    {
+        auto obj = reinterpret_cast<TContainer*>(self.Ptr);
+        if (arrayIndex > 0 && arrayIndex <= (unsigned)obj->size()) {
+            return (void*)&(*obj)[arrayIndex - 1];
+        }
+        return nullptr;
+    }
+
+    unsigned GetElementSize() const override
+    {
+        return (unsigned)sizeof(T);
+    }
+
     bool GetElement(lua_State* L, CppObjectMetadata& self, unsigned arrayIndex) override
     {
         auto obj = static_cast<TContainer*>(self.Ptr);
@@ -432,6 +480,26 @@ public:
     TypeInformation const& GetElementType() const override
     {
         return GetTypeInfo<bool>();
+    }
+
+    // An element is one bit: the address and the size are its word's, the bit is GetElementBit's
+    void* GetElementAddress(CppObjectMetadata& self, unsigned arrayIndex) override
+    {
+        auto obj = static_cast<ContainerType*>(self.Ptr);
+        if (arrayIndex > 0 && arrayIndex <= obj->size()) {
+            return (void*)&obj->Bits[(arrayIndex - 1) / ContainerType::BitsPerWord];
+        }
+        return nullptr;
+    }
+
+    unsigned GetElementSize() const override
+    {
+        return (unsigned)sizeof(TWord);
+    }
+
+    int GetElementBit(unsigned arrayIndex) const override
+    {
+        return (int)((arrayIndex - 1) % ContainerType::BitsPerWord);
     }
 
     bool GetElement(lua_State* L, CppObjectMetadata& self, unsigned arrayIndex) override

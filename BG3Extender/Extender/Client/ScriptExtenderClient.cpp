@@ -148,7 +148,7 @@ void CleanupSanityCheck()
 
 void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 {
-    if (config_.SendCrashReports) {
+    if (config_.SendCrashReports || !config_.CrashDumpDirectory.empty()) {
         // We need to initialize the crash reporter after the game engine has started,
         // otherwise the game will overwrite the top level exception filter
         InitCrashReporting();

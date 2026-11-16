@@ -294,6 +294,26 @@ bool SymbolMappingLoader::LoadBuiltinMappings(int resourceId)
     return LoadMappings(&doc);
 }
 
+bool SymbolMappingLoader::LoadNamedMappings(std::wstring const& path)
+{
+    FILE* f{ nullptr };
+    if (_wfopen_s(&f, path.c_str(), L"rb") != 0 || f == nullptr) return false;
+    tinyxml2::XMLDocument doc;
+    auto err = doc.LoadFile(f);
+    fclose(f);
+    if (err != tinyxml2::XML_SUCCESS) {
+        ERR("Couldn't parse the named mappings table");
+        return false;
+    }
+
+    named_ = true;
+    auto before = mappings_.Named.size();
+    auto ok = LoadMappings(&doc);
+    named_ = false;
+    INFO("Named mappings: %d names read", (int)(mappings_.Named.size() - before));
+    return ok;
+}
+
 bool SymbolMappingLoader::LoadMappings(tinyxml2::XMLDocument* doc)
 {
     // TODO - check version specific mappings
@@ -544,7 +564,12 @@ bool SymbolMappingLoader::LoadTarget(tinyxml2::XMLElement* ele, Pattern const& p
         }
     }
 
-    if (target.NextSymbol.empty() && target.EngineCallback.empty() && !target.TargetRef) {
+    if (named_ && !staticSymbol && name && target.NextSymbol.empty() && target.EngineCallback.empty()) {
+        target.Named = true;
+        mappings_.Named.emplace(target.Name, nullptr);
+    }
+
+    if (target.NextSymbol.empty() && target.EngineCallback.empty() && !target.TargetRef && !target.Named) {
         ERR("Target doesn't specify any actions!");
         return false;
     }
@@ -784,6 +809,10 @@ SymbolMapper::MappingResult SymbolMapper::ExecSymbolMappingAction(SymbolMappings
     auto targetPtr = target.TargetRef.Get();
     if (targetPtr != nullptr) {
         *targetPtr = const_cast<uint8_t *>(ptr);
+    }
+
+    if (target.Named) {
+        mappings_.Named[target.Name] = const_cast<uint8_t *>(ptr);
     }
 
     if (!target.NextSymbol.empty()) {

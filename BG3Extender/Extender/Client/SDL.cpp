@@ -81,8 +81,48 @@ void SDLManager::NewFrame()
 
 void SDLManager::InjectEvent(SDL_Event const& evt)
 {
+    SDL_Event stamped = evt;
+    // GateKit: a pointer event names the game's window, as SDL's own do. The game's window manager
+    // takes a motion's position only from an event whose window id is its window's; an event that
+    // names no window moved nothing.
+    if (window_ != nullptr) {
+        auto windowId = SDL_GetWindowID(window_);
+        switch (stamped.type) {
+        case SDL_MOUSEMOTION: stamped.motion.windowID = windowId; break;
+        case SDL_MOUSEBUTTONDOWN:
+        case SDL_MOUSEBUTTONUP: stamped.button.windowID = windowId; break;
+        case SDL_MOUSEWHEEL: stamped.wheel.windowID = windowId; break;
+        }
+    }
+
     std::lock_guard _(injectedEventMutex_);
-    injectedEvents_.push_back(evt);
+    // GateKit: an event injected by a Lua listener of an injected event waits for the next round of
+    // polling, so a listener that answers every event with another cannot hold the game's poll loop
+    if (firingInjectedThread_ != 0 && firingInjectedThread_ == GetCurrentThreadId()) {
+        deferredInjectedEvents_.push_back(stamped);
+    } else {
+        injectedEvents_.push_back(stamped);
+    }
+}
+
+// GateKit: the Lua input events of an injected event (KeyInput, MouseButtonInput, MouseWheelInput),
+// raised as for a real one and marked Injected. True when a listener prevented the event.
+bool SDLManager::InjectedEventPreventedByLua(SDL_Event* event)
+{
+    if (!gExtender->GetClient().HasExtensionState()) return false;
+
+    int result = 1;
+    firingInjectedThread_ = GetCurrentThreadId();
+    FireInjectedEventSEH(event, result);
+    firingInjectedThread_ = 0;
+    return result == 0;
+}
+
+void SDLManager::FireInjectedEventSEH(SDL_Event* event, int& result)
+{
+    BEGIN_GUARDED()
+    ecl::ExtensionState::Get().OnInputEvent(event, result, true);
+    END_GUARDED()
 }
 
 void SDLManager::SDLCreateWindowHooked(const char* title,
@@ -117,7 +157,7 @@ int SDLManager::SDLPollEventHooked(SDLPollEventProc* wrapped, SDL_Event* event)
 
         // An injected event the UI takes (typing into a text field, a click on a window)
         // is not passed on to the game, the same as a real one
-        if (!InjectedEventConsumedByUI(event)) {
+        if (!InjectedEventConsumedByUI(event) && !InjectedEventPreventedByLua(event)) {
             return 1;
         }
     }
@@ -125,11 +165,18 @@ int SDLManager::SDLPollEventHooked(SDLPollEventProc* wrapped, SDL_Event* event)
     int result = wrapped(event);
     result = SDLPollEventSEH(event, result);
 
+    if (result == 0 && !deferredInjectedEvents_.empty()) {
+        std::lock_guard _(injectedEventMutex_);
+        for (auto const& deferred : deferredInjectedEvents_) {
+            injectedEvents_.push_back(deferred);
+        }
+        deferredInjectedEvents_.clear();
+    }
+
     return result;
 }
 
-// Shows an injected event to the extender UI. Lua input events are not raised for it:
-// the event came from Lua in the first place.
+// Shows an injected event to the extender UI, which may take it as it takes a real one
 bool SDLManager::InjectedEventConsumedByUI(SDL_Event* event)
 {
     if (!enableUI_) return false;

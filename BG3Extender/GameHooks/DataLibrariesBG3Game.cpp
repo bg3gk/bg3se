@@ -179,6 +179,29 @@ namespace bg3se
         SYM_OFF(stats__DealDamageFunctor__ApplyDamage);
         SYM_OFF(esv__StatsSystem__ThrowDamageEvent);
 
+        SYM_OFF(eoc__roll__stream__DrawNumber);
+        SYM_OFF(eoc__roll__stream__RollManager__InternalRollDice);
+        SYM_OFF(eoc__roll__stream__RollManager__InternalRollDiceWithBoosts);
+        SYM_OFF(eoc__roll__stream__RollManager__RollDiceWithBoostsAgainstDC);
+        SYM_OFF(thoth__shared__Machine__CheckStaticCondition);
+        SYM_OFF(esv__interrupt__AdjustConditionRoll);
+        SYM_OFF(eoc__SpellPrototype__GetDefaultTextKey);
+        SYM_OFF(eoc__SpellPrototype__GetSpellConditions);
+        SYM_OFF(eoc__HitDesc__Construct);
+        SYM_OFF(eoc__HitDesc__Destroy);
+        SYM_OFF(thoth__shared__ContextData__Construct);
+        SYM_OFF(thoth__shared__ContextData__Destroy);
+        SYM_OFF(eoc__spell__CalculateModifiableSpellRollChance);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__CreateDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__SetupDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__PrePrepareDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__LoadDummy);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__AttachDummyToScene);
+        SYM_OFF(ecl__TLPreviewDummyHelpers__DestroyDummy);
+        SYM_OFF(ls__AnimationBlueprintSystem__TriggerASAnimation);
+        SYM_OFF(ls__AnimationBlueprintSystem__TriggerASCancelAnimation);
+        SYM_OFF(ls__EffectsManager__PlayEffect);
+
         SYM_OFF(esv__ExecuteStatsFunctor_AttackTargetContext);
         SYM_OFF(esv__ExecuteStatsFunctor_AttackPositionContext);
         SYM_OFF(esv__ExecuteStatsFunctor_MoveContext);

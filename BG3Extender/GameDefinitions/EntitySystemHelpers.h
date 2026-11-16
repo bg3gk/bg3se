@@ -60,13 +60,45 @@ private:
     PerECSReplicationData nullReplicationData_;
 };
 
+// One change as it was logged: what it was, when, and its place among the changes of its flush
+struct ECSComponentEvent
+{
+    ComponentChangeFlags Flags{ 0 };
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
+    // Position among every change the tracer logged inside this flush, from 1
+    uint32_t Order{ 0 };
+
+    inline uint32_t GetFlagMask() const
+    {
+        return (uint32_t)Flags;
+    }
+};
+
 struct ECSComponentLog
 {
     ComponentTypeIndex ComponentType{ 0 };
     ComponentChangeFlags Flags{ 0 };
+    // The ECS frame (EntitySystemHelpersBase::PostUpdate count) and ECB flush in which this change
+    // was first logged since the log was last cleared: orders one-frame lifetimes inside a tick.
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
+    // How many times a change was logged for this entity and component, and the frame and flush
+    // of the latest. A modification is seen once in every flush in which its mark is still set.
+    uint32_t Count{ 0 };
+    uint32_t LastFrame{ 0 };
+    uint32_t LastFlush{ 0 };
+    // The changes one by one, oldest first, up to the tracer's EventLimit; the rest only counted
+    Array<ECSComponentEvent> Events;
+    uint32_t DroppedEvents{ 0 };
 
     StringView GetName(lua_State* L) const;
     std::optional<ExtComponentType> GetType(lua_State* L) const;
+    // Flags as one integer (ComponentChangeFlags bits), beside the per-flag booleans
+    inline uint32_t GetFlagMask() const
+    {
+        return (uint32_t)Flags;
+    }
 };
 
 struct ECSEntityLog
@@ -75,11 +107,44 @@ struct ECSEntityLog
     HashMap<uint16_t, ECSComponentLog> Components;
     EntityHandle Entity;
     EntityChangeFlags Flags{ 0 };
+
+    // Flags as one integer (EntityChangeFlags bits), beside the per-flag booleans
+    inline uint32_t GetFlagMask() const
+    {
+        return (uint32_t)Flags;
+    }
+};
+
+// A filtered component whose bytes differed after a system's update from before it (TrackSystems)
+struct ECSSystemChange
+{
+    EntityHandle Entity;
+    ComponentTypeIndex ComponentType{ 0 };
+    SystemTypeIndex System{ 0 };
+    uint32_t Thread{ 0 };
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
+
+    StringView GetComponentName(lua_State* L) const;
+    StringView GetSystemName(lua_State* L) const;
 };
 
 struct ECSChangeLog
 {
     HashMap<EntityHandle, ECSEntityLog> Entities;
+    // TrackSystems: which system was updating when a filtered component changed, oldest first,
+    // up to SystemChangeLimit; the rest only counted
+    Array<ECSSystemChange> SystemChanges;
+    uint32_t DroppedSystemChanges{ 0 };
+    // Time spent comparing the filtered set around system updates, in microseconds (running)
+    uint64_t SystemTrackingMicroseconds{ 0 };
+    // Running counters (not reset by Clear): ECS frames ended and ECB flushes seen by the tracer.
+    uint32_t Frame{ 0 };
+    uint32_t Flush{ 0 };
+    // Changes logged so far inside the current flush (gives each event its Order)
+    uint32_t FlushOrder{ 0 };
+    // Events kept per entity and component (ECSChangeTracerOptions::EventLimit)
+    uint32_t EventLimit{ 16 };
 
     void Clear();
     void AddEntityChange(EntityHandle entity, EntityChangeFlags flags);
@@ -93,6 +158,25 @@ struct ECSChangeTracerOptions
     bool TrackReplication{ true };
     bool TrackModifications{ false };
     ComponentTypeMask ExcludeModificationTypes;
+    // Filters applied where the changes are read, not afterwards: only these entities (none: every
+    // entity) and only these component types (FilterComponents false: every type).
+    HashSet<EntityHandle> Entities;
+    ComponentTypeMask IncludeTypes;
+    bool FilterComponents{ false };
+    // Compare the filtered set before and after every system update; only with both an entity
+    // and a component filter
+    bool TrackSystems{ false };
+    Array<ComponentTypeIndex> IncludeTypeList;
+
+    inline bool AcceptsEntity(EntityHandle entity) const
+    {
+        return Entities.empty() || Entities.contains(entity);
+    }
+
+    inline bool AcceptsType(ComponentTypeIndex type) const
+    {
+        return !FilterComponents || IncludeTypes[(unsigned)type];
+    }
 };
 
 class ECSChangeTracer
@@ -119,11 +203,33 @@ public:
     void LogComponentModifications();
     void LogReplicatedChanges();
 
+    // TrackSystems: a fingerprint of every filtered component, taken around one system update
+    // on the thread that runs it
+    inline bool TracksSystems() const
+    {
+        return tracing_ && options_.TrackSystems && !options_.Entities.empty() && options_.FilterComponents;
+    }
+    void SnapshotFiltered(Array<uint64_t>& out);
+    void CompareFiltered(Array<uint64_t> const& before, SystemTypeIndex system, uint64_t startTicks);
+
+    inline void OnFrameEnd()
+    {
+        log_.Frame++;
+    }
+
+    inline void OnFlush()
+    {
+        log_.Flush++;
+        log_.FlushOrder = 0;
+    }
+
 private:
     EntitySystemHelpersBase* ecs_;
     ECSChangeLog log_;
     bool tracing_{ false };
     ECSChangeTracerOptions options_;
+    // System updates run on several threads at once; their records are appended under this
+    std::mutex systemChangesMutex_;
 };
 
 template <class T>
@@ -378,6 +484,13 @@ public:
     void OnDestroy();
 
     bool SetSystemUpdateHook(SystemTypeIndex system, std::function<SystemHookProc> preUpdate, std::function<SystemHookProc> postUpdate);
+    // Puts the update wrapper on every system that has none yet (pre/post hooks untouched), so the
+    // tracer can tell which system changed its filtered set (TrackSystems)
+    void HookAllSystemsForTracing();
+    inline STDString const* GetSystemName(SystemTypeIndex index) const
+    {
+        return (unsigned)index < systemTypeIdToName_.size() ? systemTypeIdToName_[(unsigned)index] : nullptr;
+    }
 
 protected:
     // Fetch EntityWorld from EocServer/EocClient; needed to bootstrap entity helpers

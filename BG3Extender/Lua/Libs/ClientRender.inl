@@ -16,11 +16,14 @@ BEGIN_NS(ecl::lua::render)
 // no console is in it, and the game is neither paused nor moved to take it. It does not need the
 // window to be in front or even visible.
 //
+// With `withOverlay` true the frame is copied after the extender has drawn its own layer (IMGUI
+// windows, a picture shown through them) into it: the picture is then what the screen shows.
+//
 // False when a screenshot is already on its way, when the renderer is not up yet, or when it
 // cannot read its frames (only the DX11 backend can so far).
-bool Screenshot(StringView path)
+bool Screenshot(StringView path, std::optional<bool> withOverlay)
 {
-    return gExtender->IMGUI().RequestScreenshot(path);
+    return gExtender->IMGUI().RequestScreenshot(path, withOverlay && *withOverlay);
 }
 
 // Whether a screenshot asked for earlier has still to be taken or written

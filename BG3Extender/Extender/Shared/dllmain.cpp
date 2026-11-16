@@ -15,8 +15,8 @@ void SetupScriptExtender(HMODULE hModule)
     auto & config = gExtender->GetConfig();
     LoadConfig(L"ScriptExtenderSettings.json", config);
 
-    // Enable console if shift is down when the game is launched
-    if (GetAsyncKeyState(VK_SHIFT) < 0) {
+    // Enable console if shift is down when the game is launched (unless ShiftOpensConsole is off)
+    if (config.ShiftOpensConsole && GetAsyncKeyState(VK_SHIFT) < 0) {
         config.CreateConsole = true;
     }
 

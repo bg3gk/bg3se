@@ -289,6 +289,24 @@ std::optional<int64_t> StoredValueHelpers::TryParseIntegralValue(lua_State* L, T
     }
 }
 
+// GateKit: Noesis::Nullable<bool> is two bytes, "has a value" and the value (NsCore/Nullable.h);
+// Lua sees it as nil or a boolean.
+static bool IsNullableBool(Type const* type)
+{
+    auto& info = gStaticSymbols.Types.NullableBool;
+    if (info.Type == nullptr) info.Type = Reflection::GetType(info.Name);
+    return info.Type != nullptr && type == info.Type;
+}
+
+static void PushNullableBool(lua_State* L, uint8_t hasValue, uint8_t value)
+{
+    if (hasValue) {
+        lua::push(L, value != 0);
+    } else {
+        lua::push(L, nullptr);
+    }
+}
+
 void StoredValueHelpers::PushValue(lua_State* L, Type const* type, void* val, Type const* objectType, Symbol* propertyName)
 {
     auto& classes = gStaticSymbols.TypeClasses;
@@ -297,6 +315,14 @@ void StoredValueHelpers::PushValue(lua_State* L, Type const* type, void* val, Ty
 
     if (typeOfType == types.TypeConst.Type) {
         PushValue(L, static_cast<TypeConst const*>(type)->GetContentType(), val, objectType, propertyName);
+
+    } else if (IsNullableBool(type)) {
+        // Small enough to be kept in the stored pointer itself, as a bool is
+        auto raw = (uintptr_t)val;
+        PushNullableBool(L, (uint8_t)(raw & 0xff), (uint8_t)((raw >> 8) & 0xff));
+    } else if (type == types.TimeSpan.Type) {
+        // GateKit: the ticks are kept in the stored pointer itself; seconds in Lua
+        lua::push(L, (double)(int64_t)(uintptr_t)val / 10000000.0);
 
     } else if (type == types.Int8.Type) {
         PushRawValue<int8_t>(L, type, val);
@@ -475,6 +501,14 @@ void StoredValueHelpers::PushProperty(lua_State* L, BaseObject const* obj, TypeC
             PushTyped<double>(L, prop, obj);
         } else if (type == types.Bool.Type) {
             PushTyped<bool>(L, prop, obj);
+        } else if (IsNullableBool(type)) {
+            uint8_t raw[8]{};
+            prop->GetCopy(obj, raw);
+            PushNullableBool(L, raw[0], raw[1]);
+        } else if (type == types.TimeSpan.Type) {
+            int64_t ticks{ 0 };
+            prop->GetCopy(obj, &ticks);
+            lua::push(L, (double)ticks / 10000000.0);
         } else if (type == types.Symbol.Type) {
             PushTyped<Symbol>(L, prop, obj);
         } else if (type == types.Color.Type) {
@@ -585,6 +619,17 @@ std::optional<StoredValueHolder> StoredValueHelpers::GetValue(lua_State* L, Type
         return GetRawValue<double>(L, type, value);
     } else if (type == types.Bool.Type) {
         return GetRawValue<bool>(L, type, value);
+    } else if (IsNullableBool(type)) {
+        // nil: no value; a boolean: that value
+        uint64_t raw = 0;
+        if (lua_type(L, value.Index) != LUA_TNIL) {
+            raw = 1 | (lua::get<bool>(L, value.Index) ? 0x100 : 0);
+        }
+        return StoredValueHolder(raw, StoredValueCopy{});
+    } else if (type == types.TimeSpan.Type) {
+        // seconds from Lua, ticks to the UI library
+        auto ticks = (int64_t)(lua::get<double>(L, value.Index) * 10000000.0);
+        return StoredValueHolder(ticks, StoredValueCopy{});
     } else if (type == types.Symbol.Type) {
         return GetRawValue<Symbol>(L, type, value);
     } else if (type == types.Color.Type) {

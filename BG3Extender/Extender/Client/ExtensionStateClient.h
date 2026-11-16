@@ -34,7 +34,8 @@ public:
         return "BootstrapClient.lua";
     }
 
-    void OnInputEvent(SDL_Event* event, int& result);
+    // `injected`: the event was put in by Ext.Input.Inject*; its Lua event carries Injected = true
+    void OnInputEvent(SDL_Event* event, int& result, bool injected = false);
 
 protected:
     friend LuaStatePin<ExtensionState, lua::ClientState>;
@@ -46,7 +47,7 @@ protected:
     void InitializeLuaState() override;
     void BootstrapLua() override;
     void FireInputEvents();
-    void FireInputEvent(SDL_Event* event, int* result);
+    void FireInputEvent(SDL_Event* event, int* result, bool injected = false);
 };
 
 END_NS()

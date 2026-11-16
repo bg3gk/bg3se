@@ -80,7 +80,7 @@ void ScriptExtender::WarnIfOffline()
 
 void ScriptExtender::Initialize()
 {
-    if (config_.SendCrashReports) {
+    if (config_.SendCrashReports || !config_.CrashDumpDirectory.empty()) {
         InitCrashReporting();
     }
 
@@ -172,7 +172,7 @@ void ScriptExtender::Initialize()
         OnCoreLibInit(nullptr);
     }
 
-    if (config_.SendCrashReports) {
+    if (config_.SendCrashReports || !config_.CrashDumpDirectory.empty()) {
         ShutdownCrashReporting();
     }
 }

@@ -42,6 +42,8 @@ struct RawPropertyAccessors
     GenericPropertyMap* PropertyMap{ nullptr };
     FixedString NewName;
     bool Iterable{ true };
+    // GateKit: sizeof the field; 0 for a property that is no plain field of the object
+    uint32_t Size{ 0 };
 
     inline uint64_t FlagValue() const
     {
@@ -203,6 +205,7 @@ public:
         typename RawPropertyAccessors::Serializer* serialize, std::size_t offset, uint64_t flag, 
         PropertyNotification notification, char const* newName, bool iterable, bool inherited);
     void AddRawValidator(char const* prop, typename RawPropertyValidators::Validator* validate, std::size_t offset, uint64_t flag);
+    void SetRawPropertySize(char const* prop, uint32_t size);
     void AddRawProperty(char const* prop, typename RawPropertyAccessors::Getter* getter,
         typename RawPropertyAccessors::Setter* setter, typename RawPropertyValidators::Validator* validate, 
         typename RawPropertyAccessors::Serializer* serialize, std::size_t offset, uint64_t flag, 

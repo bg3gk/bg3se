@@ -20,6 +20,8 @@ void ApplyConfig(ExtenderConfig& config, Document& root)
     ConfigGet(root, "ExtendStory", config.ExtendStory);
     ConfigGet(root, "SendCrashReports", config.SendCrashReports);
     ConfigGet(root, "ForceCrashReporting", config.ForceCrashReporting);
+    ConfigGet(root, "LaunchCrashReporter", config.LaunchCrashReporter);
+    ConfigGet(root, "CrashDumpDirectory", config.CrashDumpDirectory);
     ConfigGet(root, "EnableDebugger", config.EnableDebugger);
     ConfigGet(root, "EnableLuaDebugger", config.EnableLuaDebugger);
     ConfigGet(root, "DeveloperMode", config.DeveloperMode);
@@ -34,6 +36,7 @@ void ApplyConfig(ExtenderConfig& config, Document& root)
     ConfigGet(root, "MergeVirtualTextures", config.MergeVirtualTextures);
     ConfigGet(root, "KeepWindowInBackground", config.KeepWindowInBackground);
     ConfigGet(root, "KeepWindowOffScreen", config.KeepWindowOffScreen);
+    ConfigGet(root, "ShiftOpensConsole", config.ShiftOpensConsole);
 
     ConfigGet(root, "DebuggerPort", config.DebuggerPort);
     ConfigGet(root, "LuaDebuggerPort", config.LuaDebuggerPort);

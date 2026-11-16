@@ -38,7 +38,15 @@ private:
     Array<SystemHooks> hookedSystems_;
     SaltedPool<SystemHook> subscriptions_;
     Array<SubscriptionIndex> deferredUnsubscriptions_;
+    // Subscriptions made while hooks were running; added to the hook lists when the run ends,
+    // so that the list being walked never changes under it
+    Array<SubscriptionIndex> pendingSubscriptions_;
+    // Number of hook runs in progress on the thread that holds the Lua lock
+    uint32_t dispatchDepth_{ 0 };
 
+    bool AddToHookLists(SubscriptionIndex index, SystemHook& sub);
+    void RemoveSubscription(SubscriptionIndex index);
+    void EndDispatch();
     void RunHooks(ecs::SystemTypeIndex type, Array<SubscriptionIndex> const& hooks);
     void CallHandler(ecs::SystemTypeIndex type, SystemHook& hook, SubscriptionIndex index);
     void CallHandlerUnsafe(ecs::SystemTypeIndex type, SystemHook& hook, SubscriptionIndex index);

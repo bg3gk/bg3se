@@ -84,6 +84,36 @@ using ParseStaticBoostsProc = bool(LSStringView& str, Array<Guid>& boosts, void*
 
 END_NS()
 
+BEGIN_SE()
+struct Roll;
+struct RollDefinition;
+struct StatsRollResult;
+END_SE()
+
+BEGIN_NS(eoc::roll::stream)
+
+struct RollManager;
+struct Stream;
+
+// The dice of the roll manager (Lua/Server/RollEvents.inl).
+// One die: the generator is the Mersenne Twister of the dice set, whose +0x1390 points at the
+// stream's NumRolls.
+using DrawNumberProc = uint64_t (void* generator, uint64_t min, uint64_t max);
+// One set of dice from a stream; result and perDie (Array<uint8_t>*) may be null.
+using RollManager__InternalRollDiceProc = int32_t (RollManager* self, Stream* stream, RollDefinition* dice,
+    bool updateDebts, int32_t dc, bool side, float probability, bool maximize, StatsRollResult* result, void* perDie);
+// A d20 formula with the roller's boosts (dice doubled for a d20, min/max/reroll boosts, one kept).
+// roller is a 0x38-byte reference: +0 EntityHandle, +8 EntityWorld*, +0x10 cached boosts, +0x30 fetch flag.
+using RollManager__InternalRollDiceWithBoostsProc = int32_t (RollManager* self, void* env, void* roller, void* worldView,
+    Stream* stream, Roll* roll, bool updateDebts, int32_t dc, bool side, float probability, int32_t critRange,
+    bool maximize, StatsRollResult* result);
+// Finds the stream by its key, then rolls (through the weighted path or RollDiceWithBoosts).
+using RollManager__RollDiceWithBoostsAgainstDCProc = int32_t (RollManager* self, void* env, uint64_t streamKey,
+    void* roller, void* worldView, Roll* roll, int32_t dc, bool side, uint8_t* critFlags, int32_t critRange,
+    bool maximize, StatsRollResult* result);
+
+END_NS()
+
 BEGIN_NS(ecs)
 
 struct EntityWorld;
@@ -131,5 +161,85 @@ struct DeferredPredicatesManager;
 
 using DataContextProvider__ExecuteCommandQueuesProc = void(DataContextProvider*, void* /* ls::AnyView* */);
 using DeferredPredicatesManager__UpdateFromUIProc = void(DeferredPredicatesManager*);
+
+END_NS()
+
+BEGIN_NS(thoth::shared)
+
+// Evaluates one compiled stats condition against a context (the caster, the target, the hit,
+// the status). The condition's rolls are thrown inside it. Further arguments, if any, are passed on.
+using Machine__CheckStaticConditionProc = uint64_t (void* machine, void* result, int32_t index, void* context, uint64_t a5, uint64_t a6);
+
+END_NS()
+
+BEGIN_SE()
+struct ConditionRoll;
+END_SE()
+
+BEGIN_NS(esv::interrupt)
+
+// Writes what the interrupts used on a roll resolved to (a set roll, an adjustment, a reroll)
+// into the roll; answers whether the roll's outcome changed.
+using AdjustConditionRollProc = bool (void* adjustments, ConditionRoll* roll);
+
+END_NS()
+
+BEGIN_NS(stats)
+struct SpellPrototype;
+END_NS()
+
+BEGIN_NS(eoc::spell)
+
+// The pieces the game itself uses to work out the chance of a spell's roll (an attack roll or a
+// saving throw) for a caster and a target: see Ext.Stats.GetSpellRollChance.
+using SpellPrototype__GetDefaultTextKeyProc = FixedString* (stats::SpellPrototype* self, void* unused);
+using SpellPrototype__GetSpellConditionsProc = void* (stats::SpellPrototype* self, void* condition, uint8_t type, FixedString* textKey);
+using HitDesc__ConstructProc = void* (void* hit);
+using HitDesc__DestroyProc = void (void* hit);
+using ConditionContext__ConstructProc = void* (void* self, uint64_t source, uint64_t sourceProxy, uint64_t target, uint64_t targetProxy,
+    glm::vec3* sourcePosition, glm::vec3* targetPosition, void* hit, void* attack, uint32_t statusEvent, uint64_t* statusSource,
+    uint32_t* status, uint8_t removeCause, uint64_t flags, uint8_t ability, uint8_t skill);
+using ConditionContext__DestroyProc = void (void* self);
+using CalculateModifiableSpellRollChanceProc = float (void* condition, void* context, FixedString* spell, void* modifications,
+    void* stats, void* machine);
+
+END_NS()
+
+BEGIN_SE()
+struct GameObjectTemplate;
+struct ResourceManager;
+END_SE()
+
+BEGIN_NS(ecs)
+struct EntityWorld;
+END_NS()
+
+BEGIN_NS(ecl)
+
+struct TLPreviewDummy;
+
+// The pieces the game's timeline system builds a client-only figure with (a timeline dummy):
+// see Ext.ClientVisual.CreateDummy. `world` is the address of a pointer to the client's entity
+// world; `scene` is the current level's visual scene.
+using TLPreviewDummyHelpers__CreateDummyProc = TLPreviewDummy* (Guid const* uuid, uint8_t timelineType);
+using TLPreviewDummyHelpers__SetupDummyProc = void (EntityHandle const* dummy, uint32_t components, void* source, uint8_t timelineType);
+using TLPreviewDummyHelpers__PrePrepareDummyProc = void (ecs::EntityWorld** world, ResourceManager* resources, void* scene,
+    TLPreviewDummy* dummy, GameObjectTemplate* tmpl);
+using TLPreviewDummyHelpers__LoadDummyProc = void (ecs::EntityWorld** world, TLPreviewDummy* dummy, void** callback);
+using TLPreviewDummyHelpers__AttachDummyToSceneProc = void (ecs::EntityWorld** world, TLPreviewDummy* dummy, void* scene);
+using TLPreviewDummyHelpers__DestroyDummyProc = void (ecs::EntityWorld** world, uint64_t dummy);
+
+// The two gameplay events the client's "play an animation" action state (ecl::ASAnimation) sends
+// to an entity's animation blueprint: see Ext.ClientVisual.PlayAnimation. `system` is the client's
+// ls::AnimationBlueprintSystem; `event` is the game's EoCGE::ASAnimation (three sets of animation
+// short names, a float and a flag) or the one flag of EoCGE::ASCancelAnimation.
+using AnimationBlueprintSystem__TriggerASAnimationProc = void (void* system, EntityHandle const* entity, void* event);
+using AnimationBlueprintSystem__TriggerASCancelAnimationProc = void (void* system, EntityHandle const* entity, bool const* event);
+
+// ls::EffectsManager::PlayEffect(FixedString const&, EntityHandle level, Scene*, Vector3 const&,
+// Quaternion const&, float): makes an effect entity from an effect resource and starts it; `made`
+// receives the game's reference to the new entity. See Ext.ClientVisual.PlayEffect.
+using EffectsManager__PlayEffectProc = void* (void* manager, void* made, FixedString const* effect, uint64_t level, void* scene,
+    glm::vec3 const* position, glm::quat const* rotation, float scale);
 
 END_NS()

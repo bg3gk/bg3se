@@ -86,6 +86,37 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     stats::DealDamageFunctor__ApplyDamageProc* stats__DealDamageFunctor__ApplyDamage{ nullptr };
     esv::StatsSystem__ThrowDamageEventProc* esv__StatsSystem__ThrowDamageEvent{ nullptr };
 
+    // The dice of the roll manager and the condition their rolls are asked from
+    eoc::roll::stream::DrawNumberProc* eoc__roll__stream__DrawNumber{ nullptr };
+    eoc::roll::stream::RollManager__InternalRollDiceProc* eoc__roll__stream__RollManager__InternalRollDice{ nullptr };
+    eoc::roll::stream::RollManager__InternalRollDiceWithBoostsProc* eoc__roll__stream__RollManager__InternalRollDiceWithBoosts{ nullptr };
+    eoc::roll::stream::RollManager__RollDiceWithBoostsAgainstDCProc* eoc__roll__stream__RollManager__RollDiceWithBoostsAgainstDC{ nullptr };
+    thoth::shared::Machine__CheckStaticConditionProc* thoth__shared__Machine__CheckStaticCondition{ nullptr };
+    esv::interrupt::AdjustConditionRollProc* esv__interrupt__AdjustConditionRoll{ nullptr };
+
+    // The chance of a spell's roll, as the game works it out (Ext.Stats.GetSpellRollChance)
+    eoc::spell::SpellPrototype__GetDefaultTextKeyProc* eoc__SpellPrototype__GetDefaultTextKey{ nullptr };
+    eoc::spell::SpellPrototype__GetSpellConditionsProc* eoc__SpellPrototype__GetSpellConditions{ nullptr };
+    eoc::spell::HitDesc__ConstructProc* eoc__HitDesc__Construct{ nullptr };
+    eoc::spell::HitDesc__DestroyProc* eoc__HitDesc__Destroy{ nullptr };
+    eoc::spell::ConditionContext__ConstructProc* thoth__shared__ContextData__Construct{ nullptr };
+    eoc::spell::ConditionContext__DestroyProc* thoth__shared__ContextData__Destroy{ nullptr };
+    eoc::spell::CalculateModifiableSpellRollChanceProc* eoc__spell__CalculateModifiableSpellRollChance{ nullptr };
+
+    // A client-only figure built the way the timeline system builds its dummies (Ext.ClientVisual.CreateDummy)
+    ecl::TLPreviewDummyHelpers__CreateDummyProc* ecl__TLPreviewDummyHelpers__CreateDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__SetupDummyProc* ecl__TLPreviewDummyHelpers__SetupDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__PrePrepareDummyProc* ecl__TLPreviewDummyHelpers__PrePrepareDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__LoadDummyProc* ecl__TLPreviewDummyHelpers__LoadDummy{ nullptr };
+    ecl::TLPreviewDummyHelpers__AttachDummyToSceneProc* ecl__TLPreviewDummyHelpers__AttachDummyToScene{ nullptr };
+    ecl::TLPreviewDummyHelpers__DestroyDummyProc* ecl__TLPreviewDummyHelpers__DestroyDummy{ nullptr };
+
+    // The animation events of the client's ASAnimation action state (Ext.ClientVisual.PlayAnimation)
+    ecl::AnimationBlueprintSystem__TriggerASAnimationProc* ls__AnimationBlueprintSystem__TriggerASAnimation{ nullptr };
+    ecl::AnimationBlueprintSystem__TriggerASCancelAnimationProc* ls__AnimationBlueprintSystem__TriggerASCancelAnimation{ nullptr };
+    // An effect entity made and started on the client (Ext.ClientVisual.PlayEffect)
+    ecl::EffectsManager__PlayEffectProc* ls__EffectsManager__PlayEffect{ nullptr };
+
     stats::ExecuteFunctorProc<stats::AttackTargetContextData>* esv__ExecuteStatsFunctor_AttackTargetContext{ nullptr };
     stats::ExecuteFunctorProc<stats::AttackPositionContextData>* esv__ExecuteStatsFunctor_AttackPositionContext{ nullptr };
     stats::ExecuteFunctorProc<stats::MoveContextData>* esv__ExecuteStatsFunctor_MoveContext{ nullptr };

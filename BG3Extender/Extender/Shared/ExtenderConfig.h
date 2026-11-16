@@ -35,6 +35,9 @@ struct ExtenderConfig
     bool LogRuntime{ false };
     bool SendCrashReports{ true };
     bool ForceCrashReporting{ false };
+    // Whether the crash reporter window is started after a dump is written. A tool that collects
+    // the dump itself turns this off.
+    bool LaunchCrashReporter{ true };
     bool EnableAchievements{ true };
     bool DisableLauncher{ false };
     bool DisableStoryPatching{ false };
@@ -55,6 +58,11 @@ struct ExtenderConfig
     // directly should be on a screen.
     bool KeepWindowOffScreen{ false };
 
+    // Holding Shift as the game starts opens the console whatever CreateConsole says. A tool that
+    // starts copies while somebody types elsewhere turns this off: a capital letter typed at the
+    // wrong moment put a console on their desktop. On by default, as upstream behaves.
+    bool ShiftOpensConsole{ true };
+
 #if defined(OSI_EXTENSION_BUILD)
 #if defined(_DEBUG)
     bool DeveloperMode{ true };
@@ -70,6 +78,11 @@ struct ExtenderConfig
     uint32_t LuaDebuggerPort{ 9998 };
     uint32_t DebugFlags{ 0 };
     std::wstring LogDirectory;
+    // Where crash dumps go, one set of files per crash named by process id and time
+    // (<pid>-<yyyymmdd>-<hhmmss>.dmp, .txt with the faulting module+0xRVA). Empty: one fixed file in
+    // the temporary folder, overwritten by the next crash, as upstream does. When set, crash
+    // reporting is on even with SendCrashReports off.
+    std::wstring CrashDumpDirectory;
     std::wstring LuaBuiltinResourceDirectory;
     std::string CustomProfile;
 

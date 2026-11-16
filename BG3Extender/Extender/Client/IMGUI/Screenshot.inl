@@ -30,11 +30,14 @@ class ScreenshotWriter
 public:
     // `path` is below the Script Extender folder of the player's profile, as Ext.IO.SaveFile()
     // takes it. False when a screenshot is already on its way.
-    bool Request(StringView path)
+    // `withOverlay`: the frame is taken after the extender has drawn its own layer into it, so the
+    // picture is what the screen shows; without it, the game alone.
+    bool Request(StringView path, bool withOverlay = false)
     {
         std::lock_guard _(mutex_);
         if (requested_ || state_->Writing) return false;
         path_ = STDString(path);
+        withOverlay_ = withOverlay;
         requested_ = true;
         return true;
     }
@@ -46,12 +49,14 @@ public:
 
     // The rendering thread: the file wanted this frame, if any. A request is handed out once, so
     // that the frames that pass while the file is being written are not captured again.
-    std::optional<STDString> Take()
+    // `afterOverlay` says which moment of the frame this is: before the extender draws (false) or
+    // after it (true); a request is handed out at the moment it asked for.
+    std::optional<STDString> Take(bool afterOverlay = false)
     {
         if (!requested_) return {};
 
         std::lock_guard _(mutex_);
-        if (!requested_) return {};
+        if (!requested_ || withOverlay_ != afterOverlay) return {};
         requested_ = false;
         state_->Writing = true;
         return path_;
@@ -122,6 +127,7 @@ private:
     std::atomic<bool> requested_{ false };
     std::mutex mutex_;
     STDString path_;
+    bool withOverlay_{ false };
 };
 
 END_NS()

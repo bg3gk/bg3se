@@ -33,6 +33,7 @@
 #include <Lua/Libs/ClientUI/Module.inl>
 #include <Lua/Libs/ClientIMGUI.inl>
 #include <Lua/Libs/ClientRender.inl>
+#include <Lua/Libs/ClientVisual.inl>
 
 BEGIN_NS(ecl::lua)
 
@@ -46,6 +47,7 @@ void RegisterClientLibraries()
     ui::RegisterUILib();
     imgui::RegisterIMGUILib();
     render::RegisterRenderLib();
+    visual::RegisterVisualLib();
 }
 
 END_NS()

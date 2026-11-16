@@ -12189,13 +12189,89 @@ Osi = {}
 --- @field ZoneRange number
 
 
+--- Options of Ext.Entity.SetupTracing; every field is optional.
+--- @class EntityTracingOptions
+--- Log entity and component creation/destruction from the command buffers (default true)
+--- @field TrackECB boolean?
+--- Log immediate world cache writes (default true)
+--- @field TrackImmediateWorldCache boolean?
+--- Log replicated components (default true)
+--- @field TrackReplication boolean?
+--- Log components marked modified (default false)
+--- @field TrackModifications boolean?
+--- Components whose modifications are not logged; engine names or Lua labels
+--- @field ExcludeModificationComponents string[]?
+--- Only these entities are logged, filtered where the changes are read (empty: every entity);
+--- with it, modifications are looked up for these entities only instead of every storage
+--- @field Entities EntityHandle[]?
+--- Only these component types are logged (empty: every type); engine names or Lua labels
+--- @field Components string[]?
+--- Events kept per entity and component (default 16, at most 4096); the rest only counted
+--- @field EventLimit uint32?
+--- Compare the filtered components before and after every system update and record which
+--- system changed them, on which thread (needs Entities and Components; an error otherwise).
+--- Costly: every system update fingerprints the filtered set
+--- @field TrackSystems boolean?
+
+
+--- A filtered component that changed during one system's update (TrackSystems).
+--- @class EcsECSSystemChange
+--- @field Entity EntityHandle
+--- @field Component StringView Engine name of the component
+--- @field SystemName StringView Engine name of the system that was updating
+--- @field Thread uint32
+--- @field Frame uint32
+--- @field Flush uint32
+
+
+--- One logged change of a component (EcsECSComponentLog.Events).
+--- @class EcsECSComponentEvent
+--- @field Create boolean
+--- @field Destroy boolean
+--- @field Modify boolean
+--- @field Replicate boolean
+--- @field OneFrame boolean
+--- @field ReplicatedComponent boolean
+--- @field FlagMask uint32
+--- @field Frame uint32
+--- @field Flush uint32
+--- Position among every change the tracer logged inside this flush, from 1
+--- @field Order uint32
+
+
 --- @class EcsECSChangeLog
 --- @field Entities table<EntityHandle, EcsECSEntityLog>
+--- Running count of ECS frames ended (not reset by ClearTrace)
+--- @field Frame uint32
+--- Running count of ECB flushes seen (not reset by ClearTrace)
+--- @field Flush uint32
+--- TrackSystems records, oldest first (at most 4096; the rest counted in DroppedSystemChanges)
+--- @field SystemChanges EcsECSSystemChange[]
+--- @field DroppedSystemChanges uint32
+--- Running time spent in the TrackSystems comparisons, microseconds summed over threads
+--- @field SystemTrackingMicroseconds uint64
 
 
+--- One component's changes in the trace. The flags are readable two ways: one boolean per flag
+--- (Create, Destroy, ...) and all of them as one integer, FlagMask (ComponentChangeFlags bits:
+--- Create 1, Destroy 2, Replicate 4, OneFrame 8, ReplicatedComponent 16, Modify 32).
 --- @class EcsECSComponentLog
 --- @field Create boolean
 --- @field Destroy boolean
+--- @field FlagMask uint32
+--- Times a change was logged (a modification is seen once a flush while its mark is set)
+--- @field Count uint32
+--- ECS frame and ECB flush of the latest change
+--- @field LastFrame uint32
+--- @field LastFlush uint32
+--- The changes one by one, oldest first, up to EventLimit
+--- @field Events EcsECSComponentEvent[]
+--- @field DroppedEvents uint32
+--- ECS frame of the first change logged since the trace was last cleared
+--- @field Frame uint32
+--- ECB flush of the first change logged since the trace was last cleared
+--- @field Flush uint32
+--- @field Modify boolean
 --- @field Name StringView
 --- @field OneFrame boolean
 --- @field Replicate boolean
@@ -12203,12 +12279,15 @@ Osi = {}
 --- @field Type ExtComponentType?
 
 
+--- One entity's changes in the trace. Flags as booleans (Create, Destroy, ...) and as one
+--- integer, FlagMask (EntityChangeFlags bits: Create 1, Destroy 2, Immediate 4, Dead 8, Ignore 16).
 --- @class EcsECSEntityLog
 --- @field Components table<uint16, EcsECSComponentLog>
 --- @field Create boolean
 --- @field Dead boolean
 --- @field Destroy boolean
 --- @field Entity EntityHandle
+--- @field FlagMask uint32
 --- @field Ignore boolean
 --- @field Immediate boolean
 
@@ -24131,8 +24210,39 @@ local Ext_ClientUI = {}
 
 
 
+--- An address resolved to the module that holds it.
+--- @class DebugModuleAddress
+--- @field Module string? Module file name (bg3_dx11.exe); nil when no module holds the address
+--- @field RVA int64? Offset inside the module
+--- @field Address int64 Absolute address
+
+
+--- One hit of a hardware watch (Ext.Debug.ReadWatchHits).
+--- @class DebugWatchHit
+--- @field Slot int32 Watch slot, 1-4
+--- @field Thread int32 Thread that made the access
+--- @field Before int64 The value copied when the watch was armed or at the slot's previous hit
+--- @field After int64 The value read at the hit
+--- @field Changed boolean Before ~= After; a read, or a write of the same value, leaves it false
+--- @field Owner string "Server" or "Client": the side that armed the watch
+--- ECS frame and ECB flush of the owning side at the hit, the same counters as the tracer's rows
+--- @field Frame int64
+--- @field Flush int64
+--- The owning side's extender tick count at the hit
+--- @field Poll int64
+--- @field Time int64 QueryPerformanceCounter at the hit
+--- A data breakpoint is a trap: this is the instruction AFTER the one that accessed the field
+--- @field NextInstruction DebugModuleAddress
+--- Legacy name of NextInstruction
+--- @field Instruction DebugModuleAddress
+--- Return chain from the interrupted context, up to six frames; [1] is NextInstruction
+--- @field Return DebugModuleAddress[]
+
+
 --- @class Ext_Debug
---- @field Crash fun(a1:int32)
+--- Developer mode only. Closes the game on purpose to test crash reporting: 0 divides by zero,
+--- 1 aborts, 2 writes to a null pointer, 3 overflows the stack
+--- @field Crash fun(type:int32)
 --- @field DebugBreak fun()
 --- @field DebugDumpLifetimes fun()
 --- @field DumpStack fun()
@@ -24140,6 +24250,50 @@ local Ext_ClientUI = {}
 --- @field IsDeveloperMode fun():boolean
 --- @field Reset fun(a1:boolean?, a2:boolean?)
 --- @field SetEntityRuntimeCheckLevel fun(a1:int32)
+--- Developer mode only. Arms a hardware watch on every thread: on writes, or on reads and writes
+--- when readWrite is true. size is 1, 2, 4 or 8 and the address must be aligned to it. Returns
+--- the slot (1-4) or nil when all four are taken. The watch belongs to the calling side: only that
+--- side reads its hits, lists it and clears it.
+--- @field WatchWrite fun(address:int64, size:int32, readWrite:boolean?):int32?
+--- Developer mode only. The calling side's hits recorded since its last read, oldest first.
+--- @field ReadWatchHits fun(max:int32?):DebugWatchHit[]
+--- Developer mode only. The number of the calling side's hits waiting. Not needed for polling:
+--- the extender counts its ticks, re-arms new threads and applies freezes itself.
+--- @field WatchPoll fun():int64
+--- Developer mode only. Clears one slot of the calling side, or all of its slots without an
+--- argument; true if anything was cleared. The other side's watches are left alone.
+--- @field ClearWatch fun(slot:int32?):boolean
+--- Developer mode only. The calling side's watches, or both sides' with all:
+--- { { Slot, Owner, Address, Size, ReadWrite, Value } }
+--- @field ListWatches fun(all:boolean?):table[]
+--- Developer mode only. Address of a component's field: { Address, Offset, ComponentAddress, Type, Size, Scalar }
+--- @field GetFieldAddress fun(entity:EntityHandle, component:string, field:string):table?
+--- Developer mode only. { Address, InlineSize, TotalSize } of a component, mapped or not
+--- @field GetComponentAddress fun(entity:EntityHandle, component:string):table?
+--- Developer mode only. { Module, RVA, Base, Size } of the module holding the address
+--- @field ModuleFromAddress fun(address:int64):table?
+--- Developer mode only. Absolute address of module+rva
+--- @field AddressFromModule fun(module:string, rva:int64):int64?
+--- Developer mode only. A scalar (int8..uint64, float, double, bool) read from committed memory
+--- @field ReadValue fun(address:int64, type:string):number|boolean|nil
+--- Developer mode only. A scalar written to committed writable data memory (never a code page)
+--- @field WriteValue fun(address:int64, type:string, value:number|boolean):boolean
+--- @field ReadMemory fun(address:int64, size:int32):string?
+--- @field WriteMemory fun(address:int64, bytes:string):boolean
+--- @field GetModuleInfo fun():table
+--- @field GetComponentTypes fun():table[]
+--- @field GetSystemTypes fun():table[]
+--- @field GetSystemAddress fun(name:string):table?
+--- @field GetComponentHolders fun(name:string, max:int32?):EntityHandle[]
+--- @field GetComponentCounts fun():table<string, integer>
+--- Developer mode only. Holds a scalar at an address, rewritten by the extender every tick of the
+--- calling side; returns the slot or nil
+--- @field Freeze fun(address:int64, type:string, value:number|boolean):int32?
+--- @field FreezeApply fun():int32
+--- Clears the calling side's freezes (or one slot of its own)
+--- @field ClearFreezes fun(slot:int32?):boolean
+--- The calling side's freezes, or both sides' with all: { { Slot, Owner, Address, Size } }
+--- @field ListFreezes fun(all:boolean?):table[]
 local Ext_Debug = {}
 
 
@@ -24168,6 +24322,10 @@ local Ext_Debug = {}
 --- @field OnDestroyOnce fun(a1:ExtComponentType, a2:FunctionRef, a3:EntityHandle?):uint64
 --- @field OnSystemPostUpdate fun(a1:ExtSystemType, a2:FunctionRef, a3:boolean?):uint64
 --- @field OnSystemUpdate fun(a1:ExtSystemType, a2:FunctionRef, a3:boolean?):uint64
+--- Sets what the tracer records (developer mode). The table is optional; missing fields keep
+--- their defaults. Component names are the engine's ("eoc::HealthComponent") or Lua labels
+--- ("Health"); an unknown name is an error and leaves the tracer as it was.
+--- @field SetupTracing fun(options:EntityTracingOptions?)
 --- @field Subscribe fun(a1:ExtComponentType, a2:FunctionRef, a3:EntityHandle?, a4:uint64?):uint64?
 --- @field Unsubscribe fun(a1:uint64):boolean
 --- @field UuidToHandle fun(a1:Guid):EntityHandle
