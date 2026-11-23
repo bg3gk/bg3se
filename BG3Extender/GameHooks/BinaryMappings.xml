@@ -447,17 +447,11 @@
          ecl::GameControl::ShowMovie (bg3_dx11.exe+0x189EFE0) with the load state's names, playlist
          name and flags. AllowFail: a patch that moves it costs the timeline's video rows only; the
          startup playlist is written without it. -->
+    <!-- code:ecl::GameControl::m_ptr; bg3_dx11.exe+0x60089B0; read in ecl::LoadStateMovie::Start (checked in bg3.exe, bg3_dx11.exe) -->
     <Mapping Name="ecl::LoadStateMovie::Start" AllowFail="true">
-      0f b6 47 2d // movzx eax, byte ptr [rdi+2Dh]
-      @ref1 48 8b 0d ?? ?? ?? ?? // mov rcx, cs:ecl__gGameControl
-      66 89 44 24 40 // mov [rsp+40h], ax
-      48 8d 44 24 40 // lea rax, [rsp+40h]
-      48 89 44 24 28 // mov [rsp+28h], rax
-      0f b6 47 2c // movzx eax, byte ptr [rdi+2Ch]
-      88 44 24 20 // mov [rsp+20h], al
-      e8 ?? ?? ?? ?? // call ecl::GameControl::ShowMovie
-      48 8b 5c 24 48 // mov rbx, [rsp+48h]
-      c6 47 2e 01 // mov byte ptr [rdi+2Eh], 1
+      @ref1 48 8b 0d ?? ?? ?? ?? // mov rcx,[rel 1460089B0h]
+      66 89 44 24 40 // mov [rsp+40h],ax
+      48 8d 44 24 40 // lea rax,[rsp+40h]
       <Target Type="Indirect" Offset="@ref1" Symbol="ecl__gGameControl" />
     </Mapping>
 
@@ -466,18 +460,10 @@
          pack-file calls, the manager's global is loaded and the state's progress total (+0x38)
          stored at its +0x40. Bytes read live (dx11). AllowFail: a patch that moves it costs the
          timeline's load-state events only. -->
+    <!-- code:ls::LoadingScreenManager::m_ptr; bg3_dx11.exe+0x6047B40; read in ecl::GameStateStartLoading::Enter (checked in bg3.exe, bg3_dx11.exe) -->
     <Mapping Name="ecl::GameStateStartLoading::Enter" AllowFail="true">
-      45 33 c0 // xor r8d, r8d
-      48 8b cb // mov rcx, rbx
-      e8 ?? ?? ?? ?? // call
-      48 8b cb // mov rcx, rbx
-      e8 ?? ?? ?? ?? // call
-      @ref1 4c 8b 35 ?? ?? ?? ?? // mov r14, cs:ls__gLoadingScreenManager
-      8b 45 38 // mov eax, [rbp+38h]
-      49 89 46 40 // mov [r14+40h], rax
-      33 ff // xor edi, edi
-      48 8b 05 ?? ?? ?? ?? // mov rax, cs:...
-      40 38 78 40 // cmp [rax+40h], dil
+      @ref1 4c 8b 35 ?? ?? ?? ?? // mov r14,[rel 146047B40h]
+      8b 45 38 // mov eax,[rbp+38h]
       <Target Type="Indirect" Offset="@ref1" Symbol="ls__gLoadingScreenManager" />
     </Mapping>
 
@@ -486,6 +472,7 @@
          25605617 and found once in bg3.exe (`gatekit symbols signature`). AllowFail: a patch that
          moves them costs those timeline rows only. -->
     <!-- bg3_dx11.exe+0x5878A0: the Toolkit's App::InitGame (slot +0xB0 of App's vtable). -->
+    <!-- code:App::InitGame; bg3.exe+0x588800, bg3_dx11.exe+0x5878A0 -->
     <Mapping Name="App::InitGame" AllowFail="true">
       @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
       48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
@@ -506,6 +493,7 @@
     </Mapping>
 
     <!-- bg3_dx11.exe+0x586A80: the Toolkit's App::InitializeResourceManager. -->
+    <!-- code:App::InitializeResourceManager; bg3.exe+0x5879E0, bg3_dx11.exe+0x586A80 -->
     <Mapping Name="App::InitializeResourceManager" AllowFail="true">
       @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
       48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
@@ -526,6 +514,7 @@
 
     <!-- bg3_dx11.exe+0x41091A0: ls::PackedFileManager::LoadPackFiles (the only user of "MinData",
          as the macOS build's function of that name; called by BaseApp::Start, +0x3AC0C70). -->
+    <!-- code:ls::PackedFileManager::LoadPackFiles; bg3.exe+0x413F4D0, bg3_dx11.exe+0x41091A0 -->
     <Mapping Name="ls::PackedFileManager::LoadPackFiles" AllowFail="true">
       @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
       48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
@@ -545,6 +534,7 @@
     </Mapping>
 
     <!-- bg3_dx11.exe+0x412EC50: the Toolkit's ls::TranslatedStringRepository::LoadFromContextFolder. -->
+    <!-- code:ls::TranslatedStringRepository::LoadFromContextFolder; bg3.exe+0x41650D0, bg3_dx11.exe+0x412EC50 -->
     <Mapping Name="ls::TranslatedStringRepository::LoadFromContextFolder" AllowFail="true">
       @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
       55 // push rbp
@@ -561,6 +551,248 @@
       48 89 45 1f // mov [rbp + 0x1f], rax
       44 88 4c 24 31 // mov [rsp + 0x31], r9b
       <Target Type="Absolute" Offset="@start" Symbol="ls__TranslatedStringRepository__LoadFromContextFolder" />
+    </Mapping>
+
+    <!-- The hint list (Extender/Client/ModHints.inl): in App::InitializeResourceManager
+         (bg3_dx11.exe+0x586A80, the site at +0x58735E) the game loads ecl::HintManager::m_ptr
+         (bg3_dx11.exe+0x6007A30), zeroes its count (+0x14) and, when the path is not empty, calls
+         ls::FileFormatIO::LoadFile (bg3_dx11.exe+0x411A360) with it and Path(Hints/Hints.lsx). Bytes
+         read live (dx11). AllowFail: a patch that moves it costs the mods' hints only. -->
+    <!-- code:ecl::HintManager::m_ptr; bg3_dx11.exe+0x6007A30; read in App::InitializeResourceManager (checked in bg3.exe, bg3_dx11.exe) -->
+    <Mapping Name="ecl::HintManager::m_ptr" AllowFail="true">
+      @ref1 48 8b 0d ?? ?? ?? ?? // mov rcx,[rel 146007A30h]
+      44 89 71 14 // mov [rcx+14h],r14d
+      <Target Type="Indirect" Offset="@ref1" Symbol="ecl__HintManager" />
+    </Mapping>
+
+    <!-- code:ls::FileFormatIO::LoadFile; bg3.exe+0x41506F0, bg3_dx11.exe+0x411A360 -->
+    <Mapping Name="ls::FileFormatIO::LoadFile" AllowFail="true">
+      @start 48 89 5c 24 08 // mov [rsp+8],rbx
+      56 // push rsi
+      57 // push rdi
+      41 56 // push r14
+      48 83 ec 20 // sub rsp,20h
+      48 8b fa // mov rdi,rdx
+      4c 8b f1 // mov r14,rcx
+      <Target Type="Absolute" Offset="@start" Symbol="ls__FileFormatIO__LoadFile" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x1609A50: gui::DCLoadingScreen::OnAdvanceHintCommand, the loading screen's
+         draw of a hint (wrapped for the start's timeline only). Prologue, unique in bg3_dx11.exe of
+         build 25605617 and found once in bg3.exe (`gatekit symbols signature`). AllowFail: a patch
+         that moves it costs the timeline's HintShown rows only. -->
+    <!-- code:gui::DCLoadingScreen::OnAdvanceHintCommand; bg3.exe+0x160AA30, bg3_dx11.exe+0x1609A50 -->
+    <Mapping Name="gui::DCLoadingScreen::OnAdvanceHintCommand" AllowFail="true">
+      @start 4c 8b dc // mov r11, rsp
+      55 // push rbp
+      56 // push rsi
+      41 56 // push r14
+      41 57 // push r15
+      48 83 ec 78 // sub rsp, 0x78
+      4c 8b b1 70 03 00 00 // mov r14, qword ptr [rcx + 0x370]
+      <Target Type="Absolute" Offset="@start" Symbol="gui__DCLoadingScreen__OnAdvanceHintCommand" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x12EDA00: gui::LSImageSequence::OnLoaded, the loading screen's slideshow made
+         ready: it shuffles its images (+0x278, count +0x284) when Shuffle is set and builds the one
+         storyboard that changes them (wrapped for the start's timeline only). Prologue, unique in
+         bg3_dx11.exe of build 25605617 and found once in bg3.exe (`gatekit symbols signature`).
+         AllowFail: a patch that moves it costs the timeline's WallpaperSet rows only. -->
+    <!-- code:gui::LSImageSequence::OnLoaded; bg3.exe+0x12EEA10, bg3_dx11.exe+0x12EDA00 -->
+    <Mapping Name="gui::LSImageSequence::OnLoaded" AllowFail="true">
+      @start 48 8b c4 // mov rax, rsp
+      48 89 58 10 // mov qword ptr [rax + 0x10], rbx
+      48 89 70 18 // mov qword ptr [rax + 0x18], rsi
+      48 89 78 20 // mov qword ptr [rax + 0x20], rdi
+      55 // push rbp
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 90 // lea rbp, [rsp - 0x70]
+      48 81 ec 70 01 00 00 // sub rsp, 0x170
+      0f 29 70 c8 // movaps xmmword ptr [rax - 0x38], xmm6
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      <Target Type="Absolute" Offset="@start" Symbol="gui__LSImageSequence__OnLoaded" />
+    </Mapping>
+
+    <!-- The mods' interface merged early (Extender/Client/EarlyModUI.inl): gui::GameUI::UpdateFromUI
+         (bg3_dx11.exe+0x1210210, wrapped) and the functions its merge block calls, in its order:
+         ui::ModManager::RegisterMods (+0x20E56A0), ui::TextureProvider::LoadTextureMetadataInternal
+         (+0x20F1260), Noesis::GUI::GetApplicationResources (+0x4708D30; the block calls it through a
+         one-jump thunk, +0x45C3600), Noesis::ResourceDictionary::GetMergedDictionaries (+0x45C3E00),
+         gui::GameUI::ResetModdedLibs (+0x12131F0) and ui::StateMachine::ApplyMods (+0x20CC980). Names
+         by pairing the block with macOS gui::GameUI::ProcessLoadingModsFromUI. Prologues, each unique
+         in bg3_dx11.exe of build 25605617 and found once in bg3.exe (`gatekit symbols signature`).
+         AllowFail: a patch that moves one costs the early merge only (the game merges at its own time). -->
+    <!-- code:gui::GameUI::UpdateFromUI; bg3.exe+0x1211230, bg3_dx11.exe+0x1210210 -->
+    <Mapping Name="gui::GameUI::UpdateFromUI" AllowFail="true">
+      @start 40 55 // push rbp
+      53 // push rbx
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 e1 // lea rbp, [rsp - 0x1f]
+      48 81 ec a8 00 00 00 // sub rsp, 0xa8
+      48 8b f1 // mov rsi, rcx
+      <Target Type="Absolute" Offset="@start" Symbol="gui__GameUI__UpdateFromUI" />
+    </Mapping>
+
+    <!-- code:ui::ModManager::RegisterMods; bg3.exe+0x20E64C0, bg3_dx11.exe+0x20E56A0 -->
+    <Mapping Name="ui::ModManager::RegisterMods" AllowFail="true">
+      @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d ac 24 a0 ea ff ff // lea rbp, [rsp - 0x1560]
+      <Target Type="Absolute" Offset="@start" Symbol="ui__ModManager__RegisterMods" />
+    </Mapping>
+
+    <!-- code:ui::TextureProvider::LoadTextureMetadataInternal; bg3.exe+0x20F2080, bg3_dx11.exe+0x20F1260 -->
+    <Mapping Name="ui::TextureProvider::LoadTextureMetadataInternal" AllowFail="true">
+      @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
+      48 89 74 24 20 // mov qword ptr [rsp + 0x20], rsi
+      55 // push rbp
+      57 // push rdi
+      41 54 // push r12
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 c9 // lea rbp, [rsp - 0x37]
+      48 81 ec 00 01 00 00 // sub rsp, 0x100
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      48 33 c4 // xor rax, rsp
+      48 89 45 27 // mov qword ptr [rbp + 0x27], rax
+      48 8b fa // mov rdi, rdx
+      <Target Type="Absolute" Offset="@start" Symbol="ui__TextureProvider__LoadTextureMetadataInternal" />
+    </Mapping>
+
+    <!-- code:Noesis::GUI::GetApplicationResources; bg3.exe+0x4723080, bg3_dx11.exe+0x4708D30 -->
+    <Mapping Name="Noesis::GUI::GetApplicationResources" AllowFail="true">
+      @start b8 28 00 00 00 // mov eax,28h
+      e8 ?? ?? ?? ?? // call 0000000144E7BBE0h
+      48 2b e0 // sub rsp,rax
+      48 8b 05 ?? ?? ?? ?? // mov rax,[rel 146204AA0h]
+      48 85 c0 // test rax,rax
+      75 ?? // jne short 00000001447230BDh
+      b9 a8 02 00 00 // mov ecx,2A8h
+      <Target Type="Absolute" Offset="@start" Symbol="Noesis__GUI__GetApplicationResources" />
+    </Mapping>
+
+    <!-- code:Noesis::ResourceDictionary::GetMergedDictionaries; bg3.exe+0x45DE150, bg3_dx11.exe+0x45C3E00 -->
+    <Mapping Name="Noesis::ResourceDictionary::GetMergedDictionaries" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
+      57 // push rdi
+      b8 60 00 00 00 // mov eax, 0x60
+      e8 ?? ?? ?? ?? // call __chkstk
+      48 2b e0 // sub rsp, rax
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      48 33 c4 // xor rax, rsp
+      48 89 44 24 50 // mov qword ptr [rsp + 0x50], rax
+      48 8b f9 // mov rdi, rcx
+      48 83 b9 68 02 00 00 00 // cmp qword ptr [rcx + 0x268], 0
+      <Target Type="Absolute" Offset="@start" Symbol="Noesis__ResourceDictionary__GetMergedDictionaries" />
+    </Mapping>
+
+    <!-- code:gui::GameUI::ResetModdedLibs; bg3.exe+0x1214200, bg3_dx11.exe+0x12131F0 -->
+    <Mapping Name="gui::GameUI::ResetModdedLibs" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 83 ec 40 // sub rsp, 0x40
+      4c 8b e2 // mov r12, rdx
+      4c 8b f1 // mov r14, rcx
+      <Target Type="Absolute" Offset="@start" Symbol="gui__GameUI__ResetModdedLibs" />
+    </Mapping>
+
+    <!-- code:ui::StateMachine::ApplyMods; bg3.exe+0x20CD7A0, bg3_dx11.exe+0x20CC980 -->
+    <Mapping Name="ui::StateMachine::ApplyMods" AllowFail="true">
+      @start 40 53 // push rbx
+      55 // push rbp
+      41 57 // push r15
+      48 83 ec 30 // sub rsp, 0x30
+      48 8b 41 08 // mov rax, qword ptr [rcx + 8]
+      <Target Type="Absolute" Offset="@start" Symbol="ui__StateMachine__ApplyMods" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x3BC88E0: ls::ModManager::LoadModFromSettings, the game's resolver of the mod
+         list (Extender/Client/GameModules.inl): the manager's settings (+0x1C0) made into its active
+         module (+0x38) and, when that differs from the one it holds, its load-ordered modules
+         (+0x158, ls::ModManager::BuildLoadOrderedModules). Called by the game in
+         ecl::ModManagerClient::SaveSettingsAndReload (the mod manager's toggles) and when the
+         profile changes. Name by pairing with macOS. Prologue, unique in bg3_dx11.exe of build
+         25605617 and found once in bg3.exe (`gatekit symbols signature`). AllowFail: a patch that
+         moves it leaves the early readers on the settings' order. -->
+    <!-- code:ls::ModManager::LoadModFromSettings; bg3.exe+0x3BC8CC0, bg3_dx11.exe+0x3BC88E0 -->
+    <Mapping Name="ls::ModManager::LoadModFromSettings" AllowFail="true">
+      @start 40 53 // push rbx
+      48 81 ec 70 01 00 00 // sub rsp, 0x170
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      48 33 c4 // xor rax, rsp
+      48 89 84 24 60 01 00 00 // mov [rsp+0x160], rax
+      48 8b d9 // mov rbx, rcx
+      48 8d 05 ?? ?? ?? ?? // lea rax, [the vtable of its local copy of the settings]
+      <Target Type="Absolute" Offset="@start" Symbol="ls__ModManager__LoadModFromSettings" />
+    </Mapping>
+
+    <!-- The client's mod manager's enable and disable, the calls the game's mod manager page makes
+         (gui::DCModBrowser::ToggleModEnabled), for Ext.Mod.SetEnabled and Ext.Mod.SetOrder
+         (Lua/Libs/ClientMod.inl). Each changes the settings, then saves modsettings.lsx and resolves
+         the list again (ecl::ModManagerClient::SaveSettingsAndReload). Names by pairing with macOS
+         and EoCClient.dll. AllowFail: a patch that moves them leaves Ext.Mod's changes refused. -->
+    <!-- code:ecl::ModManagerClient::AddMod; bg3.exe+0x181BB80, bg3_dx11.exe+0x181B020 -->
+    <Mapping Name="ecl::ModManagerClient::AddMod" AllowFail="true">
+      @start 48 89 5c 24 08 // mov [rsp+8],rbx
+      48 89 74 24 10 // mov [rsp+10h],rsi
+      57 // push rdi
+      48 83 ec 20 // sub rsp,20h
+      48 8b f9 // mov rdi,rcx
+      48 8b f2 // mov rsi,rdx
+      48 81 c1 c8 01 00 00 // add rcx,1C8h
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__ModManagerClient__AddMod" />
+    </Mapping>
+
+    <!-- code:ecl::ModManagerClient::RemoveMod; bg3.exe+0x181BCF0, bg3_dx11.exe+0x181B190 -->
+    <Mapping Name="ecl::ModManagerClient::RemoveMod" AllowFail="true">
+      @start 48 89 5c 24 08 // mov [rsp+8],rbx
+      48 89 74 24 10 // mov [rsp+10h],rsi
+      57 // push rdi
+      48 83 ec 20 // sub rsp,20h
+      48 8b f9 // mov rdi,rcx
+      48 8b f2 // mov rsi,rdx
+      48 81 c1 c0 01 00 00 // add rcx,1C0h
+      <Target Type="Absolute" Offset="@start" Symbol="ecl__ModManagerClient__RemoveMod" />
+    </Mapping>
+
+    <!-- The game's read of a command-line argument's value (ecl::GameStateInit::Do reads
+         -loadSaveGame through it, ecl::EocClient::Load -testLoadLevel): wrapped so that a value
+         is given in UTF-8 from the wide command line (Extender/Client/DirectSaveLoad.h, the switch
+         WideCommandLine). AllowFail: a patch that moves it leaves the values as the game reads them. -->
+    <!-- code:ls::ArgumentString::GetValue; bg3.exe+0x411B380, bg3_dx11.exe+0x40E4EE0 -->
+    <Mapping Name="ls::ArgumentString::GetValue" AllowFail="true">
+      @start 40 53 // push rbx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 56 // push r14
+      48 83 ec 50 // sub rsp,50h
+      48 8b 05 ?? ?? ?? ?? // mov rax,[rel 145EC3D60h]
+      48 33 c4 // xor rax,rsp
+      48 89 44 24 48 // mov [rsp+48h],rax
+      49 8b d8 // mov rbx,r8
+      <Target Type="Absolute" Offset="@start" Symbol="ls__ArgumentString__GetValue" />
     </Mapping>
 
     <!-- The dice of the roll manager (Lua/Server/RollEvents.inl).

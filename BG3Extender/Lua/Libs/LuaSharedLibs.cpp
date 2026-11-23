@@ -35,6 +35,8 @@
 #include <Lua/Libs/ClientRender.inl>
 #include <Lua/Libs/ClientVisual.inl>
 #include <Lua/Libs/ClientStartupVideos.inl>
+#include <Lua/Libs/ClientHints.inl>
+#include <Lua/Libs/ClientMod.inl>
 
 BEGIN_NS(ecl::lua)
 
@@ -50,6 +52,8 @@ void RegisterClientLibraries()
     render::RegisterRenderLib();
     visual::RegisterVisualLib();
     startup_videos::RegisterStartupVideosLib();
+    hints::RegisterHintsLib();
+    mod::RegisterClientModLib();
 }
 
 END_NS()

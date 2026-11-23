@@ -604,12 +604,16 @@ void OnStartLoading(void* state)
         gRecord.AvailableMods = modManager->AvailableMods.size();
         gRecord.LoadOrderedModules = modManager->LoadOrderedModules.size();
 
-        // modsettings.lsx's order is the load order.
-        for (auto const& mod : modManager->Settings.Mods) {
+        // The game's module list, in its load order (GameModules.h).
+        auto const& list = game_modules::OnStartLoading();
+        gRecord.ModuleListSource = list.Source;
+        gRecord.ModuleListMoment = list.Moment;
+        warnings.insert(warnings.end(), list.Warnings.begin(), list.Warnings.end());
+        for (auto const& mod : list.Modules) {
             if (mod.Folder.empty()) continue;
 
             ModSeen seen;
-            seen.Mod.Uuid = Lower(mod.ModuleUUIDString ? ToSTD(mod.ModuleUUIDString.GetStringView()) : mod.ModuleUUID.ToString());
+            seen.Mod.Uuid = mod.Uuid;
             seen.Mod.Name = mod.Name;
             seen.Mod.Folder = mod.Folder;
 

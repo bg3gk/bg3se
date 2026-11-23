@@ -1,4 +1,5 @@
 #include <Extender/Client/StartupVideos.h>
+#include <Extender/Client/GameModules.h>
 #include <Extender/Shared/StartupTimeline.h>
 
 /// <lua_module>StartupVideos</lua_module>
@@ -57,8 +58,10 @@ namespace
 
 // Ext.StartupVideos.GetPlaylist() -> { Entries = { { Id, Video, Source, Mod?, ReplacedBy? } },
 // Warnings, Enabled, Written, Game, Mods = { { Uuid, ModTable?, Name, Folder, MetaReadable,
-// ConfigReadable, DeclarationFound } }, ... }:
-// the composition the game's first StartLoading was given, and what it was made from.
+// ConfigReadable, DeclarationFound } }, ModuleList = { Source, Moment }, ... }:
+// the composition the game's first StartLoading was given, and what it was made from. Mods are the
+// modules of the game's module list, in its load order; ModuleList names that list
+// (Ext.StartupVideos.GetModuleLists gives it whole).
 UserReturn GetPlaylist(lua_State* L)
 {
     auto const& rec = GetStartupRecord();
@@ -72,6 +75,10 @@ UserReturn GetPlaylist(lua_State* L)
     settable(L, "SettingsMods", rec.SettingsMods);
     settable(L, "AvailableMods", rec.AvailableMods);
     settable(L, "LoadOrderedModules", rec.LoadOrderedModules);
+    lua_createtable(L, 0, 2);
+    settable(L, "Source", rec.ModuleListSource);
+    settable(L, "Moment", rec.ModuleListMoment);
+    lua_setfield(L, -2, "ModuleList");
 
     lua_createtable(L, (int)rec.Mods.size(), 0);
     int i = 1;
@@ -164,21 +171,54 @@ namespace
 // - LoadState: Name (the active load state's type as module+0xRVA of its vtable, or none);
 // - LoadingScreenShown, LoadingScreenHidden;
 // - Fade: From, To (None, FadingOut, Black, FadingIn) of the client game state machine;
-// - UIState: Name, Parent, Depth, Change ("Entered" or "Left") of the interface's state machine.
+// - UIState: Name, Parent, Depth, Change ("Entered" or "Left") of the interface's state machine;
+// - LoadingProgress: Progress, ProgressTotal, Name ("LocalProgress/LocalProgressTotal") of the
+//   loading screen manager (LocalProgress in tenths of its total);
+// - HintShown: Name (the HintKey), Index, Count: the hint the loading screen drew;
+// - HintsComposed: GameCount, Count, Name, Moment: the mods' hints composed into the game's list
+//   (Moment "StartLoading": the first composition; "reload": composed again after the game loaded
+//   another module list; "installed": that composition put in the game's list, on the
+//   interface's thread);
+// - ModuleList: Modules, SettingsCount, Name (where the list came from and whether it is the one
+//   taken before), Moment ("StartLoading", "LoadModule"): the game's module list taken for the
+//   early readers (Ext.StartupVideos.GetModuleLists);
+// - TimelinePlayback: Name (the timeline resource), Type (TimelineType), From, To (PlaybackState,
+//   or -1 when the timeline entity appeared / went away).
+// - WallpaperSet: Index (1..), Count, Name (the image), Slot, FadeIn, FadeOut (milliseconds): one
+//   row per image of a slideshow when its control is made ready, in the order it will show them;
+// - WallpaperShown: Name (the image), Index (its position in the set, 0 for a single image),
+//   Count (the set's size, 1 for a single image), Look ("sequence" or "single"): the wallpaper a
+//   live element shows changed;
+// - WallpaperGone: the same fields, of the image last shown: the wallpaper's element left the
+//   interface (its widget went);
+// - the three wallpaper rows carry Owner (the x:Name of the widget the element lies in: `root` for
+//   the game's loading screen, a mod's page by its own name), OwnerData (the type of that widget's
+//   DataContext) and Visible (the element's IsVisible);
+// - EarlyModInterface: Merge ("early": the mods' interface merged at the first StartLoading;
+//   "game": the game's own merge), Modules (the modules given to ui::ModManager::RegisterMods),
+//   Registered (its answer; absent when not run), Faulted, Name (the modules' folders or why it was
+//   not run).
+// Every row carries Row, its number in the record (1..). Timeline(since) gives only the rows after
+// row `since` (a cheap read for a caller that keeps where it stopped); the list's field Count is
+// the number of rows recorded so far.
 // Events past the record's capacity are dropped; the count is in the list's field Dropped.
-UserReturn Timeline(lua_State* L)
+UserReturn Timeline(lua_State* L, std::optional<int64_t> since)
 {
     namespace tl = bg3se::startup_timeline;
     static char const* const sides[] = { "Extender", "Client", "Server" };
     static char const* const whats[] = { "ExtenderLoaded", "State", "PlaylistWritten", "VideoStarted",
         "VideoStopped", "LoadState", "LoadingScreenShown", "LoadingScreenHidden", "Fade", "UIState",
-        "Step", "FileOpened" };
+        "Step", "FileOpened", "LoadingProgress", "HintShown", "HintsComposed", "TimelinePlayback",
+        "WallpaperSet", "WallpaperShown", "WallpaperGone", "EarlyModInterface", "ModuleList" };
 
     auto count = tl::Count();
-    lua_createtable(L, (int)count, 1);
-    for (uint32_t i = 0; i < count; i++) {
+    uint32_t first = 0;
+    if (since && *since > 0) first = (*since >= (int64_t)count) ? count : (uint32_t)*since;
+    lua_createtable(L, (int)(count - first), 2);
+    for (uint32_t i = first; i < count; i++) {
         auto const& e = tl::Get(i);
-        lua_createtable(L, 0, 8);
+        lua_createtable(L, 0, 9);
+        settable(L, "Row", (int64_t)i + 1);
         settable(L, "Ms", e.Ms);
         settable(L, "Side", sides[(unsigned)e.EventSide]);
         settable(L, "What", whats[(unsigned)e.Kind]);
@@ -209,6 +249,67 @@ UserReturn Timeline(lua_State* L)
             if (e.From == tl::StepEnd) settable(L, "Phase", "End");
             break;
 
+        case tl::What::LoadingProgress:
+            settable(L, "Progress", e.From);
+            settable(L, "ProgressTotal", e.To);
+            break;
+
+        case tl::What::HintShown:
+            settable(L, "Index", e.From);
+            settable(L, "Count", e.To);
+            break;
+
+        case tl::What::HintsComposed:
+            settable(L, "GameCount", e.From);
+            settable(L, "Count", e.To);
+            if (e.Parent[0] != 0) settable(L, "Moment", e.Parent);
+            break;
+
+        case tl::What::ModuleList:
+            settable(L, "Modules", e.From);
+            settable(L, "SettingsCount", e.To);
+            if (e.Parent[0] != 0) settable(L, "Moment", e.Parent);
+            break;
+
+        case tl::What::TimelinePlayback:
+            settable(L, "From", e.From);
+            settable(L, "To", e.To);
+            if (e.Parent[0] != 0) settable(L, "Type", (int32_t)atoi(e.Parent));
+            break;
+
+        case tl::What::WallpaperSet:
+        {
+            settable(L, "Index", e.From);
+            settable(L, "Count", e.To);
+            long long slot{ 0 }, fadeIn{ 0 }, fadeOut{ 0 };
+            if (sscanf_s(e.Parent, "%lld/%lld/%lld", &slot, &fadeIn, &fadeOut) == 3) {
+                settable(L, "Slot", (int64_t)slot);
+                settable(L, "FadeIn", (int64_t)fadeIn);
+                settable(L, "FadeOut", (int64_t)fadeOut);
+            }
+            settable(L, "Owner", e.Owner);
+            settable(L, "OwnerData", e.OwnerData);
+            if (e.Visible >= 0) settable(L, "Visible", e.Visible != 0);
+            break;
+        }
+
+        case tl::What::WallpaperShown:
+        case tl::What::WallpaperGone:
+            settable(L, "Index", e.From);
+            settable(L, "Count", e.To);
+            if (e.Parent[0] != 0) settable(L, "Look", e.Parent);
+            settable(L, "Owner", e.Owner);
+            settable(L, "OwnerData", e.OwnerData);
+            if (e.Visible >= 0) settable(L, "Visible", e.Visible != 0);
+            break;
+
+        case tl::What::EarlyModInterface:
+            settable(L, "Merge", e.Parent);
+            settable(L, "Modules", e.From);
+            if (e.To >= 0) settable(L, "Registered", e.To != 0);
+            if (e.To == -2) settable(L, "Faulted", true);
+            break;
+
         default:
             break;
         }
@@ -219,9 +320,45 @@ UserReturn Timeline(lua_State* L)
             settable(L, "FileOpens", (int64_t)e.FileOpens);
         }
         if (e.Name[0] != 0) settable(L, "Name", e.Name);
-        lua_rawseti(L, -2, (int)i + 1);
+        lua_rawseti(L, -2, (int)(i - first) + 1);
     }
+    settable(L, "Count", (int64_t)count);
     settable(L, "Dropped", tl::Dropped());
+    return 1;
+}
+
+// Ext.StartupVideos.GetModuleLists() -> { { Source, Moment, Ms, SettingsCount, Modules = { { Uuid,
+// Name, Folder } }, Warnings }, ... }: every game's module list the early readers took
+// (Extender/Client/GameModules.h), in order: the first StartLoading's (Source "LoadModFromSettings":
+// the game's resolver called there; "Settings": the fallback, modsettings.lsx's own order), then
+// one at the end of each client LoadModule (Source "LoadOrderedModules": what the game loaded).
+// The startup videos, the mods' hints and the mods' interface on the first loading screen read the
+// first; the hints are composed again from a later one when it differs.
+UserReturn GetModuleLists(lua_State* L)
+{
+    auto lists = bg3se::ecl::game_modules::History();
+    lua_createtable(L, (int)lists.size(), 0);
+    int i = 1;
+    for (auto const& list : lists) {
+        lua_createtable(L, 0, 6);
+        settable(L, "Source", list.Source);
+        settable(L, "Moment", list.Moment);
+        settable(L, "Ms", list.Ms);
+        settable(L, "SettingsCount", list.SettingsCount);
+        lua_createtable(L, (int)list.Modules.size(), 0);
+        int j = 1;
+        for (auto const& m : list.Modules) {
+            lua_createtable(L, 0, 3);
+            settable(L, "Uuid", m.Uuid);
+            settable(L, "Name", m.Name);
+            settable(L, "Folder", m.Folder);
+            lua_rawseti(L, -2, j++);
+        }
+        lua_setfield(L, -2, "Modules");
+        PushStrings(L, list.Warnings);
+        lua_setfield(L, -2, "Warnings");
+        lua_rawseti(L, -2, i++);
+    }
     return 1;
 }
 
@@ -232,6 +369,7 @@ void RegisterStartupVideosLib()
     MODULE_FUNCTION(GetPlaylist)
     MODULE_FUNCTION(Compose)
     MODULE_FUNCTION(Timeline)
+    MODULE_FUNCTION(GetModuleLists)
     END_MODULE()
 }
 

@@ -139,6 +139,21 @@ namespace bg3se
         SYM_OFF(App__InitializeResourceManager);
         SYM_OFF(ls__PackedFileManager__LoadPackFiles);
         SYM_OFF(ls__TranslatedStringRepository__LoadFromContextFolder);
+        SYM_OFF(ls__ArgumentString__GetValue);
+        SYM_OFF(ecl__HintManager);
+        SYM_OFF(ls__FileFormatIO__LoadFile);
+        SYM_OFF(gui__DCLoadingScreen__OnAdvanceHintCommand);
+        SYM_OFF(gui__LSImageSequence__OnLoaded);
+        SYM_OFF(gui__GameUI__UpdateFromUI);
+        SYM_OFF(ui__ModManager__RegisterMods);
+        SYM_OFF(ui__TextureProvider__LoadTextureMetadataInternal);
+        SYM_OFF(Noesis__GUI__GetApplicationResources);
+        SYM_OFF(Noesis__ResourceDictionary__GetMergedDictionaries);
+        SYM_OFF(gui__GameUI__ResetModdedLibs);
+        SYM_OFF(ui__StateMachine__ApplyMods);
+        SYM_OFF(ls__ModManager__LoadModFromSettings);
+        SYM_OFF(ecl__ModManagerClient__AddMod);
+        SYM_OFF(ecl__ModManagerClient__RemoveMod);
 
         SYM_OFF(ecl__EoCClient);
         SYM_OFF(esv__EoCServer);

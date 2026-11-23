@@ -8,6 +8,9 @@
 #include <Extender/Shared/Console.h>
 #include <GameDefinitions/Stats/Cache.h>
 #include <Extender/Shared/StartupTimeline.h>
+#include <Extender/Client/EarlyModUI.h>
+#include <Extender/Client/ModHints.h>
+#include <Extender/Client/DirectSaveLoad.h>
 #include "Version.h"
 #include "resource.h"
 #include <iomanip>
@@ -29,6 +32,12 @@
 
 #undef DEBUG_SERVER_CLIENT
 
+namespace bg3se::lua::debug
+{
+    // Lua/Libs/DebugCover.inl
+    void CoverAtStartBegin();
+}
+
 namespace bg3se
 {
 
@@ -42,6 +51,10 @@ decltype(ScriptExtender::AppInitGame)* decltype(ScriptExtender::AppInitGame)::gH
 decltype(ScriptExtender::AppInitializeResourceManager)* decltype(ScriptExtender::AppInitializeResourceManager)::gHook;
 decltype(ScriptExtender::LoadPackFiles)* decltype(ScriptExtender::LoadPackFiles)::gHook;
 decltype(ScriptExtender::LoadFromContextFolder)* decltype(ScriptExtender::LoadFromContextFolder)::gHook;
+decltype(ScriptExtender::AdvanceHint)* decltype(ScriptExtender::AdvanceHint)::gHook;
+decltype(ScriptExtender::ImageSequenceLoaded)* decltype(ScriptExtender::ImageSequenceLoaded)::gHook;
+decltype(ScriptExtender::GameUIUpdate)* decltype(ScriptExtender::GameUIUpdate)::gHook;
+decltype(ScriptExtender::ArgumentGetValue)* decltype(ScriptExtender::ArgumentGetValue)::gHook;
 
 std::unique_ptr<ScriptExtender> gExtender;
 
@@ -164,6 +177,26 @@ void ScriptExtender::Initialize()
             &ScriptExtender::OnLoadFromContextFolderEnd, this);
     }
 
+    if (GetStaticSymbols().gui__DCLoadingScreen__OnAdvanceHintCommand != nullptr) {
+        AdvanceHint.Wrap(GetStaticSymbols().gui__DCLoadingScreen__OnAdvanceHintCommand);
+        AdvanceHint.SetPrePostHook(&ScriptExtender::OnAdvanceHintBegin, &ScriptExtender::OnAdvanceHintEnd, this);
+    }
+
+    if (GetStaticSymbols().gui__LSImageSequence__OnLoaded != nullptr) {
+        ImageSequenceLoaded.Wrap(GetStaticSymbols().gui__LSImageSequence__OnLoaded);
+        ImageSequenceLoaded.SetPostHook(&ScriptExtender::OnImageSequenceLoaded, this);
+    }
+
+    if (config_.EarlyModInterface && GetStaticSymbols().gui__GameUI__UpdateFromUI != nullptr) {
+        GameUIUpdate.Wrap(GetStaticSymbols().gui__GameUI__UpdateFromUI);
+        GameUIUpdate.SetPreHook(&ScriptExtender::OnGameUIUpdate, this);
+    }
+
+    if (config_.WideCommandLine && GetStaticSymbols().ls__ArgumentString__GetValue != nullptr) {
+        ArgumentGetValue.Wrap(GetStaticSymbols().ls__ArgumentString__GetValue);
+        ArgumentGetValue.SetPostHook(&ScriptExtender::OnArgumentGetValue, this);
+    }
+
     DetourTransactionCommit();
 
 #if USE_OPTICK
@@ -195,6 +228,8 @@ void ScriptExtender::Initialize()
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(initEnd - initStart).count();
     DEBUG("Library startup took %lld ms", ms);
     startup_timeline::RecordStep("ScriptExtender::Initialize", startup_timeline::StepEnd);
+    // the extender's own hooks are in place: the start's coverage counters go on now, before the engine starts
+    lua::debug::CoverAtStartBegin();
 
     auto app = GetStaticSymbols().AppInstance;
     if (app && *app) {
@@ -490,6 +525,33 @@ void ScriptExtender::OnLoadFromContextFolderBegin(void* self, Path const* folder
 void ScriptExtender::OnLoadFromContextFolderEnd(void* self, Path const* folder, bool fallback, bool a3, bool result)
 {
     startup_timeline::RecordStep("ls::TranslatedStringRepository::LoadFromContextFolder", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnAdvanceHintBegin(void* self)
+{
+    // A composition of the hints made at a reload goes into the list before this draw reads it.
+    ecl::mod_hints::OnInterfaceThread();
+    startup_timeline::BeforeAdvanceHint(self);
+}
+
+void ScriptExtender::OnAdvanceHintEnd(void* self)
+{
+    startup_timeline::AfterAdvanceHint(self);
+}
+
+void ScriptExtender::OnImageSequenceLoaded(void* self, void* a1, void* a2)
+{
+    startup_timeline::AfterImageSequenceLoaded(self);
+}
+
+void ScriptExtender::OnGameUIUpdate(void* self, void* time)
+{
+    ecl::early_mod_ui::BeforeGameUIUpdate(self);
+}
+
+void ScriptExtender::OnArgumentGetValue(void* self, char const* key, STDString* value, bool found)
+{
+    ecl::direct_save_load::OnArgumentValue(key, value, found);
 }
 
 void ScriptExtender::OnAppUpdatePaths(App* self)

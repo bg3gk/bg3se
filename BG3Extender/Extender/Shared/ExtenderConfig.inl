@@ -38,6 +38,11 @@ void ApplyConfig(ExtenderConfig& config, Document& root)
     ConfigGet(root, "KeepWindowOffScreen", config.KeepWindowOffScreen);
     ConfigGet(root, "ShiftOpensConsole", config.ShiftOpensConsole);
     ConfigGet(root, "StartupVideos", config.StartupVideos);
+    ConfigGet(root, "ModHints", config.ModHints);
+    ConfigGet(root, "EarlyModInterface", config.EarlyModInterface);
+    ConfigGet(root, "DirectSaveLoad", config.DirectSaveLoad);
+    ConfigGet(root, "WideCommandLine", config.WideCommandLine);
+    ConfigGet(root, "CoverageAtStart", config.CoverageAtStart);
 
     ConfigGet(root, "DebuggerPort", config.DebuggerPort);
     ConfigGet(root, "LuaDebuggerPort", config.LuaDebuggerPort);

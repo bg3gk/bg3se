@@ -168,6 +168,20 @@ public:
     WrappableFunction<LoadPackFilesTag, PackedFileManager__LoadPackFilesProc> LoadPackFiles;
     enum class LoadFromContextFolderTag {};
     WrappableFunction<LoadFromContextFolderTag, TranslatedStringRepository__LoadFromContextFolderProc> LoadFromContextFolder;
+    // The loading screen's draw of a hint, wrapped only for the timeline's HintShown rows.
+    enum class AdvanceHintTag {};
+    WrappableFunction<AdvanceHintTag, DCLoadingScreen__OnAdvanceHintCommandProc> AdvanceHint;
+    // The loading screen's slideshow made ready, wrapped only for the timeline's WallpaperSet rows.
+    enum class ImageSequenceLoadedTag {};
+    WrappableFunction<ImageSequenceLoadedTag, LSImageSequence__OnLoadedProc> ImageSequenceLoaded;
+    // The interface's per-frame update: the mods' interface merged before the first loading screen
+    // (Extender/Client/EarlyModUI.h).
+    enum class GameUIUpdateTag {};
+    WrappableFunction<GameUIUpdateTag, GameUI__UpdateFromUIProc> GameUIUpdate;
+    // The game's read of a command-line argument's value: given in UTF-8 from the wide command
+    // line (Extender/Client/DirectSaveLoad.h, the switch WideCommandLine).
+    enum class ArgumentGetValueTag {};
+    WrappableFunction<ArgumentGetValueTag, ArgumentString__GetValueProc> ArgumentGetValue;
 
 private:
     esv::ScriptExtender server_;
@@ -212,6 +226,11 @@ private:
     void OnLoadPackFilesEnd(void* self, bool a1, bool a2);
     void OnLoadFromContextFolderBegin(void* self, Path const* folder, bool fallback, bool a3);
     void OnLoadFromContextFolderEnd(void* self, Path const* folder, bool fallback, bool a3, bool result);
+    void OnAdvanceHintBegin(void* self);
+    void OnAdvanceHintEnd(void* self);
+    void OnImageSequenceLoaded(void* self, void* a1, void* a2);
+    void OnGameUIUpdate(void* self, void* time);
+    void OnArgumentGetValue(void* self, char const* key, STDString* value, bool found);
     void HookStateMachineUpdates();
     void OnStatsLoad(stats::RPGStats__LoadProc* wrapped, stats::RPGStats* mgr, Array<STDString>* paths);
     void OnStatsLoadGuarded(stats::RPGStats__LoadProc* wrapped, stats::RPGStats* mgr, Array<STDString>* paths);

@@ -31,7 +31,14 @@ onto it rather than carrying a long-lived divergence.
 | [Values of the interface](#values-of-the-interface): `Nullable<Bool>` and `TimeSpan` through `Ext.UI` | client | no |
 | [Screenshots, the frame and the window](#screenshots-the-frame-and-the-window): `Ext.ClientRender.Screenshot(path, withOverlay)`, `MirrorEnable`, `SetFrameCap`, `KeepInBackground` | client | no |
 | [A picture from the disk](#a-picture-from-the-disk): `Ext.IMGUI.LoadImageFile` | client | no |
-| [Startup videos](Docs/API.md#startup-videos): a mod's `ScriptExtender/StartupVideos.json` hides, replaces and adds the videos the game plays at start, composed with every other mod's; `Ext.StartupVideos.GetPlaylist`, `Compose`, and `Timeline` (every stage of the start with its time, recorded natively before Lua exists: both sides' states with the process's IO and CPU counters, the videos, the loading screen, the client's screen fades and the interface's states up to the "press any key" page) | client | no |
+| [Startup videos](Docs/API.md#startup-videos): a mod's `ScriptExtender/StartupVideos.json` hides, replaces and adds the videos the game plays at start, composed with every other mod's; `Ext.StartupVideos.GetPlaylist`, `Compose`, and `Timeline` (every stage of the start with its time, recorded natively before Lua exists: both sides' states with the process's IO and CPU counters, the videos, the loading screen, the client's screen fades and the interface's states up to the "press any key" page; and after the start: the loading screen's progress, the hints it draws and its wallpapers - the slideshow's shuffled set as `gui::LSImageSequence::OnLoaded` makes it, each image as the slideshow's clock shows it, the single images of the other looks - every client timeline's playback state - the main menu's camera descent among them - through the menu, later loads and a session) | client | no |
+| [The mods' interface on the first loading screen](Docs/API.md#the-mods-interface-on-the-first-loading-screen): the game's own merge of the mods' interface (`ui::ModManager::RegisterMods`, the texture metadata, `gui::GameUI::ResetModdedLibs`, `ui::StateMachine::ApplyMods`) run once more at the first `StartLoading`, with the game's module list (the very set the game's own merge gets later), before the loading screen's widget is made - a mod's `BusyElement`, styles and `Loading` pages are on the very first loading screen; an `EarlyModInterface` timeline row for it and for the game's own merge; the wallpaper rows follow every live slideshow and single image, each with its widget (`Owner`, `OwnerData`, `Visible`) | client | no |
+| [Loading hints](Docs/API.md#loading-hints): each loaded module's `Public/<Folder>/Hints/Hints.lsx` (the game's format) is loaded by the game's own `ls::FileFormatIO::LoadFile` and composed into the game's hint list - new keys appended, a known key replaced in place, the later mod winning with a warning; composed again when the game reloads its modules after a change of the mod list (the game's file loaded anew, every file of the new list), so a disabled mod's hints go and an enabled one's come; `Ext.Hints.GetComposition` | client | no |
+| [The game's module list](Docs/API.md#which-modules) for every early reader (startup videos, hints, the early interface merge): at the first `StartLoading` the game's own resolver (`ls::ModManager::LoadModFromSettings`) is called once, and the readers read the load-ordered modules it leaves - the list the game then loads, dependencies and the game's own modules included, in its order (fallback: `modsettings.lsx`'s order, said so); a `ModuleList` timeline row at that moment and at each client `LoadModule`'s end; `Ext.StartupVideos.GetModuleLists` | client | no |
+| [The game's mod list](Docs/API.md#mods): `Ext.Mod.GetList` (the settings in order, the modules the game loads with why - enabled, a dependency, the game's own - and the available ones, each with its dependencies and dependants), `Ext.Mod.Pending` (the manager's byte: whether the next session's start loads the modules again, and what changes), `Ext.Mod.SetEnabled` and `SetOrder` through the game's own mod manager calls (`ecl::ModManagerClient::AddMod`, `RemoveMod`: settings saved, list resolved, modules loaded at the next session's start); main menu only | client | no |
+| [A save from the command line without the main menu](Docs/API.md#a-save-from-the-command-line-without-the-main-menu): with `DirectSaveLoad` (off by default), once the game's `Init` has queued the save's load (`-loadSaveGame`, `-continueGame`) behind the main menu's states, those states (`LoadMenu`, `StopLoading`, `Menu`) are taken out of the client's queue; the save is loaded by the game's own start of a save, ~17 s sooner; a `Step` timeline row says what was done | client | no |
+| [Command-line values in any alphabet](Docs/API.md#command-line-values-in-any-alphabet): a value the game reads through `ls::ArgumentString::GetValue` is given in UTF-8 from the wide command line when that is all it changes - a save folder named in any alphabet is found by `-loadSaveGame` (`WideCommandLine`) | both | no |
+| `Ext.Debug.ReadValue(address, "FixedString")`: a FixedString's text from its 4-byte index (read only: `WriteValue` and `Freeze` refuse it) | both | yes |
 | [Fixed](#fixed): `GenomeVariant` values larger than a pointer | both | - |
 | [Settings this fork adds](#settings-this-fork-adds) | - | - |
 
@@ -250,6 +257,16 @@ Developer mode.
 With a counter on every function of the executable of 64 bytes or more (about 176,000) a client
 tick takes about a fifth longer; putting them on stalls the game for about a minute.
 
+A function is in a record when it ran, whatever the ring lost: the counter marks its function as
+seen besides writing the call into the ring, so `F` lines are complete and only the counts of the
+calls and the pairs can fall short (`L`).
+
+**The start, before any Lua.** The setting `CoverageAtStart` names a file of the executable's
+function starts, one hexadecimal offset a line. The counters go on as soon as the extender has
+started - its own hooks in place, the engine not yet started - which delays the start by the time
+they take; at every state the client enters, up to `Menu`, the counts so far are saved beside the
+file as `<file>.<NN>-<state>.txt` and started again. The counters stay on after the menu.
+
 ## The memory instrument
 
 For finding who writes a field and holding a value fixed while a mechanic is studied. Developer
@@ -258,7 +275,9 @@ mode, both sides.
 - The address of a component's field for an entity, from the extender's own type information
   (`GetFieldAddress`); conversion both ways between an absolute address and `module+0xRVA`
   (`ModuleFromAddress`, `AddressFromModule`); a bounds-checked read and write of a typed value
-  (`ReadValue`, `WriteValue`, a write refused on a code page).
+  (`ReadValue`, `WriteValue`, a write refused on a code page). `ReadValue` also reads a
+  `"FixedString"`: the text of the index there, through the game's lookup under a guard (nil for
+  an index the table does not hold).
 - **Who writes a field**: a hardware watchpoint (`WatchWrite`) on up to four addresses, armed on
   every thread through the debug registers, caught by a vectored handler that records the writing
   instruction and a short return chain into a ring buffer (`ReadWatchHits`), resuming at once. A
@@ -518,20 +537,93 @@ In `ScriptExtenderSettings.json`, beside upstream's:
 | `KeepWindowOffScreen` | false | Puts the window where no screen reaches when it is created |
 | `ShiftOpensConsole` | true | Holding Shift at start opens the console |
 | `StartupVideos` | true | Off, the game starts with no startup video, whatever the mods declare |
+| `ModHints` | true | Off, the loading screen's hint list stays as the game's own file gives it, whatever the mods ship |
+| `EarlyModInterface` | true | Off, the mods' interface is merged only at the game's own time (the end of `LoadModule`), and the first loading screen is the game's alone |
+| `DirectSaveLoad` | false | On, a save the command line asks for (`-loadSaveGame`, `-continueGame`) is loaded without the main menu: the menu's states the game queued at its start are taken out once its `Init` has queued the save's load. A combination the game does not make by itself: nothing of the menu runs before the first session |
+| `WideCommandLine` | true | Off, the game reads its command-line values in the system's ANSI code page only (a non-ASCII save name is not found) |
 | `CrashDumpDirectory` | empty | Folder for crash dumps, `<pid>-<yyyymmdd>-<hhmmss>.dmp` and a `.txt` with the faulting `module+0xRVA`; when set, crash reporting is on even with `SendCrashReports` off |
+| `CoverageAtStart` | empty | Developer mode: a file of the executable's function starts; coverage counters from the extender's start, a record at every state the client enters up to the main menu ([Coverage](#coverage)) |
 | `LaunchCrashReporter` | true | Starts the reporter window after a dump |
 
-## Upstreaming
+## Upstreaming, and our own build
 
-These are improvements to Norbyte's work, and belong back in it where he wants them. Nothing
-here has been offered upstream yet; when it is, it will be as ordinary pull requests against
-`Norbyte/bg3se`, one subject at a time, with the evidence for each change.
+These are improvements to Norbyte's work, and belong back in it where he wants them. Whether he
+takes a change is his decision, so the fork is kept ready for both ways at once:
+
+- **Upstream**: each addition is offered as its own pull request against `Norbyte/bg3se`, one
+  subject at a time, with the evidence for each change. An addition is therefore one separable
+  unit: its own files where it can (`Extender/Client/StartupVideos.*`, `ModHints.*`,
+  `EarlyModUI.*`, `GameModules.*`, `Extender/Shared/StartupTimeline.*`, `Lua/Libs/DebugCover.inl`,
+  ...), its own player's switch in the settings below (off gives the game as it is), its own
+  section on this page and in [Docs/API.md](Docs/API.md), and its own commits. Taking one needs
+  none of the others, except where its section says so (the early readers share
+  `GameModules`).
+- **Our own build**: the same additions, all together, released from `gatekit-v34` as a build of
+  its own named **BG3GKSE** (the release, its archive and the DLL's product name; the file stays
+  `BG3ScriptExtender.dll`, the name upstream's loader loads, so it replaces upstream's one for one).
+  The product name in [BG3Extender.rc](BG3Extender/BG3Extender.rc) and the release workflow
+  (`.github/workflows/bg3gkse.yml`, "Building") are ours
+  alone and are never offered upstream (GateKit's `se-release.json`; `gatekit se install` fetches it). It does not wait for
+  upstream. An addition upstream takes becomes upstream's at the next rebase, and the difference
+  shrinks.
+- **Nothing here needs GateKit to be built.** The mappings of the game's functions that GateKit's
+  registry writes stand in [BinaryMappings.xml](BG3Extender/GameHooks/BinaryMappings.xml) as
+  ordinary lines, each after a comment `<!-- code:<id>; places -->` naming the registry's id and
+  the function's place in each executable: a pattern of the function's start found once in every
+  executable. `gatekit registry mappings sync <BinaryMappings.xml> --check` says whether they are
+  still as the registry has them (a check before a build), and without `--check` writes them
+  again after the registry moved to a new build of the game. A mapping whose pattern is not at a
+  function's start, or that finds a global through an instruction (`@ref`), is written by hand and
+  has no such comment.
+
+A player installs one DLL either way: this fork's `BG3ScriptExtender.dll` in place of
+upstream's, through the same loader. GateKit's own mod is for driving and testing the game and is
+never needed to play; a mod that uses an addition here is an ordinary mod, and on upstream's
+extender its files are simply not read.
 
 ## Building
 
-As upstream: Visual Studio with the C++ toolchain, `BG3Tools.sln`, the `Game Release`
+As upstream: Visual Studio 2026 with the C++ toolchain (v145), `BG3Tools.sln`, the `Game Release`
 configuration. GateKit users do not build it - `gatekit se install` fetches a release. A build
 folder holds the DLL, its PDB and, for GateKit, `RegistryMappings.xml` (above).
+
+The build needs nothing beyond the externals `pull-externals.bat` fetches and builds (run once,
+from an x64 Native Tools prompt): `stb_image.h`'s folder is among the project's include paths, and
+the Abseil and utf8_range libraries libprotobuf-lite links against are taken from protobuf's own
+build by folder. From the repository's root, with no `CL` or `LINK` in the environment:
+
+```
+msbuild BG3Tools.sln -t:BG3Extender -p:Configuration="Game Release" -p:Platform=x64 -m
+```
+
+gives `x64\Game Release\BG3ScriptExtender.dll` and its PDB. The post-build step copies the DLL into
+`GameBinDir` (`-p:GameBinDir=<the game's bin>`; upstream's own path by default) and is skipped
+where that folder does not exist.
+
+**Releases.** [.github/workflows/bg3gkse.yml](.github/workflows/bg3gkse.yml) builds the same on a
+GitHub Windows runner (`windows-2025`, Visual Studio 2026), with the externals kept in its cache
+until `pull-externals.bat` changes. Run by hand it keeps the build as the run's artifact and
+publishes nothing. A pushed tag `BG3GKSE-<major>.<n>` - `<major>` is `RES_DLL_MAJOR_VERSION` in
+[resource.h](BG3Extender/resource.h), `<n>` our own count - makes a release of that name holding
+`BG3ScriptExtender.dll`, `BG3ScriptExtender.pdb`, `SHA256SUMS.txt` and `BG3GKSE-<major>.<n>.zip`
+(the DLL and the PDB). The run refuses a DLL whose product name is not BG3GKSE. The workflow is
+ours alone, like the product name, and is never offered upstream.
+
+Before a tag is pushed, on a machine with the game and GateKit's symbol database:
+
+```
+gatekit registry mappings sync BG3Extender/GameHooks/BinaryMappings.xml --check
+```
+
+It cannot run on the runner: it finds each marked mapping's pattern again in the game's
+executables through the symbol database, and neither the game nor that database (built from the
+game's files) may be put on a public machine. `RegistryMappings.xml` is not in the release for the
+same reason (`registry mappings write` scans the executables); `gatekit se install <folder>`
+copies it from a build folder that has one.
+
+GateKit takes a release by its pin: `se-release.json` in GateKit names `bg3gk/bg3se`, the tag, the
+zip and the zip's SHA-256 from `SHA256SUMS.txt`; `gatekit se install` with no folder fetches that
+zip and checks the hash.
 
 The builds, newest first; each is normal mode, `Game Release` x64:
 

@@ -46,9 +46,11 @@
 - [Timers](#timers)
 - [JSON Support](#json-support)
 - [Mod Info](#mod-info)
+- [Mods: the game's mod list](#mods)
 - [Utils](#utils)
 - [Audio](#audio)
 - [Startup Videos](#startup-videos)
+- [Loading Hints](#loading-hints)
 - [Localization](#loca)
 - [Templates](#templates)
 - [Static Data](#static-data)
@@ -175,7 +177,7 @@ Sometimes, the output of a command in the console might be too lengthy or comple
 
 Here's how it works:
 
-`Ext.IO.SaveFile(filename, content)`: This function allows you to save content to a file with a specified filename. You need to provide the filename and the content you want to save. If the directory specified in the filename does not exist, `SaveFile` will automatically create it.
+`Ext.IO.SaveFile(filename, content)`: This function allows you to save content to a file with a specified filename. You need to provide the filename and the content you want to save. If the directory specified in the filename does not exist, `SaveFile` will automatically create it. In this fork the whole file is written beside its place and put there in one step, so that a reader never sees it empty or cut short; when the place cannot be replaced (a reader holds it open without sharing its deletion) it is written in place.
 
 `Ext.DumpExport(object)`: This function serializes the given object into a string, which can then be saved to a file using `Ext.IO.SaveFile`.
 
@@ -1757,6 +1759,82 @@ Provides access to the engine's internal ModManager. Useful to get information a
 - `BaseModule: Module`
 - `Settings: ModuleSettings`
 
+<a id="mods"></a>
+## Mods - `Ext.Mod`
+
+On the client `Ext.Mod` also gives the game's own mod list and the game's own enable and disable
+of a mod, for a mod manager in the game's menu, a mod that needs another, or a tool. Nothing here
+writes a file or sorts a list itself: each change is a call the game's mod manager page makes.
+
+**The game's terms.** The player's choice is the client's mod settings (`modsettings.lsx`, the
+manager's `Settings`); the first entry is the adventure (`GustavX`), the rest are the enabled mods.
+What the game loads is their resolution, the manager's `LoadOrderedModules`: the settings with
+their dependencies and the game's own modules (`MainUI`, `ModBrowser`, ...), in the game's order
+([which modules](#which-modules)). The game's mod manager page enables a mod with
+`ecl::ModManagerClient::AddMod` - the mod, then each of its dependencies that is a user mod and
+not enabled - and
+disables one with `ecl::ModManagerClient::RemoveMod`; the mods that depend on a disabled mod stay
+enabled, and the game still loads it for them. Each of the two saves `modsettings.lsx` at once,
+sorted by dependencies (`ls::ModuleSettings::ResolveAddonsOrder`), and resolves `LoadOrderedModules`
+again at once (`ls::ModManager::LoadModFromSettings`), which sets the manager's byte `+0x150` (SE's
+`ModManager.Flag`) to 0. **The modules are loaded only at the next session's start**: a save loaded
+or a game started while the byte is 0 takes the client through `UnloadModule` and `LoadModule`,
+whose end sets the byte back to 1. Until then the main menu keeps the modules it has, and a
+disabled mod's Lua runs on. A save made with a mod now disabled raises the game's own checks
+(`ModVerification`, then a box), as after a toggle on the page.
+
+**Where.** Client only, in the main menu only: the game's mod manager page is reached from there
+alone, and in a session the modules are loaded and the save checks its own. Elsewhere
+`SetEnabled` and `SetOrder` change nothing and say why (`Reason`).
+
+### GetList() : table[]
+
+The game's mod list now, one entry per module:
+
+| Field | |
+|---|---|
+| `UUID`, `Name`, `Folder`, `Version` | the module's (lower-case UUID; `Version` as `major.minor.revision.build`) |
+| `Enabled`, `Index` | in the settings, at that place (1 is the adventure, `Main = true`) |
+| `Loaded`, `LoadIndex` | in `LoadOrderedModules`, at that place: what the session in force loaded, or after a change in the menu what the next session's start loads ([`Pending`](#mods-pending)) |
+| `Source` | `Settings` (enabled); `Dependency` (loaded although not enabled, because a loaded module depends on it - a mod enabled only as a dependency); `Game` (loaded although not enabled, no loaded module depending on it); `Available` (installed, neither enabled nor loaded) |
+| `UGC` | a user mod: in the manager's set `ls::ModManager::IsUGCMod` reads (the mods installed in the profile are, the game's own modules are not) |
+| `DependsOn`, `RequiredBy` | the UUIDs of its dependencies, and of the loaded modules that depend on it |
+
+The order: the settings', then the other loaded modules in load order, then the available ones.
+
+<a id="mods-pending"></a>
+### Pending() : table
+
+Whether the game loads its modules again at the next session's start, and what that changes:
+`{ Pending, Byte, Since, Added, Removed, Reordered }`. `Pending` is the game's own decision, the
+manager's byte at 0 - also after a change undone, since the game does not compare. `Added`,
+`Removed` and `Reordered` compare `LoadOrderedModules` with the list the client loaded last (`Since`:
+the end of the last client `LoadModule`, or the first `StartLoading`'s list).
+
+### SetEnabled(uuid, on) : table
+
+The game's mod manager's toggle. `on`: the available mod through `ecl::ModManagerClient::AddMod`,
+then each of its user-mod dependencies not enabled, as the page does (a dependency that is no user
+mod is not added to the settings; the game's resolver loads it anyway, `Source = "Dependency"`);
+`off`: `ecl::ModManagerClient::RemoveMod` - a mod another enabled mod depends on stays loaded for
+it (`Source = "Dependency"`), and enabled again it goes back before its dependant. Answers `{ Done, Reason?, Added, Removed, Settings,
+Loaded, Pending }`: the UUIDs the settings gained and lost, the settings and `LoadOrderedModules`
+after the game resolved them, and `Pending()`. Refused: outside the main menu, a mod already in the
+state asked, a mod not among the available ones, the adventure (the settings' first entry).
+
+```lua
+local r = Ext.Mod.SetEnabled("a1c0de57-6b1d-4a17-9e2b-0a1b7e57a11e", false)
+-- r.Done, r.Pending.Pending == true: the next save loaded goes without it
+```
+
+### SetOrder(uuids) : table
+
+The given enabled mods put after the other enabled mods, in the given order. The game's mod
+manager has no order of its own to set: a mod enabled goes to the end. So each mod given is
+disabled and enabled again through the same two calls (two saves and resolutions per mod).
+Each save sorts the settings by dependencies, so the order asked may not hold (a mod given before
+one it depends on ends after it): `Same` says whether it did. Answers as `SetEnabled`, with `Same`.
+
 <a id="utils"></a>
 ## Utils - `Ext.Utils`
 
@@ -1815,10 +1893,34 @@ Client-side audio control API (banks, events, RTPC, switches, states).
 
 The game plays its startup videos (the studio's logo, one clip named `Splash_Logo_Larian`)
 before any mod's Lua exists. A mod changes them with a file, not with Lua: the extender reads the
-declarations of the enabled mods at the game's first `StartLoading` state, composes one list and
-gives it to the game in place of its own playlist. The whole list is one playlist of the game's
-movie player: the videos play in turn on black, the game goes on only after the last, and one key
-press skips the rest of them.
+declarations of the modules the game will load at the game's first `StartLoading` state, composes
+one list and gives it to the game in place of its own playlist. The whole list is one playlist of
+the game's movie player: the videos play in turn on black, the game goes on only after the last,
+and one key press skips the rest of them.
+
+<a id="which-modules"></a>
+### Which modules: the game's module list
+
+Every early reader of this fork - the startup videos, the [loading hints](#loading-hints) and
+[the mods' interface on the first loading screen](#the-mods-interface-on-the-first-loading-screen) -
+reads one list: the modules the game will load, as the game resolves them. The player's choice is
+`modsettings.lsx` (the client's `ModManager.Settings`); what the game loads is its resolution by
+`ls::ModManager::LoadModFromSettings` into the load-ordered modules (`ModManager.LoadOrderedModules`):
+the main module, its dependencies and the game's own modules (`MainUI`, `ModBrowser`, ...), in the
+game's order. At the first `StartLoading` that resolution has not run yet (the client's
+`LoadModule` makes it), so the extender calls the game's resolver there, once, on the client's
+manager - the call the game itself makes when the player toggles a mod in its mod manager - and
+every reader reads the load-ordered modules it leaves. The client's `LoadModule` then resolves the
+same settings again, as always, and its result is checked against the early one (a `ModuleList`
+row of the timeline, "same as the list at StartLoading"). Should the resolver not be found (a
+patch moved it) or fault, the readers fall back to `modsettings.lsx`'s own order, without the
+dependencies and the game's own modules, and say so (`Source = "Settings"`, a warning).
+
+When the list changes: a toggle in the game's mod manager writes `modsettings.lsx` at once and
+re-resolves the list, but the game applies it only at the next session's start (the client's
+`UnloadModule` and `LoadModule`). The startup videos play once per process: they follow a change
+at the next start of the game. The hints follow it at that reload (below); the mods' interface is
+merged again by the game itself at that reload.
 
 ### The declaration: `StartupVideos.json`
 
@@ -1876,14 +1978,22 @@ whatever the mods declare; the game then starts with no video.
   `"Game"` or the UUID of the mod that added the entry, `Mod` and `ReplacedBy` are
   `{ Uuid, ModTable?, Name, Folder }`), `Warnings`, `Enabled` (the player's switch), `Seen` and
   `Written` (the extender met the startup playlist and wrote the list into it), `Game` (the game's
-  own entries), and `Mods` (`{ Uuid, ModTable?, Name, Folder, MetaReadable, ConfigReadable,
-  DeclarationFound }` for every enabled mod, in load order).
+  own entries), `Mods` (`{ Uuid, ModTable?, Name, Folder, MetaReadable, ConfigReadable,
+  DeclarationFound }` for every module of the game's module list, in its load order) and
+  `ModuleList` (`{ Source, Moment }`: the list read, `"LoadModFromSettings"` or `"Settings"`, at
+  `"StartLoading"`).
+- `Ext.StartupVideos.GetModuleLists()` -> every game's module list the early readers took, in
+  order: `{ Source, Moment, Ms, SettingsCount, Modules = { { Uuid, Name, Folder } }, Warnings }`.
+  The first is the first `StartLoading`'s (`Source` `"LoadModFromSettings"`, or `"Settings"` for
+  the fallback); then one at the end of each client `LoadModule` (`"LoadOrderedModules"`: what the
+  game loaded).
 - `Ext.StartupVideos.Compose(declarations)` -> `{ Entries, Warnings }`: the same composer on
   declarations given in Lua, in the order given, over the game's own entries. Each declaration is
   a table of the file's format with the mod's identity:
   `{ Uuid = "...", ModTable = "MyMod", Name = "My Mod", Hide = {...}, Replace = {...}, Add = {...} }`.
   References may also name, by `ModTable`, any mod enabled at the start.
-- `Ext.StartupVideos.Timeline()` -> a list of rows, oldest first, and `Dropped`: every stage of
+- `Ext.StartupVideos.Timeline([since])` -> a list of rows, oldest first (after row `since` when
+  given), `Count` and `Dropped`: every stage of
   the game's start as the extender saw it from its first moment in the process, so that the
   start - which runs before any Lua - can be read afterwards. It keeps recording after the start
   (a level load, a return to the menu) until it is full.
@@ -1927,17 +2037,49 @@ or the extender's own, and the hook that marks it:
 | `App::LoadAndResaveGraphicsSettings` | End | `graphicSettings.lsx` is read (the extender's `App__LoadGraphicSettings`) | post-hook |
 | `App::InitGame` | Begin, End | the game's systems: the data managers, the server (`esv::EocServer`), the client's ECS, the templates, physics, the resource manager (below), and last `ecl::EocClient::Load`, which queues the client's first states | own hook |
 | `App::InitializeResourceManager` | Begin, End | inside `App::InitGame`: the sound engine and its banks (`App::InitialiseSound`), the two Bink managers, the loading hints (`Hints/Hints.lsx`) | own hook |
+
+The rows of the client's side, after the first state:
+
+| `What` | Side | when | fields |
+|---|---|---|---|
 | `PlaylistWritten` | Client | the startup list written into the game | `Name`: the entry and how many names it holds |
+| `HintsComposed` | Client | the mods' hint files composed into the game's hint list (see [Loading Hints](#loading-hints)): at the first `StartLoading`, again when the game loaded another module list, and when that composition was put into the list | `GameCount`, `Count` (the game's own entries and the list after), `Name` (how many mods' files were found, of how many modules), `Moment` (`"StartLoading"`, `"reload"`, `"installed"`) |
+| `ModuleList` | Client | the game's module list was taken for the early readers (see [Which modules](#which-modules)): at the first `StartLoading`, and at the end of each client `LoadModule` | `Modules`, `SettingsCount` (the entries of `modsettings.lsx`), `Name` (`"LoadModFromSettings"`, `"Settings"`, or `"LoadOrderedModules: same as / differs from the list at <moment>"`), `Moment` (`"StartLoading"`, `"LoadModule"`) |
 | `VideoStarted` / `VideoStopped` | Client | the movie player took a video / stopped playing | `Name` (started): the video and how many still wait |
 | `LoadState` | Client | the loading screen's active load state changed | `Name`: its type as `module+0xRVA` of its virtual table, or `none` |
 | `LoadingScreenShown` / `LoadingScreenHidden` | Client | the loading screen appeared / went | - |
+| `LoadingProgress` | Client | the loading screen manager's progress changed (`ls::LoadingScreenManager`): the segments done or their total, or the current segment's local progress by a tenth of its total | `Progress`, `ProgressTotal` (segments), `Name` (`"LocalProgress/LocalProgressTotal"`) |
+| `HintShown` | Client | the loading screen drew a hint (`gui::DCLoadingScreen::OnAdvanceHintCommand`: 100 ms after the screen appears, then every 10 s) | `Name` (its `HintKey`), `Index` (in the hint list), `Count` (the list's size) |
 | `Fade` | Client | the client game state machine's fade phase changed | `From`, `To`: `None`, `FadingOut`, `Black`, `FadingIn` |
 | `UIState` | Client | a state of the interface's state machine appeared or went (a page such as `SplashScreen`, the "press any key" page, or `MainMenu`) | `Name`, `Parent` (the state it hangs under), `Depth` (`Root` is 0), `Change` (`"Entered"` or `"Left"`) |
+| `TimelinePlayback` | Client | a client timeline appeared, changed its playback state or went away (`eoc::TimelineDataComponent.PlaybackState` of every entity that has one) | `Name` (the timeline resource, `ecl::timeline::TimelineLoadedComponent.Timeline`), `Type` (its `TimelineType`), `From`, `To` (the states; -1 when it appeared / went away) |
+| `EarlyModInterface` | Client | the mods' interface was merged (see [The mods' interface on the first loading screen](#the-mods-interface-on-the-first-loading-screen)): the extender's early merge at the first `StartLoading`, or the game's own at the end of `LoadModule` | `Merge` (`"early"` or `"game"`), `Modules` (the modules given to `ui::ModManager::RegisterMods`), `Registered` (its answer; absent when the early merge was not run), `Faulted`, `Name` (the modules' folders, or why the early merge was not run; for the game's first merge after an early one, whether it merges the early set: `"...: the early set"` / `"...: not the early set"`) |
+| `WallpaperSet` | Client | a slideshow (`gui::LSImageSequence`: the game's Act 1/2/3 looks, or a mod's own) was made ready by its `OnLoaded`, which shuffles its images and builds the storyboard that changes them; one row per image, in the order it will show them. A new control is made with every loading widget (several times in one load: at its start and again when the interface is set up after a Lua reset) | `Index` (1..), `Count`, `Name` (the image: its `UriSource`'s file name without the extension, `loadScreen_BGartwork_3`), `Slot` (each image's time, ms: `ImageHoldDuration`, 20000 in the game's XAML), `FadeIn`, `FadeOut` (ms, inside the slot), and the owner's fields below |
+| `WallpaperShown` | Client | the image a live wallpaper element shows changed: a slideshow's `Image.Source`, which its storyboard's clock sets (read on the interface's update), or the single image of the loading screen's other looks (`LoadingSingleImage`: the first start, character creation, the prologue, the creche). Every live element is followed at once - the game's loading screen's and each mod page's - and a newer element of the same widget supersedes the older | `Name` (the image), `Index` (its position in the set; 0 for a single image), `Count` (1 for a single image), `Look` (`"sequence"` or `"single"`), and the owner's fields below |
+| `WallpaperGone` | Client | that image's element left the interface (its widget went; it outlives `LoadingScreenHidden` by seconds) | as the last `WallpaperShown` of it |
 
-The counters on two `State` rows give the work done between them. The player, the loading screen
-and the fade are looked at once per client tick and the interface's states once per interface
-update, so their times are good to a frame. The record holds 1024 rows; later ones are dropped and
-counted in `Dropped`.
+The three wallpaper rows name the element's owner, so the game's own slideshow and a mod's are told
+apart: `Owner` is the `x:Name` of the widget the element lies in (its nearest ancestor that is a
+`ls:UIWidget`; `root` for the game's loading screen, a mod's page by the name its XAML gives it,
+empty when it lies in none), `OwnerData` the type of that widget's `DataContext`
+(`ls.LoadingScreen` for the game's loading screen and a page bound with `ContextName="LoadingScreen"`),
+and `Visible` the element's `IsVisible` when the row was written (a visible element may still be
+drawn over by another page).
+
+Every row also has `Row`, its number in the record. `Ext.StartupVideos.Timeline(since)` gives only
+the rows after row `since`, and the list's `Count` is how many rows are recorded: a caller that
+keeps where it stopped reads only what is new.
+
+The main menu's timelines are `TimelineType` 10: `MM_Open` (`02c1cb82-...`, the camera before the
+key), `MM_Open_Boats` (looping), `MM_Accept` (`d0fbd7c8-89e5-b1cf-5528-55fb12deb971`, the camera's
+descent after the key), `MM_Accept_Temple` and `MM_New`. Playback state 2 is playing and 0 stopped
+(observed, not named): `MM_Accept` 0 -> 2 is "the descent started", 2 -> 0 "the camera at rest".
+
+The counters on two `State` rows give the work done between them. The player, the loading screen,
+the fade and the timelines are looked at once per client tick and the interface's states once per
+interface update, so their times are good to a frame. The record holds 8192 rows (a start to the
+main menu takes about 600; it keeps recording through the menu, later loads and a session);
+later ones are dropped and counted in `Dropped`.
 
 One start (`--startup-videos`, the game's own clip), abridged:
 
@@ -1984,6 +2126,161 @@ One start (`--startup-videos`, the game's own clip), abridged:
 
 `Black` is not seen between two client ticks at the start: the game goes from fading out to
 black to fading in within one update of its state machine.
+
+<a id="the-mods-interface-on-the-first-loading-screen"></a>
+### The mods' interface on the first loading screen
+
+A mod's interface - its `GUI/Resources/Resources.xaml` (a `BusyElement` that replaces the game's
+spinner, styles, templates), its texture metadata, its state machines (`ModType="Extend"` pages of
+the `Loading` state) - is merged by the game in `gui::GameUI::UpdateFromUI`, once
+`gui::GameUI::OnModuleLoaded` has marked it pending at the end of `LoadModule`. The first start's
+loading screen is made before that, at `StartLoading`, and without the extender keeps the game's
+look until the interface's states are entered again a few seconds into `LoadMenu`.
+
+With the extender the same merge also runs before the first loading screen:
+
+- **The modules**: at the client's first `StartLoading`, the game's module list (see
+  [Which modules](#which-modules)): the client's `LoadOrderedModules` as the
+  game's resolver leaves them - the very set the game gives `RegisterMods` at its own merge, its
+  own interface modules (`MainUI`, `ModBrowser`, ...) and every dependency included, in its
+  order. (Only when the resolver is not available: the enabled mods of `modsettings.lsx`, each
+  found among `ModManager.AvailableMods`, the base module left out when the manager names it.)
+- **The merge**: on the interface's next update, before its state machine is updated (that update
+  makes the loading screen's widget), under the interface's lock, the game's own block with the
+  arguments the game gives it: `ui::ModManager::RegisterMods` with those modules, the texture
+  metadata of each mod's data (`ui::TextureProvider::LoadTextureMetadataInternal`),
+  `gui::GameUI::ResetModdedLibs` on `Noesis::GUI::GetApplicationResources()`'s merged
+  dictionaries, `ui::StateMachine::ApplyMods`. The game's checks are its own (a GUI `Assets` folder
+  without texture metadata raises its "No metadata" box here too).
+- **Afterwards** the game merges again at its own time, with its `LoadOrderedModules`;
+  `RegisterMods` rebuilds its list from scratch. That merge's row says whether it merged the early
+  set (`"the game's merge (LoadOrderedModules): the early set"`). After a change of the mod list
+  the game merges again at its module reload, with the new list.
+- The player's switch: `"EarlyModInterface": false` in `ScriptExtenderSettings.json` keeps the
+  game's own timing.
+- Each merge is an `EarlyModInterface` row of the timeline (above).
+
+### A save from the command line without the main menu
+
+`-loadSaveGame NAME` (or `-continueGame`) makes the game's `Init` state (`ecl::GameStateInit::Do`)
+find the save and call the save manager's `TryLoad`, which ends in the game's own start of a save
+(`Eoc::StartGame` with the load action, through `ecl::SavegameManager::LoadGame`): the client's
+`StartLoading`, `StartServer` and `Idle` are queued. But `ecl::EocClient::Load` has already queued
+the main menu's states at the start - `LoadModule`, `LoadMenu`, `StopLoading`, `Menu` - so the
+save's load waits behind them: the main menu's level is loaded (`LoadMenu`, ~16-19 s) and shown,
+then left at once. The game itself never loads a save from its command line without that menu.
+
+With `"DirectSaveLoad": true` in `ScriptExtenderSettings.json` (**off by default**), at the client's
+first exit from `Init` - its `Do` has run - the extender looks at the client's queue: when it is
+exactly the game's own (`LoadMenu`, `StopLoading`, `Menu`, then a `StartLoading` followed by a
+`StartServer`), the three menu states are taken out and disposed of as
+`ecl::GameStateMachine::ClearQueue` disposes of a queued state. Nothing else changes: the module
+is loaded first (`LoadModule`, as the menu's path loads it), then the save is loaded by the game as
+the game queued it. The client goes `Init -> LoadModule -> StartLoading -> StartServer -> ... ->
+LoadSession -> LoadLevel -> Running`, the order a level start (`-testLoadLevel`) takes; no
+`LoadMenu`, no `Menu`. Measured (copy of build 25605617, dx11, the same save three times each way):
+playable after 33, 32, 34 s against 52, 48, 49 s through the menu; the host, level, position and
+party read the same.
+
+- A save that is not found (the game's `Init` queues nothing behind the menu) leaves the queue as
+  it is: the game shows its main menu as without the switch.
+- Each start says what happened in one timeline row: a `Step` with `Parent = "DirectSaveLoad"`,
+  `Name` = `the menu's states taken out: the save loads next`, `off: the switch DirectSaveLoad`,
+  or why it did not act (`not run: ...`), at the moment of `Init -> LoadModule`.
+- The risk: the main menu's states never run before the first session - nothing of the menu
+  (its level, its pages, its own `Enter`) exists when the save is loaded, as in a level start. A
+  mod that waits for the client's `Menu` state before its first session never sees it.
+
+### Command-line values in any alphabet
+
+The game's WinMain gets its command line narrow, in the system's ANSI code page, and splits it into
+`ls::ArgumentString` (at spaces outside double quotes, the quotes removed); every argument is read
+from there through `ls::ArgumentString::GetValue`. The game's own names - save folders above all -
+are UTF-8, so a Cyrillic save folder given to `-loadSaveGame` never matches (in code page 1251 it
+is read as its 1251 bytes, in code page 1252 as question marks), and the game sits in its menu.
+
+The extender starts after that split, so the value is mended where the game reads it: after each
+`GetValue`, the same argument is taken from the process's wide command line (`GetCommandLineW`,
+split as the game splits it) and, when its ANSI form is exactly what the game read and its UTF-8
+form differs, the game is given the UTF-8 form. ASCII values are never touched. It is on by
+default; `"WideCommandLine": false` gives the game's own narrow reading. A changed value is a
+timeline `Step` row with `Parent = "WideCommandLine"`, `Name` = `<key> given in UTF-8`.
+
+<a id="loading-hints"></a>
+## Loading Hints - `Ext.Hints`
+
+The loading screen shows hints drawn at random from one list, `ecl::HintManager`, which the game
+fills once per process from one file, `Public/Game/Hints/Hints.lsx`; a mod that ships that file
+replaces the whole list, and of two such mods only the last wins. With the extender, each module
+the game loads (the game's module list, see [Which modules](#which-modules))
+may instead ship its own hints in its own folder, and they are added to the game's:
+
+- **The place**: `Public/<Folder>/Hints/Hints.lsx`, `<Folder>` the mod's folder (as its `meta.lsx`
+  names it), inside its pak or loose under `Data/`. It shadows no one's file.
+- **The format** is the game's own: a `save` with a region `Hints`, a `root` node and one `Hint`
+  node per hint, each with `HintKey` (FixedString), `Description` (TranslatedString: the text's
+  handle, from the mod's localization), `Keyboard`, `Controller` (bool: shown for that input),
+  `Internal` (bool) and `WikiPage` (LSString). The root's `HintDuration` is not taken: the
+  game's stays.
+- **The load**: at the client's first `StartLoading` (the module list is known, the mods' files
+  are reachable, and no hint has been drawn yet), each file is loaded by the game itself
+  (`ls::FileFormatIO::LoadFile` into a second `ecl::HintManager`), in the game's load order.
+- **The composition**: an entry whose `HintKey` is not yet in the list is appended; an entry whose
+  `HintKey` is already there replaces that entry in place (the game's, or an earlier mod's): the
+  later mod wins, as with resources, and a warning names both. A key given twice in one file:
+  the later one is kept, with a warning.
+- The player's switch: `"ModHints": false` in `ScriptExtenderSettings.json` leaves the game's list
+  as its own file gives it.
+- **The list follows the game's reload of its modules.** A mod enabled or disabled in the game's
+  mod manager is applied by the game at the next session's start: the client's `UnloadModule`
+  and `LoadModule` (a save loaded, a new game). At the end of every client `LoadModule` the
+  modules the game loaded are compared with the ones the list was composed from; when they
+  differ, the list is composed again - the game's own `Public/Game/Hints/Hints.lsx` loaded anew by
+  the same loader, then the file of every module of the new list - so a disabled mod's hints go
+  and an enabled one's come. The new list is put into the game's on the interface's thread, before
+  the loading screen draws its next hint (the hints drawn during that `LoadModule` itself are
+  still the old list's); the old entries are destroyed by the game's own destructor. Rows:
+  `HintsComposed` with `Moment` `"reload"`, then `"installed"`. Until that reload the menu keeps the
+  list of the modules loaded last, as the game keeps their other data.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<save>
+    <version major="4" minor="0" revision="0" build="34"/>
+    <region id="Hints">
+        <node id="root">
+            <children>
+                <node id="Hint">
+                    <attribute id="Controller" type="bool" value="true"/>
+                    <attribute id="Description" type="TranslatedString" handle="h...my handle..." version="1"/>
+                    <attribute id="HintKey" type="FixedString" value="MyMod_Hint_1"/>
+                    <attribute id="Internal" type="bool" value="false"/>
+                    <attribute id="Keyboard" type="bool" value="true"/>
+                    <attribute id="WikiPage" type="LSString" value=""/>
+                </node>
+            </children>
+        </node>
+    </region>
+</save>
+```
+
+### Methods (client)
+
+- `Ext.Hints.GetComposition()` -> how the list in force was composed: `Seen` (the first
+  `StartLoading` was met), `Enabled` (the player's switch), `Written` (the game's list was
+  rewritten), `Moment` (`"StartLoading"`, or `"LoadModule"` after a reload), `Compositions` (how
+  many were put into the list), `Pending` (a reload's composition waits for the interface's next
+  update), `GameCount` and `Count` (the game's own entries and the list's size after),
+  `ModuleList` (`{ Source, Moment, Count }`: the game's module list read), `Entries` (the list in
+  order: `{ HintKey, Source, Mod?, Replaced? }`, `Source` `"Game"` or the giving mod's UUID, `Mod`
+  and `Replaced` as `{ Source, Name, Folder }`, `Replaced` the one whose entry of that key it
+  replaced), `Files` (one per module of that list, in its order: `{ Source, Name, Folder, Path,
+  Found, Loaded, Count, Added, Replaced }`) and `Warnings`.
+
+The list itself can be read with `Ext.Debug.ReadValue` (developer mode): `ecl::Hint` is 0x38
+bytes, `HintKey` a `"FixedString"` at +0, the `Description`'s handle a `"FixedString"` at +4,
+`Controller` +0x14, `Keyboard` +0x15, `Internal` +0x30. The timeline's `HintsComposed` and
+`HintShown` rows say when the list was composed and which hint the loading screen drew.
 
 <a id="loca"></a>
 ## Localization - `Ext.Loca`
@@ -2204,6 +2501,10 @@ You can listen to SE and engine events with `Ext.Events.<EVENT_NAME>:Subscribe(f
 | `SessionLoaded` | Thrown when the game session was set up. |
 | `ResetCompleted` | Thrown when `Ext.Debug.Reset()` or `reset` console command completes on the client or server.<br/>Indicates that the Lua state was reloaded. |
 | `GameStateChanged` | Indicates that the server/client game state changed (e.g., loading save, paused, main menu, etc.). |
+| `ModulesReloaded` | (client; this fork) The client loaded another set of modules than at its previous load (a change of the mod list the game applies at a session's start): `Previous`, `Current` (module UUIDs in load order). |
+| `TimelinePlayback` | (client; this fork) A client timeline's playback state changed as the game's timeline system left it: `Timeline` (resource UUID), `Type`, `From`, `To` (-1: not there / gone). The main menu's camera descent is one. |
+| `LoadingScreen` | (client; this fork) The game showed or hid its loading screen: `Visible`. Thrown only while the client has Lua: a load that resets it is told after the fact by the start's timeline. |
+| `UIStateChanged` | (client; this fork) A state of the interface's state machine was entered or left: `State`, `Parent`, `Depth`, `Entered`. The player sees a load end when `Loading` is left. |
 | `Tick` | Thrown after each game engine tick on both the client and the server.<br/>Server logic runs at ~30hz, so this event is thrown roughly every 33ms.<br/>Helper: `Ext.OnNextTick(fun)` registers a handler that is only called on the next tick and is unregistered afterwards. |
 | `BeforeRoll` | Server only. Thrown before the game rolls dice for a check, attack, saving throw, damage, heal or initiative.<br/>`Bonus`, `Advantage`, `Disadvantage` and `DC` can be changed and apply to this roll only. |
 | `Roll` | Server only. Thrown after the roll with every die thrown (`Dice`) and the result.<br/>`Natural`, `Total`, `Discarded` and `Critical` can be changed; changing `Natural` adjusts `Total` and `Critical` accordingly. |

@@ -9,7 +9,7 @@
 
 namespace {
 
-constexpr uint64_t CoverRingEntries = 1ull << 20;        // 16 bytes each
+constexpr uint64_t CoverRingEntries = 1ull << 22;        // 16 bytes each
 constexpr uint32_t CoverStubBytes = 96;
 constexpr uint32_t CoverBatch = 256;
 
@@ -21,6 +21,8 @@ struct CoverSlot
     uint64_t Hits{ 0 };
     bool Attached{ false };
     bool Hot{ false };
+    // set by the counter itself at every call: that the function ran never depends on the ring
+    uint8_t Seen{ 0 };
 };
 
 struct CoverEdgeKey
@@ -56,7 +58,7 @@ constexpr uint32_t CoverCellOffset = 88;
 
 void** CoverCell(uint8_t* stub) { return (void**)(stub + CoverCellOffset); }
 
-uint8_t* CoverBuildStub(uint8_t* at, uint32_t slot, uint64_t function)
+uint8_t* CoverBuildStub(uint8_t* at, uint32_t slot, uint64_t function, uint8_t* seen)
 {
     uint8_t* w = at;
     auto bytes = [&](std::initializer_list<uint8_t> list) { for (auto b : list) *w++ = b; };
@@ -74,6 +76,8 @@ uint8_t* CoverBuildStub(uint8_t* at, uint32_t slot, uint64_t function)
     bytes({ 0x49, 0xC1, 0xE3, 0x04 });                       // shl r11, 4
     bytes({ 0x4B, 0x89, 0x44, 0x1A, 0x10 });                 // mov [r10+r11+0x10], rax
     bytes({ 0x4B, 0xC7, 0x44, 0x1A, 0x18 }); imm32(slot + 1);// mov qword [r10+r11+0x18], slot + 1
+    bytes({ 0x49, 0xBA }); imm64((uint64_t)seen);            // mov r10, &slot.Seen
+    bytes({ 0x41, 0xC6, 0x02, 0x01 });                       // mov byte [r10], 1
     bytes({ 0x41, 0x5B });                                   // pop r11
     bytes({ 0x41, 0x5A });                                   // pop r10
     bytes({ 0x58 });                                         // pop rax
@@ -226,42 +230,27 @@ void CoverTick()
 }
 // Called every tick of either side (OnExtenderTick).
 
-// Ext.Debug.StartCoverage(addresses, [hotLimit]) -> { Asked, Placed, Refused }. Puts a counter on the
-// function that begins at each address of the list. A function Detours cannot patch (too short)
-// is refused and the rest go on. hotLimit (default 2,000,000): a function called more often than
-// this since the start is taken off by itself. A second start adds to the first.
-UserReturn StartCoverage(lua_State* L)
+// Puts a counter on the function that begins at each address; the caller holds gInstrumentMutex.
+// False when there is no memory for the ring.
+bool CoverPlace(std::vector<uint64_t> const& addresses, uint32_t& asked, uint32_t& placed, uint32_t& refused)
 {
-    if (!gExtender->GetConfig().DeveloperMode) {
-        ERR("StartCoverage() is only available in developer mode");
-        return 0;
-    }
-    WARN_ONCE("Coverage counters are a development tool for studying the game's code; they should not be used in production!");
-    luaL_checktype(L, 1, LUA_TTABLE);
-    std::lock_guard _(gInstrumentMutex);
-    if (lua_isinteger(L, 2)) gCoverHotLimit = (uint64_t)lua_tointeger(L, 2);
-
     if (gCoverRing == nullptr) {
         gCoverRing = (uint64_t*)VirtualAlloc(nullptr, 16 + CoverRingEntries * 16, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
         gCoverSlots = new std::deque<CoverSlot>();
         gCoverCode = new std::vector<uint8_t*>();
         gCoverEdges = new std::unordered_map<CoverEdgeKey, uint64_t, CoverEdgeHash>();
-        if (gCoverRing == nullptr) return luaL_error(L, "StartCoverage: no memory for the ring");
+        if (gCoverRing == nullptr) return false;
     }
 
     auto& slots = *gCoverSlots;
     std::unordered_set<uint64_t> have;
     for (auto const& s : slots) have.insert(s.Address);
 
-    auto count = (uint32_t)lua_rawlen(L, 1);
     uint32_t first = (uint32_t)slots.size();
     uint8_t* block = nullptr;
     uint32_t used = 0, blockStubs = 0;
-    uint32_t asked = 0;
-    for (uint32_t i = 1; i <= count; i++) {
-        lua_rawgeti(L, 1, i);
-        auto address = (uint64_t)lua_tointeger(L, -1);
-        lua_pop(L, 1);
+    asked = placed = refused = 0;
+    for (auto address : addresses) {
         asked++;
         if (address == 0 || have.count(address) || !IsReadableRange((uint8_t const*)address, 16) || !CoverIsFunctionStart(address)) continue;
         have.insert(address);
@@ -280,12 +269,11 @@ UserReturn StartCoverage(lua_State* L)
         slots.push_back(slot);
     }
     // Only now are the slots at their final places: build each stub around its own slot
-    for (uint32_t i = first; i < slots.size(); i++) CoverBuildStub(slots[i].Stub, i, slots[i].Address);
+    for (uint32_t i = first; i < slots.size(); i++) CoverBuildStub(slots[i].Stub, i, slots[i].Address, &slots[i].Seen);
     for (auto code : *gCoverCode) FlushInstructionCache(GetCurrentProcess(), code, (SIZE_T)4096 * CoverStubBytes);
 
     DetourSetIgnoreTooSmall(TRUE);
     auto threads = CoverThreads();
-    uint32_t placed = 0, refused = 0;
     for (uint32_t from = first; from < slots.size(); from += CoverBatch) {
         uint32_t to = (uint32_t)std::min<std::size_t>(slots.size(), (std::size_t)from + CoverBatch);
         if (CoverPatch(threads, from, to, true) != NO_ERROR) {
@@ -304,6 +292,34 @@ UserReturn StartCoverage(lua_State* L)
         gCoverWorker = true;
         std::thread(CoverWork).detach();
     }
+    return true;
+}
+
+// Ext.Debug.StartCoverage(addresses, [hotLimit]) -> { Asked, Placed, Refused }. Puts a counter on the
+// function that begins at each address of the list. A function Detours cannot patch (too short)
+// is refused and the rest go on. hotLimit (default 200,000): a function called more often than
+// this since the start is taken off by itself. A second start adds to the first.
+UserReturn StartCoverage(lua_State* L)
+{
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("StartCoverage() is only available in developer mode");
+        return 0;
+    }
+    WARN_ONCE("Coverage counters are a development tool for studying the game's code; they should not be used in production!");
+    luaL_checktype(L, 1, LUA_TTABLE);
+    std::lock_guard _(gInstrumentMutex);
+    if (lua_isinteger(L, 2)) gCoverHotLimit = (uint64_t)lua_tointeger(L, 2);
+
+    std::vector<uint64_t> addresses;
+    auto count = (uint32_t)lua_rawlen(L, 1);
+    addresses.reserve(count);
+    for (uint32_t i = 1; i <= count; i++) {
+        lua_rawgeti(L, 1, i);
+        addresses.push_back((uint64_t)lua_tointeger(L, -1));
+        lua_pop(L, 1);
+    }
+    uint32_t asked = 0, placed = 0, refused = 0;
+    if (!CoverPlace(addresses, asked, placed, refused)) return luaL_error(L, "StartCoverage: no memory for the ring");
 
     lua_newtable(L);
     settable(L, "Asked", (int64_t)asked);
@@ -328,7 +344,7 @@ UserReturn GetCoverageStatus(lua_State* L)
         for (auto const& s : *gCoverSlots) {
             if (s.Attached) attached++;
             if (s.Hot) hot++;
-            if (s.Hits > 0) seen++;
+            if (s.Hits > 0 || s.Seen) seen++;
         }
     }
     lua_newtable(L);
@@ -342,22 +358,20 @@ UserReturn GetCoverageStatus(lua_State* L)
     return 1;
 }
 
-// Ext.Debug.SaveCoverage(path, [reset]) -> { Functions, Pairs }. Writes the counts to a text file:
+// The record's format (Ext.Debug.SaveCoverage): a text file of
 // "F <module> <rva> <calls> <hot>" for every function called, "E <module> <rva> <module> <rva>
 // <calls>" for every pair of a function and the address that called it. With reset the counts
 // start again from zero, so that a file holds one stretch of play.
-UserReturn SaveCoverage(lua_State* L, STDString path, std::optional<bool> reset)
+// Writes the counts to a file and, with reset, starts them again; the caller holds
+// gInstrumentMutex. Null when all went well, else what went wrong.
+char const* CoverWrite(char const* path, bool reset, uint64_t& functions, uint64_t& pairs)
 {
-    if (!gExtender->GetConfig().DeveloperMode) {
-        ERR("SaveCoverage() is only available in developer mode");
-        return 0;
-    }
-    std::lock_guard _(gInstrumentMutex);
+    functions = pairs = 0;
     CoverDrain(false);
-    if (gCoverSlots == nullptr) return luaL_error(L, "SaveCoverage: nothing is covered");
+    if (gCoverSlots == nullptr) return "nothing is covered";
 
     FILE* file = nullptr;
-    if (fopen_s(&file, path.c_str(), "wb") != 0 || file == nullptr) return luaL_error(L, "SaveCoverage: the file cannot be written");
+    if (fopen_s(&file, path, "wb") != 0 || file == nullptr) return "the file cannot be written";
 
     std::unordered_map<HMODULE, std::string> names;
     auto place = [&](uint64_t address, std::string& module, uint64_t& rva) {
@@ -379,11 +393,10 @@ UserReturn SaveCoverage(lua_State* L, STDString path, std::optional<bool> reset)
     };
 
     auto& slots = *gCoverSlots;
-    uint64_t functions = 0, pairs = 0;
     std::string module, callerModule;
     uint64_t rva = 0, callerRva = 0;
     for (auto const& s : slots) {
-        if (s.Hits == 0) continue;
+        if (s.Hits == 0 && !s.Seen) continue;
         place(s.Address, module, rva);
         fprintf(file, "F %s %llX %llu %d\n", module.c_str(), (unsigned long long)rva, (unsigned long long)s.Hits, s.Hot ? 1 : 0);
         functions++;
@@ -398,11 +411,26 @@ UserReturn SaveCoverage(lua_State* L, STDString path, std::optional<bool> reset)
     fprintf(file, "L %llu\n", (unsigned long long)gCoverLost);
     fclose(file);
 
-    if (reset.value_or(false)) {
+    if (reset) {
         // the hot ones keep their count: it is what says they were taken off
-        for (auto& s : slots) if (!s.Hot) s.Hits = 0;
+        for (auto& s : slots) { if (!s.Hot) s.Hits = 0; s.Seen = 0; }
         gCoverEdges->clear();
         gCoverLost = 0;
+    }
+    return nullptr;
+}
+
+// Ext.Debug.SaveCoverage(path, [reset]) -> { Functions, Pairs }: CoverWrite for Lua.
+UserReturn SaveCoverage(lua_State* L, STDString path, std::optional<bool> reset)
+{
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("SaveCoverage() is only available in developer mode");
+        return 0;
+    }
+    std::lock_guard _(gInstrumentMutex);
+    uint64_t functions = 0, pairs = 0;
+    if (auto problem = CoverWrite(path.c_str(), reset.value_or(false), functions, pairs)) {
+        return luaL_error(L, "SaveCoverage: %s", problem);
     }
 
     lua_newtable(L);
@@ -438,4 +466,58 @@ int64_t StopCoverage(lua_State* L)
     CoverDrain(true);
     gCoverActive = false;
     return removed;
+}
+
+// --- The start's coverage -------------------------------------------------------------------------
+// Lua comes only with LoadModule; the start before it is covered from the setting "CoverageAtStart":
+// a file of the executable's function starts, one hexadecimal offset a line. The counters are put on
+// as soon as the extender has started - before the engine's start - and at every state the client
+// enters, up to the main menu, the counts so far are saved beside that file and start again
+// ("<file>.<NN>-<state>.txt"). The counters stay on afterwards, for Ext.Debug.SaveCoverage.
+
+std::string gCoverAtStart;
+uint32_t gCoverAtStartSaved{ 0 };
+bool gCoverAtStartDone{ false };
+
+void CoverAtStartBegin()
+{
+    auto const& config = gExtender->GetConfig();
+    if (!config.DeveloperMode || config.CoverageAtStart.empty()) return;
+
+    FILE* file = nullptr;
+    if (fopen_s(&file, config.CoverageAtStart.c_str(), "rb") != 0 || file == nullptr) {
+        ERR("CoverageAtStart: %s cannot be read", config.CoverageAtStart.c_str());
+        return;
+    }
+    auto base = (uint64_t)GetModuleHandleW(nullptr);
+    std::vector<uint64_t> addresses;
+    char line[64];
+    while (fgets(line, sizeof(line), file) != nullptr) {
+        char* end = nullptr;
+        auto rva = strtoull(line, &end, 16);
+        if (end != line && rva != 0) addresses.push_back(base + rva);
+    }
+    fclose(file);
+
+    std::lock_guard _(gInstrumentMutex);
+    uint32_t asked = 0, placed = 0, refused = 0;
+    if (!CoverPlace(addresses, asked, placed, refused)) {
+        ERR("CoverageAtStart: no memory for the ring");
+        return;
+    }
+    gCoverAtStart = config.CoverageAtStart;
+    INFO("CoverageAtStart: %u functions asked, %u counted, %u refused", asked, placed, refused);
+}
+
+void CoverAtStartState(char const* state)
+{
+    if (gCoverAtStart.empty() || gCoverAtStartDone) return;
+    std::lock_guard _(gInstrumentMutex);
+    char path[1024];
+    snprintf(path, sizeof(path), "%s.%02u-%s.txt", gCoverAtStart.c_str(), ++gCoverAtStartSaved, state);
+    uint64_t functions = 0, pairs = 0;
+    if (auto problem = CoverWrite(path, true, functions, pairs)) {
+        ERR("CoverageAtStart: %s: %s", path, problem);
+    }
+    if (strcmp(state, "Menu") == 0) gCoverAtStartDone = true;
 }

@@ -67,6 +67,33 @@ struct ExtenderConfig
     // video at all, whatever the mods declare (Extender/Client/StartupVideos.inl).
     bool StartupVideos{ true };
 
+    // The player's switch for the mods' loading hints: off, the game's hint list stays as its own
+    // file gives it, whatever the mods ship (Extender/Client/ModHints.inl).
+    bool ModHints{ true };
+
+    // The player's switch for the mods' interface on the first loading screen: off, the game merges
+    // the mods' interface at its own time, at the end of LoadModule, and the first loading screen
+    // is the game's alone (Extender/Client/EarlyModUI.inl).
+    bool EarlyModInterface{ true };
+
+    // A save asked for on the command line (-loadSaveGame, -continueGame) loaded without the main
+    // menu: the menu's states the game queued at its start (LoadMenu, StopLoading, Menu) are taken
+    // out of the client's queue when the game's own Init has queued the save's load behind them.
+    // A combination the game does not make by itself, so off by default
+    // (Extender/Client/DirectSaveLoad.inl).
+    bool DirectSaveLoad{ false };
+
+    // The game reads its command line narrow, in the system's ANSI code page, while its own strings
+    // (save folders, paths) are UTF-8: a value such as a Cyrillic save name never matches. On, a
+    // value the game reads through ls::ArgumentString::GetValue is given in UTF-8, from the
+    // process's wide command line, when that is all it changes (Extender/Client/DirectSaveLoad.inl).
+    bool WideCommandLine{ true };
+
+    // Developer mode: a file of the executable's function starts (one hexadecimal offset a line);
+    // coverage counters go on as the extender starts and a record is saved beside the file at every
+    // state the client enters up to the main menu (Lua/Libs/DebugCover.inl). Empty: off.
+    std::string CoverageAtStart;
+
 #if defined(OSI_EXTENSION_BUILD)
 #if defined(_DEBUG)
     bool DeveloperMode{ true };

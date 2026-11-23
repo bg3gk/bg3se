@@ -1,8 +1,11 @@
 #pragma once
 
 // The startup videos: what the game plays in its first StartLoading state, composed from the
-// game's own playlist and the declarations of the enabled mods
-// (Mods/<Folder>/ScriptExtender/StartupVideos.json), then written into the game's playlist.
+// game's own playlist and the declarations of the modules the game will load
+// (Mods/<Folder>/ScriptExtender/StartupVideos.json), then written into the game's playlist. The
+// modules are the game's own resolution of modsettings.lsx, in its load order
+// (Extender/Client/GameModules.h). The videos play once per process: a change of the mod list in
+// the game's menu shows in them at the next start of the game.
 //
 // The composer is a pure function of the declarations and the game's entries; the rest of this
 // file is the moment it is applied (the client's StartLoading listener, which runs before
@@ -111,7 +114,14 @@ struct StartupRecord
     std::vector<STDString> GameEntries;
     uint32_t SettingsMods{ 0 };
     uint32_t AvailableMods{ 0 };
+    // The client's load-ordered modules at that moment, after the game's resolver ran
+    // (Extender/Client/GameModules.h).
     uint32_t LoadOrderedModules{ 0 };
+    // The module list the declarations were looked for in: where it came from ("LoadModFromSettings",
+    // or "Settings" when the game's resolver was not available) and its moment.
+    STDString ModuleListSource;
+    STDString ModuleListMoment;
+    // One per module of that list, in its order (the game's load order).
     std::vector<ModSeen> Mods;
     std::vector<Declaration> Declarations;
     Composition Result;
