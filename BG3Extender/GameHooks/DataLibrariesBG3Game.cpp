@@ -140,6 +140,10 @@ namespace bg3se
         SYM_OFF(ls__PackedFileManager__LoadPackFiles);
         SYM_OFF(ls__TranslatedStringRepository__LoadFromContextFolder);
         SYM_OFF(ls__ArgumentString__GetValue);
+        SYM_OFF(ls__RenderThread__Update);
+        SYM_OFF(lua__luaC_step);
+        SYM_OFF(unplaced__TickWait);
+        SYM_OFF(esv__inventory__TreasureGenerationSystem__GenerateTreasure);
         SYM_OFF(ecl__HintManager);
         SYM_OFF(ls__FileFormatIO__LoadFile);
         SYM_OFF(gui__DCLoadingScreen__OnAdvanceHintCommand);

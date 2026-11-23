@@ -3,6 +3,9 @@
 #include <Extender/ScriptExtender.h>
 #include <Lua/Debugger/LuaDebugger.h>
 #include <Extender/Shared/StartupTimeline.h>
+#include <Extender/Shared/LoadTrace.h>
+#include <Extender/Shared/FastLoad.h>
+#include <Extender/Shared/RenderCut.h>
 
 #pragma warning(push)
 #pragma warning(disable:4267)
@@ -113,6 +116,11 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 {
     startup_timeline::RecordWithCounters(startup_timeline::Side::Server, startup_timeline::What::State,
         (int32_t)fromState, (int32_t)toState);
+    // GateKit: the load's trace (the switch LoadTrace).
+    load_trace::Role("esv state");
+    load_trace::OnState(2, (int32_t)fromState, (int32_t)toState);
+    fast_load::OnServerState((int32_t)fromState, (int32_t)toState);   // GateKit: fast loads
+    render_cut::OnServerState((int32_t)fromState, (int32_t)toState);  // GateKit: Lua collector held
 
 #if defined(DEBUG_SERVER_CLIENT)
         DEBUG("esv::ScriptExtender::OnGameStateChanged(): %s -> %s", 
@@ -198,11 +206,16 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 void ScriptExtender::GameStateWorkerWrapper(void (* wrapped)(void *), void* self)
 {
     ContextGuard _(ContextType::Server);
+    load_trace::Role("esv worker");   // GateKit: the load's trace
+    load_trace::ServerWorker(self);
+    fast_load::OnServerWorker(self);
     wrapped(self);
 }
 
 void ScriptExtender::PreUpdate(void* self, GameTime* time)
 {
+    load_trace::Role("esv update");   // GateKit: the load's trace
+    render_cut::OnServerTick();       // GateKit: the server's ticks counted (RenderCut.h)
     network_.Update();
     RunPendingTasks();
     if (extensionState_) {

@@ -896,6 +896,122 @@ UserReturn GetObjectAddress(lua_State* L)
     return 2;
 }
 
+// GateKit (W3 round 6, the switch TreasurePin; Extender/Shared/Headless.h):
+// Ext.Debug.PinTreasure([seed]) -> { Installed, Pinned, Seed, Calls, Keyed, Unkeyed }. With a seed,
+// every treasure table rolled from now on first seeds the server's saved random from the seed and
+// the entity's UUID (a cheat for differential checks); without one, the game's shared sequence is
+// back. The counters after the call. Developer mode.
+UserReturn PinTreasure(lua_State* L, std::optional<int64_t> seed)
+{
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("PinTreasure() is only available in developer mode");
+        return 0;
+    }
+    bg3se::headless::PinTreasure(seed.has_value(), (uint32_t)seed.value_or(0));
+    auto c = bg3se::headless::ReadTreasure();
+    lua_createtable(L, 0, 6);
+    settable(L, "Installed", c.Installed);
+    settable(L, "Pinned", c.Pinned);
+    settable(L, "Seed", (int64_t)c.Seed);
+    settable(L, "Calls", (int64_t)c.Calls);
+    settable(L, "Keyed", (int64_t)c.Keyed);
+    settable(L, "Unkeyed", (int64_t)c.Unkeyed);
+    return 1;
+}
+
+// GateKit (W3 round 6): Ext.Debug.MemoryMap([top]) -> { Totals, Allocations, Heaps }: the process's
+// address space walked with VirtualQuery. Totals by type (Private, Mapped, Image) and state, in MB
+// ({ Committed, Reserved }); Allocations: the `top` (default 40) largest committed allocations of
+// private memory, grouped by their allocation base ({ Base, CommittedMB, ReservedMB, Regions, Heap
+// = true when the base is one of GetProcessHeaps' heaps, Protect of the largest region }); Heaps:
+// the process heaps' count. What a memory map tool (VMMap) shows, without one. Developer mode.
+UserReturn MemoryMap(lua_State* L, std::optional<int> topArg)
+{
+    if (!gExtender->GetConfig().DeveloperMode) {
+        ERR("MemoryMap() is only available in developer mode");
+        return 0;
+    }
+    int top = topArg.value_or(40);
+    if (top < 1) top = 1;
+    if (top > 1000) top = 1000;
+
+    std::vector<HANDLE> heaps(1024);
+    auto heapCount = GetProcessHeaps((DWORD)heaps.size(), heaps.data());
+    if (heapCount > heaps.size()) heapCount = (DWORD)heaps.size();
+    heaps.resize(heapCount);
+
+    struct Alloc { uint64_t Base; uint64_t Committed; uint64_t Reserved; uint32_t Regions; uint64_t BiggestRegion; DWORD Protect; };
+    std::unordered_map<uint64_t, Alloc> allocs;
+    uint64_t totals[3][2]{};   // [Private, Mapped, Image][Committed, Reserved]
+
+    MEMORY_BASIC_INFORMATION mbi;
+    uint8_t* at = nullptr;
+    while (VirtualQuery(at, &mbi, sizeof(mbi)) == sizeof(mbi)) {
+        if (mbi.State != MEM_FREE) {
+            int type = mbi.Type == MEM_PRIVATE ? 0 : mbi.Type == MEM_MAPPED ? 1 : 2;
+            int state = mbi.State == MEM_COMMIT ? 0 : 1;
+            totals[type][state] += mbi.RegionSize;
+            if (type == 0) {
+                auto base = (uint64_t)mbi.AllocationBase;
+                auto& a = allocs[base];
+                a.Base = base;
+                a.Regions++;
+                if (state == 0) {
+                    a.Committed += mbi.RegionSize;
+                    if (mbi.RegionSize > a.BiggestRegion) { a.BiggestRegion = mbi.RegionSize; a.Protect = mbi.Protect; }
+                } else {
+                    a.Reserved += mbi.RegionSize;
+                }
+            }
+        }
+        auto next = (uint8_t*)mbi.BaseAddress + mbi.RegionSize;
+        if (next <= at) break;
+        at = next;
+    }
+
+    std::vector<Alloc> list;
+    list.reserve(allocs.size());
+    for (auto const& kv : allocs) list.push_back(kv.second);
+    std::sort(list.begin(), list.end(), [](Alloc const& a, Alloc const& b) { return a.Committed > b.Committed; });
+
+    auto mb = [](uint64_t bytes) { return (double)bytes / (1024.0 * 1024.0); };
+    lua_createtable(L, 0, 3);
+
+    lua_pushstring(L, "Totals");
+    lua_createtable(L, 0, 3);
+    char const* names[3]{ "Private", "Mapped", "Image" };
+    for (int t = 0; t < 3; t++) {
+        lua_pushstring(L, names[t]);
+        lua_createtable(L, 0, 2);
+        settable(L, "Committed", mb(totals[t][0]));
+        settable(L, "Reserved", mb(totals[t][1]));
+        lua_settable(L, -3);
+    }
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "Allocations");
+    lua_createtable(L, top, 0);
+    int n = 0;
+    for (auto const& a : list) {
+        if (n >= top || a.Committed == 0) break;
+        lua_createtable(L, 0, 6);
+        settable(L, "Base", (int64_t)a.Base);
+        settable(L, "CommittedMB", mb(a.Committed));
+        settable(L, "ReservedMB", mb(a.Reserved));
+        settable(L, "Regions", (int64_t)a.Regions);
+        settable(L, "Protect", (int64_t)a.Protect);
+        bool heap = false;
+        for (auto h : heaps) if ((uint64_t)h == a.Base) { heap = true; break; }
+        settable(L, "Heap", heap);
+        lua_rawseti(L, -2, ++n);
+    }
+    lua_settable(L, -3);
+
+    settable(L, "Heaps", (int64_t)heaps.size());
+    settable(L, "PrivateAllocations", (int64_t)list.size());
+    return 1;
+}
+
 // Ext.Debug.GetSymbolAddress(name) -> address, or nil and why. The address the extender found
 // for one of its own symbols (the names of GameHooks/DataLibrariesBG3Game.cpp, such as
 // "stats__DealDamageFunctor__ApplyDamage"): a function's entry, or the place of a global. A name

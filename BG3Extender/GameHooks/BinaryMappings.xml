@@ -795,6 +795,104 @@
       <Target Type="Absolute" Offset="@start" Symbol="ls__ArgumentString__GetValue" />
     </Mapping>
 
+    <!-- GateKit (Extender/Shared/RenderCut.h, the switches RenderCut and FastLoadLuaGC, off by
+         default). Both written from the registry (`gatekit registry mappings sync`), unique in
+         bg3_dx11.exe and bg3.exe of build 25605617. AllowFail: a patch that moves them leaves the
+         switches without effect.
+         ls::RenderThread::Update: one frame of the main thread's rendering (by pairing: macOS
+         BaseApp::OnIdle calls it, dx11's thunk at +0x3AC3510 has the same shape). -->
+    <!-- code:ls::RenderThread::Update; bg3.exe+0x3DF7FA0, bg3_dx11.exe+0x3DF8DE0 -->
+    <Mapping Name="ls::RenderThread::Update" AllowFail="true">
+      @start 48 89 5c 24 10 // mov [rsp+10h],rbx
+      48 89 6c 24 18 // mov [rsp+18h],rbp
+      ?? // push rsi
+      ?? // push rdi
+      ?? ?? // push r14
+      ?? ?? ?? ?? // sub rsp,40h
+      ?? ?? ?? // mov r14,rcx
+      ?? ?? ?? ?? ?? ?? ?? // mov rcx,[rel 1462D0718h]
+      ?? ?? ?? // mov rax,[rcx]
+      ?? ?? ?? ?? ?? 00 // mov r8d,2
+      ?? ?? ?? // mov rdx,[r14]
+      ?? ?? ?? ?? ?? ?? // call qword [rax+298h]
+      ?? ?? ?? ?? ?? ?? ?? // mov rcx,[rel 1462D0718h]
+      ?? ?? ?? // mov rax,[rcx]
+      ?? ?? ?? // mov rdx,[r14]
+      ?? ?? ?? ?? // add rdx,10h
+      ?? ?? ?? ?? ?? 00 // mov r8d,2
+      ?? ?? ?? ?? ?? ?? // call qword [rax+298h]
+      ?? ?? ?? ?? ?? ?? ?? // mov rcx,[rel 1462D0718h]
+      ?? ?? ?? // mov rax,[rcx]
+      ?? ?? ?? ?? ?? 00 // call qword [rax+0F8h]
+      ?? ?? ?? // mov rcx,[rax]
+      ?? ?? ?? ?? // mov r8,[rcx+78h]
+      ?? ?? ?? ?? ?? ?? ?? // lea rdx,[rel 1463D93E8h]
+      ?? ?? ?? // mov rcx,rax
+      ?? ?? ?? // call r8
+      ?? ?? ?? ?? ?? // mov byte [r14+2Ch],0
+      ?? ?? ?? ?? ?? ?? ?? // mov rax,[rel 1462D42D0h]
+      ?? ?? ?? ?? ?? 00 00 // mov byte [rax+408h],0
+      ?? ?? ?? ?? // mov rcx,[r14+8]
+      ?? ?? ?? ?? ?? // call 00000001441586A0h
+      ?? ?? ?? ?? ?? ?? ?? // mov rax,[rel 1462D10D8h]
+      ?? ?? ?? ?? ?? ?? 00 // mov rcx,[rax+130h]
+      ?? ?? ?? // mov rax,[rcx]
+      ?? ?? 90 ?? 00 00 // call qword [rax+90h]
+      <Target Type="Absolute" Offset="@start" Symbol="ls__RenderThread__Update" />
+    </Mapping>
+
+    <!-- unplaced::luaC_step: the game's embedded Lua 5.3, one incremental collector step (its body
+         is Lua 5.3's luaC_step line for line). -->
+    <!-- code:unplaced::luaC_step; bg3.exe+0x4D948D0, bg3_dx11.exe+0x4D7A580 -->
+    <Mapping Name="unplaced::luaC_step" AllowFail="true">
+      @start 48 89 6c 24 10 // mov qword ptr [rsp + 0x10], rbp
+      48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
+      57 // push rdi
+      48 83 ec 20 // sub rsp, 0x20
+      48 8b 71 18 // mov rsi, qword ptr [rcx + 0x18]
+      <Target Type="Absolute" Offset="@start" Symbol="lua__luaC_step" />
+    </Mapping>
+
+    <!-- GateKit (Extender/Shared/Headless.h, the switch IdleSleep, off by default). Written from
+         the registry (`gatekit registry mappings sync`), unique in bg3_dx11.exe and bg3.exe of build
+         25605617. AllowFail: without it the switch has no effect.
+         unplaced::TickWait: the wait at the end of a game thread's tick (the server's worker
+         +0x78, called through bg3_dx11.exe+0x4122890). -->
+    <!-- code:unplaced::TickWait; bg3.exe+0x4158DF0, bg3_dx11.exe+0x4122940 -->
+    <Mapping Name="unplaced::TickWait" AllowFail="true">
+      @start 40 55 // push rbp
+      53 // push rbx
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8b ec // mov rbp,rsp
+      48 83 ec 68 // sub rsp,68h
+      4c 8b e2 // mov r12,rdx
+      <Target Type="Absolute" Offset="@start" Symbol="unplaced__TickWait" />
+    </Mapping>
+
+    <!-- GateKit (Extender/Shared/Headless.h, the switch TreasurePin, off by default). Written from
+         the registry (`gatekit registry mappings sync`), unique in bg3_dx11.exe and bg3.exe of build
+         25605617. AllowFail: without it the switch has no effect. -->
+    <!-- code:esv::inventory::TreasureGenerationSystem::GenerateTreasure; bg3.exe+0x34C14C0, bg3_dx11.exe+0x34C1630 -->
+    <Mapping Name="esv::inventory::TreasureGenerationSystem::GenerateTreasure" AllowFail="true">
+      @start 48 89 5c 24 10 // mov [rsp+10h],rbx
+      4c 89 44 24 18 // mov [rsp+18h],r8
+      48 89 4c 24 08 // mov [rsp+8],rcx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 f9 // lea rbp,[rsp-7]
+      <Target Type="Absolute" Offset="@start" Symbol="esv__inventory__TreasureGenerationSystem__GenerateTreasure" />
+    </Mapping>
+
     <!-- The dice of the roll manager (Lua/Server/RollEvents.inl).
          Prologues; each is unique in bg3_dx11.exe and in bg3.exe of build 25605617
          (dx11 / vulkan RVAs given beside each). AllowFail: a patch that moves them costs the roll events only. -->

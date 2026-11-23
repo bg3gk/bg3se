@@ -47,6 +47,14 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     TranslatedStringRepository__LoadFromContextFolderProc* ls__TranslatedStringRepository__LoadFromContextFolder{ nullptr };
     // The game's read of a command-line argument's value (Extender/Client/DirectSaveLoad.h).
     ArgumentString__GetValueProc* ls__ArgumentString__GetValue{ nullptr };
+    // GateKit, switches off by default (Extender/Shared/RenderCut.h): the render thread's frame and
+    // the game's Lua collector step.
+    RenderThread__UpdateProc* ls__RenderThread__Update{ nullptr };
+    LuaC_StepProc* lua__luaC_step{ nullptr };
+    // GateKit, switch off by default (Extender/Shared/Headless.h): the game threads' tick wait.
+    TickWaitProc* unplaced__TickWait{ nullptr };
+    // GateKit, switch TreasurePin off by default (Extender/Shared/Headless.h): a treasure table rolled.
+    GenerateTreasureProc* esv__inventory__TreasureGenerationSystem__GenerateTreasure{ nullptr };
     // The hint list and the game's file loader (Extender/Client/ModHints.inl), both found where
     // App::InitializeResourceManager loads Hints/Hints.lsx: ecl::HintManager::m_ptr and
     // ls::FileFormatIO::LoadFile.

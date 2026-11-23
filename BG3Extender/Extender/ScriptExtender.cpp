@@ -11,6 +11,7 @@
 #include <Extender/Client/EarlyModUI.h>
 #include <Extender/Client/ModHints.h>
 #include <Extender/Client/DirectSaveLoad.h>
+#include <Extender/Shared/FastLoad.h>
 #include "Version.h"
 #include "resource.h"
 #include <iomanip>
@@ -26,6 +27,9 @@
 #include <Extender/Shared/UserVariables.inl>
 #include <Extender/Shared/UseActions.inl>
 #include <Extender/Shared/VirtualTextures.inl>
+#include <Extender/Shared/LoadTrace.inl>
+#include <Extender/Shared/RenderCut.inl>   // GateKit: render skip, Lua collector held during a load
+#include <Extender/Shared/Headless.inl>    // GateKit: tick waits slept, resource classes stubbed
 #if USE_OPTICK
 #include <optick_server.h>
 #endif
@@ -104,6 +108,14 @@ void ScriptExtender::Initialize()
 
     startTime_ = GetTickCount64();
     startup_timeline::RecordWithCounters(startup_timeline::Side::Extender, startup_timeline::What::ExtenderLoaded, -1, -1);
+
+    // GateKit: the load's trace, measuring only (the switch LoadTrace, off by default).
+    if (config_.LoadTrace) {
+        load_trace::Install(config_.LoadTraceSampleMs);
+    }
+    // GateKit: fast loads for automated runs (each switch off by default).
+    fast_load::Configure(config_.FastLoadClientFrames, config_.FastLoadServerTick,
+        config_.FastLoadStreamingWait, config_.FastLoadFades, config_.FastLoadStreamingGate);
 
     if (Libraries.GetGameVersion(gameVersion_)) {
         if (gameVersion_.IsSupported()) {
@@ -196,6 +208,19 @@ void ScriptExtender::Initialize()
         ArgumentGetValue.Wrap(GetStaticSymbols().ls__ArgumentString__GetValue);
         ArgumentGetValue.SetPostHook(&ScriptExtender::OnArgumentGetValue, this);
     }
+
+    // GateKit: the render thread's frame and the game's Lua collector (RenderCut.h), each only when
+    // its switch is on (off by default).
+    render_cut::Install(config_.RenderCut, config_.RenderCutSkip, config_.FastLoadLuaGC, config_.RenderCutFromRunning,
+        config_.RenderCutSkipPaceUs, config_.RenderCutSkipPaceStartOnly);
+    // GateKit: the tick waits slept and resource classes stubbed (Headless.h), off by default.
+    headless::Install(config_.IdleSleep, config_.StubFileExtensions);
+    // GateKit: the treasure generation's wrapper, inert until pinned (Headless.h), off by default.
+    headless::InstallTreasurePin(config_.TreasurePin);
+    // GateKit (W3 round 7), measuring: VirtualAlloc calls of at least N MB named by their callers.
+    headless::InstallLargeAllocTrace(config_.LargeAllocTraceMB);
+    // Record self-termination when exit diagnostics are enabled.
+    headless::InstallExitWitness(config_.ExitWitness, config_.LogDirectory);
 
     DetourTransactionCommit();
 
@@ -703,7 +728,31 @@ FileReader * ScriptExtender::OnFileReaderCreate(FileReader__CtorProc* next, File
         statLoadOrderHelper_.OnStatFileOpened(path);
     }
 
+    // GateKit: a stubbed resource class (the switches StubFileExtensions and StubFileTarget,
+    // Headless.h): the open gets the stand-in file, or finds no file, as for a missing one.
+    if (headless::Stubbed(path.Name.data(), path.Name.size())
+        && (config_.StubFileTarget.empty() || path.Name.find(config_.StubFileTarget.c_str()) == STDString::npos)) {
+        Path stub;
+        if (config_.StubFileTarget.empty()) {
+            stub.Name = path.Name;
+            stub.Name += ".gatekit-stub";
+        } else {
+            stub.Name = config_.StubFileTarget.c_str();
+        }
+#if !defined(OSI_EOCAPP)
+        stub.Unknown = path->Unknown;
+#endif
+        return next(self, stub, type, unknown);
+    }
+
     DisableCrashReporting _;
+    // GateKit: the load's trace (the switch LoadTrace): the open's time, size and thread.
+    if (load_trace::Enabled()) {
+        auto began = load_trace::FileReaderBegin();
+        auto reader = next(self, path, type, unknown);
+        load_trace::FileReaderEnd(began, path.Name.data(), path.Name.size(), type, unknown, self->FileSize, self->IsLoaded);
+        return reader;
+    }
     return next(self, path, type, unknown);
 }
 

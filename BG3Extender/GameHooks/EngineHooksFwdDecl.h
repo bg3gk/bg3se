@@ -48,6 +48,19 @@ using TranslatedStringRepository__LoadFromContextFolderProc = bool (void* self, 
 // (Extender/Client/DirectSaveLoad.h gives it in UTF-8).
 using ArgumentString__GetValueProc = bool (void* self, char const* key, STDString* value);
 
+// GateKit (Extender/Shared/RenderCut.h, switches off by default): one frame of the render thread
+// (the main thread), and one step of the game's embedded Lua 5.3 collector (lua_State*).
+using RenderThread__UpdateProc = void (void* self);
+using LuaC_StepProc = void (void* L);
+// GateKit (Extender/Shared/Headless.h, switch off by default): the wait at the end of a game
+// thread's tick (the tick's clock object, microseconds less to wait).
+using TickWaitProc = void (void* clock, int64_t lessUs);
+// GateKit (Extender/Shared/Headless.h, switch TreasurePin off by default): a treasure table rolled
+// for an entity (the system, its world view, the entity, the finder, the table's FixedString, the
+// finder's level, a flag, the map the made items go into).
+using GenerateTreasureProc = bool (void* self, void* view, uint64_t* entity, uint64_t* finder, int32_t* table,
+    int32_t level, uint8_t flag, int64_t out);
+
 // The game's load of one data file into an ls::FileFormatIO object (Extender/Client/ModHints.inl
 // loads the mods' hint files with it).
 using FileFormatIO__LoadFileProc = bool (void* self, Path const* path);

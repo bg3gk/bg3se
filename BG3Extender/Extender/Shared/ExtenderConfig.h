@@ -94,6 +94,62 @@ struct ExtenderConfig
     // state the client enters up to the main menu (Lua/Libs/DebugCover.inl). Empty: off.
     std::string CoverageAtStart;
 
+    // GateKit, measuring only: the load's trace (Extender/Shared/LoadTrace.h) - every file opened and
+    // read, the process's counters at every game state, a sampling profiler of the game's threads
+    // every LoadTraceSampleMs. Off by default (it costs memory and some time).
+    bool LoadTrace{ false };
+    uint32_t LoadTraceSampleMs{ 5 };
+
+    // GateKit, for automated runs: loads without the game's waits (Extender/Shared/FastLoad.h),
+    // each part on its own. Off by default: a player's game keeps its pace and its fades.
+    bool FastLoadClientFrames{ false };
+    bool FastLoadServerTick{ false };
+    bool FastLoadStreamingWait{ false };
+    bool FastLoadStreamingGate{ false };   // W3 round 5: only the least wait cut (FastLoad.h)
+    bool FastLoadFades{ false };
+    // The game's own Lua collector held while the server loads (Extender/Shared/RenderCut.h).
+    bool FastLoadLuaGC{ false };
+
+    // GateKit, for automated runs: the main thread's frame (ls::RenderThread::Update) wrapped so it
+    // can be skipped (nothing drawn, nothing presented), from the start when RenderCutSkip, else
+    // when Ext.StartupVideos.RenderCut(1) asks (Extender/Shared/RenderCut.h). Off by default.
+    bool RenderCut{ false };
+    bool RenderCutSkip{ false };
+    // GateKit (W3 round 5): with RenderCut, nothing drawn from the client's first Running on (the
+    // start is drawn): the interface's view models of the party are made while the start draws -
+    // with nothing drawn from the process start the host's VMCharacter misses IsPlayableCharacter
+    // and its player, and a dialogue never shows its line (RenderCut.h). Off by default.
+    bool RenderCutFromRunning{ false };
+    // GateKit (W3 round 7), with RenderCut: a skipped update (nothing drawn) is paced to at most one
+    // in this many microseconds - the main thread sleeps (a high-resolution waitable timer) out the
+    // rest instead of looping straight into the next update (RenderCut.h). 0: off (the default).
+    uint32_t RenderCutSkipPaceUs{ 0 };
+    // Limit RenderCutSkipPaceUs to startup. Pacing an in-session load changes how long the server
+    // can run before the client is ready.
+    bool RenderCutSkipPaceStartOnly{ false };
+
+    // GateKit (W3 round 4), for a headless game: the game threads' tick waits (unplaced::TickWait)
+    // sleep on a high-resolution timer instead of spinning, the last 1.5 ms left to the game's own
+    // precise wait (Extender/Shared/Headless.h). Off by default.
+    bool IdleSleep{ false };
+    // GateKit (W3 round 6), for differential checks: a wrapper of the treasure generation, inert
+    // until Lua pins a seed (Ext.Debug.PinTreasure; Extender/Shared/Headless.h). Off by default.
+    bool TreasurePin{ false };
+    // GateKit (W3 round 7), measuring only: VirtualAlloc calls of at least this many MB written into
+    // the start's timeline with their callers (Extender/Shared/Headless.h). 0: off (the default).
+    uint32_t LargeAllocTraceMB{ 0 };
+    // Record the exit code, callers and recent timeline rows in LogDirectory on self-termination.
+    bool ExitWitness{ false };
+    // GateKit (W3 round 4), measuring a headless game: the engine's opens (ls::FileReader) of paths
+    // ending in one of these extensions (comma-separated, ".dds,.wem") find no file, as for a
+    // file that is not there; the game's own fallback for a missing resource takes its place
+    // (Extender/Shared/Headless.h). Empty: off.
+    std::string StubFileExtensions;
+    // With StubFileExtensions: the path a stubbed open is given instead (a small valid file of the
+    // class, such as a 64x64 engine texture), so the game gets a valid object rather than none.
+    // Empty: a path that does not exist.
+    std::string StubFileTarget;
+
 #if defined(OSI_EXTENSION_BUILD)
 #if defined(_DEBUG)
     bool DeveloperMode{ true };

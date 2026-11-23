@@ -1,6 +1,9 @@
 #include <Extender/Client/StartupVideos.h>
 #include <Extender/Client/GameModules.h>
 #include <Extender/Shared/StartupTimeline.h>
+#include <Extender/Shared/LoadTrace.h>
+#include <Extender/Shared/RenderCut.h>
+#include <Extender/Shared/Headless.h>
 
 /// <lua_module>StartupVideos</lua_module>
 BEGIN_NS(ecl::lua::startup_videos)
@@ -362,6 +365,105 @@ UserReturn GetModuleLists(lua_State* L)
     return 1;
 }
 
+// GateKit, measuring only (the switch LoadTrace): Ext.StartupVideos.LoadTraceDump(path, sinceMs?)
+// writes the load's trace since sinceMs (process milliseconds, as the timeline's Ms; 0 or none =
+// everything) into path and three .tsv files beside it; returns what was written or why not.
+// Ext.StartupVideos.LoadTraceNow() gives the current time in that clock (a mark before a load);
+// Ext.StartupVideos.LoadTraceReset() forgets everything recorded (call it while nothing loads).
+STDString LoadTraceDump(STDString path, std::optional<double> sinceMs)
+{
+    return STDString(bg3se::load_trace::Dump(path.c_str(), sinceMs ? *sinceMs : 0.0));
+}
+
+double LoadTraceNow()
+{
+    return bg3se::startup_timeline::NowMs();
+}
+
+void LoadTraceReset()
+{
+    bg3se::load_trace::Reset();
+}
+
+// Ext.StartupVideos.LoadTraceServerTick(us?) -> the server worker's tick period in microseconds
+// before the call (-1: not known); with `us` it is written (0: the server ticks without waiting).
+// Measuring only (the switch LoadTrace).
+int64_t LoadTraceServerTick(std::optional<int64_t> us)
+{
+    return bg3se::load_trace::ServerTickUs(us ? *us : -1);
+}
+
+// Ext.StartupVideos.LoadTracePrepareRunning(maxSeconds?) -> { Override, Min, Max, Waited, Quiet,
+// FirstMin, FirstMax, Reads }: the client's PrepareRunning streaming poller as last read (Min/Max
+// the least and most wait, Waited the time waited, Quiet the polls in a row with nothing
+// streaming; First* as read at the state's first update). With maxSeconds the most wait of every
+// later PrepareRunning is overridden (a negative number: the game's own again). Measuring only.
+UserReturn LoadTracePrepareRunning(lua_State* L, std::optional<float> maxSeconds)
+{
+    auto before = bg3se::load_trace::PrepareRunningMaxWait(maxSeconds ? *maxSeconds : 0.0f, maxSeconds.has_value());
+    auto p = bg3se::load_trace::LastPoller();
+    lua_createtable(L, 0, 8);
+    settable(L, "Override", (double)before);
+    settable(L, "Min", (double)p.Min);
+    settable(L, "Max", (double)p.Max);
+    settable(L, "Waited", (double)p.Waited);
+    settable(L, "Quiet", (int64_t)p.Quiet);
+    settable(L, "FirstMin", (double)p.FirstMin);
+    settable(L, "FirstMax", (double)p.FirstMax);
+    settable(L, "Reads", (int64_t)p.Reads);
+    return 1;
+}
+
+// GateKit (Extender/Shared/RenderCut.h, the switches RenderCut and FastLoadLuaGC):
+// Ext.StartupVideos.RenderCut(mode?) -> { Installed, LuaGcInstalled, Mode, Frames, Skipped,
+// ClientTicks, ServerTicks, GcHeld, GcReleased, ClientCpuMs, ServerCpuMs, MainCpuMs, ProcessCpuMs,
+// Ms, PrivateMB, WorkingSetMB }: the counters now (two reads give rates); with `mode` the main
+// thread's frames are drawn (0), skipped (1) or one in `mode` drawn (Mode is the one before).
+UserReturn RenderCut(lua_State* L, std::optional<int> mode)
+{
+    auto before = bg3se::render_cut::SetMode(mode ? *mode : -1);
+    auto c = bg3se::render_cut::Read();
+    lua_createtable(L, 0, 16);
+    settable(L, "Installed", c.Installed);
+    settable(L, "LuaGcInstalled", c.LuaGcInstalled);
+    settable(L, "Mode", (int64_t)before);
+    settable(L, "Frames", (int64_t)c.Frames);
+    settable(L, "Skipped", (int64_t)c.Skipped);
+    settable(L, "RenderFrames", (int64_t)c.RenderFrames);
+    settable(L, "RenderFramesOff", (int64_t)c.RenderFramesOff);
+    settable(L, "ClientTicks", (int64_t)c.ClientTicks);
+    settable(L, "ServerTicks", (int64_t)c.ServerTicks);
+    settable(L, "GcHeld", (int64_t)c.GcHeld);
+    settable(L, "GcReleased", (int64_t)c.GcReleased);
+    settable(L, "ClientCpuMs", c.ClientCpuMs);
+    settable(L, "ServerCpuMs", c.ServerCpuMs);
+    settable(L, "MainCpuMs", c.MainCpuMs);
+    settable(L, "ProcessCpuMs", c.ProcessCpuMs);
+    settable(L, "Ms", c.Ms);
+    settable(L, "PrivateMB", c.PrivateMB);
+    settable(L, "WorkingSetMB", c.WorkingSetMB);
+    settable(L, "SkipPaceUs", (int64_t)c.SkipPaceUs);       // GateKit W3 round 7: RenderCutSkipPaceUs
+    settable(L, "PacedSleeps", (int64_t)c.PacedSleeps);
+    settable(L, "PacedSleptMs", c.PacedSleptMs);
+    return 1;
+}
+
+// GateKit (Extender/Shared/Headless.h, the switches IdleSleep and StubFileExtensions):
+// Ext.StartupVideos.Headless() -> { IdleSleepInstalled, Waits, Slept, SleptMs, StubExtensions,
+// StubbedOpens }: the counters now.
+UserReturn Headless(lua_State* L)
+{
+    auto c = bg3se::headless::Read();
+    lua_createtable(L, 0, 6);
+    settable(L, "IdleSleepInstalled", c.IdleSleepInstalled);
+    settable(L, "Waits", (int64_t)c.Waits);
+    settable(L, "Slept", (int64_t)c.Slept);
+    settable(L, "SleptMs", c.SleptMs);
+    settable(L, "StubExtensions", (int64_t)c.StubExtensions);
+    settable(L, "StubbedOpens", (int64_t)c.StubbedOpens);
+    return 1;
+}
+
 void RegisterStartupVideosLib()
 {
     DECLARE_MODULE(StartupVideos, Client)
@@ -370,6 +472,13 @@ void RegisterStartupVideosLib()
     MODULE_FUNCTION(Compose)
     MODULE_FUNCTION(Timeline)
     MODULE_FUNCTION(GetModuleLists)
+    MODULE_FUNCTION(LoadTraceDump)
+    MODULE_FUNCTION(LoadTraceNow)
+    MODULE_FUNCTION(LoadTraceReset)
+    MODULE_FUNCTION(LoadTraceServerTick)
+    MODULE_FUNCTION(LoadTracePrepareRunning)
+    MODULE_FUNCTION(RenderCut)
+    MODULE_FUNCTION(Headless)
     END_MODULE()
 }
 

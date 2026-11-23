@@ -19,6 +19,9 @@ STATIC_HOOK(gameStateMachineUpdate_)
 #include <Extender/Client/EarlyModUI.inl>
 #include <Extender/Client/DirectSaveLoad.inl>
 #include <Extender/Shared/StartupTimeline.inl>
+#include <Extender/Shared/LoadTrace.h>
+#include <Extender/Shared/FastLoad.inl>
+#include <Extender/Shared/RenderCut.h>
 
 namespace bg3se::lua::debug
 {
@@ -162,6 +165,11 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 {
     startup_timeline::RecordWithCounters(startup_timeline::Side::Client, startup_timeline::What::State,
         (int32_t)fromState, (int32_t)toState);
+    // GateKit: the load's trace (the switch LoadTrace).
+    load_trace::Role("ecl state");
+    load_trace::OnState(1, (int32_t)fromState, (int32_t)toState);
+    fast_load::OnClientState((int32_t)fromState, (int32_t)toState);   // GateKit: fast loads
+    render_cut::OnClientState((int32_t)fromState, (int32_t)toState);  // GateKit: RenderCutFromRunning
     if ((std::size_t)toState < std::size(GameStateNames)) {
         lua::debug::CoverAtStartState(GameStateNames[(std::size_t)toState]);
     }
@@ -347,6 +355,7 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 void ScriptExtender::GameStateWorkerWrapper(void (*wrapped)(void*), void* self)
 {
     ContextGuard _(ContextType::Client);
+    load_trace::Role("ecl worker");   // GateKit: the load's trace
     wrapped(self);
 }
 
@@ -418,6 +427,15 @@ void ScriptExtender::ThrowTimelineEvents()
 void ScriptExtender::OnUpdate(void* self, GameTime* time)
 {
     BEGIN_GUARDED()
+    load_trace::Role("ecl update");   // GateKit: the load's trace
+    render_cut::OnClientTick();       // GateKit: the client's ticks counted (RenderCut.h)
+    if (load_trace::Enabled() || fast_load::Any()) {
+        auto clientState = GetStaticSymbols().GetClientState();
+        bool preparing = clientState && *clientState == GameState::PrepareRunning;
+        // the trace reads the poller before a fast load cuts it
+        load_trace::OnClientUpdate(self, preparing);
+        fast_load::OnClientUpdate(self, preparing);
+    }
     startup_timeline::PollClient(self);
     ThrowTimelineEvents();
     // In case we're loaded too late to see LoadModule transition
