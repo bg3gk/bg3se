@@ -67,18 +67,28 @@ jobs:
       # pull-externals.bat starts them afresh.
       - name: Externals from the cache
         id: externals
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             External
             !External/README.md
             !External/VulkanLib
-          key: externals-${{ runner.os }}-${{ hashFiles('pull-externals.bat') }}-1
+          key: externals-${{ runner.os }}-${{ hashFiles('pull-externals.bat', 'patches/imgui-dx11-hdr.patch') }}-1
 
       - name: Fetch and build the externals
         if: steps.externals.outputs.cache-hit != 'true'
         shell: cmd
         run: call pull-externals.bat
+
+      - name: Save built externals
+        if: steps.externals.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            External
+            !External/README.md
+            !External/VulkanLib
+          key: ${{ steps.externals.outputs.cache-primary-key }}
 
       # The 64-bit tools: the whole-program link is too big for the 32-bit linker's incremental
       # code generation.
