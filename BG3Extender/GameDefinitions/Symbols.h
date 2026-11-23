@@ -40,6 +40,11 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     STDString** ls__PathRoots{ nullptr };
     App__CtorProc* App__Ctor{ nullptr };
     App__UpdatePathsProc* App__UpdatePaths{ nullptr };
+    // Steps of the engine's start, marked in the start's timeline (Extender/Shared/StartupTimeline.h).
+    App__InitGameProc* App__InitGame{ nullptr };
+    App__InitializeResourceManagerProc* App__InitializeResourceManager{ nullptr };
+    PackedFileManager__LoadPackFilesProc* ls__PackedFileManager__LoadPackFiles{ nullptr };
+    TranslatedStringRepository__LoadFromContextFolderProc* ls__TranslatedStringRepository__LoadFromContextFolder{ nullptr };
 
     ecl::EoCClient** ecl__EoCClient{ nullptr };
     esv::EoCServer** esv__EoCServer{ nullptr };
@@ -58,6 +63,12 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     ecl::GameStateMachine__UpdateProc* ecl__GameStateMachine__Update{ nullptr };
     esv::GameStateMachine__UpdateProc* esv__GameStateMachine__Update{ nullptr };
     App__LoadGraphicSettingsProc* App__LoadGraphicSettings{ nullptr };
+    // The GameControl global (its movie player is polled by Extender/Shared/StartupTimeline.inl),
+    // found through ecl::LoadStateMovie::Start, which loads it before calling ShowMovie.
+    void** ecl__gGameControl{ nullptr };
+    // The loading screen manager (Extender/Shared/StartupTimeline.inl), found through
+    // ecl::GameStateStartLoading::Enter, which hands it the progress total and its load states.
+    void** ls__gLoadingScreenManager{ nullptr };
     input::InputManager** ls__gInputManager{ nullptr };
 
     ecs::EntityWorld__UpdateProc* ecs__EntityWorld__Update{ nullptr };

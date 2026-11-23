@@ -31,6 +31,7 @@ onto it rather than carrying a long-lived divergence.
 | [Values of the interface](#values-of-the-interface): `Nullable<Bool>` and `TimeSpan` through `Ext.UI` | client | no |
 | [Screenshots, the frame and the window](#screenshots-the-frame-and-the-window): `Ext.ClientRender.Screenshot(path, withOverlay)`, `MirrorEnable`, `SetFrameCap`, `KeepInBackground` | client | no |
 | [A picture from the disk](#a-picture-from-the-disk): `Ext.IMGUI.LoadImageFile` | client | no |
+| [Startup videos](Docs/API.md#startup-videos): a mod's `ScriptExtender/StartupVideos.json` hides, replaces and adds the videos the game plays at start, composed with every other mod's; `Ext.StartupVideos.GetPlaylist`, `Compose`, and `Timeline` (every stage of the start with its time, recorded natively before Lua exists: both sides' states with the process's IO and CPU counters, the videos, the loading screen, the client's screen fades and the interface's states up to the "press any key" page) | client | no |
 | [Fixed](#fixed): `GenomeVariant` values larger than a pointer | both | - |
 | [Settings this fork adds](#settings-this-fork-adds) | - | - |
 
@@ -516,6 +517,7 @@ In `ScriptExtenderSettings.json`, beside upstream's:
 | `KeepWindowInBackground` | false | Refuses the game's attempts to bring its window forward |
 | `KeepWindowOffScreen` | false | Puts the window where no screen reaches when it is created |
 | `ShiftOpensConsole` | true | Holding Shift at start opens the console |
+| `StartupVideos` | true | Off, the game starts with no startup video, whatever the mods declare |
 | `CrashDumpDirectory` | empty | Folder for crash dumps, `<pid>-<yyyymmdd>-<hhmmss>.dmp` and a `.txt` with the faulting `module+0xRVA`; when set, crash reporting is on even with `SendCrashReports` off |
 | `LaunchCrashReporter` | true | Starts the reporter window after a dump |
 

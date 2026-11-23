@@ -442,6 +442,127 @@
       <Target Type="Indirect" Offset="@ref1" Symbol="esv__StatsSystem__ThrowDamageEvent" />
     </Mapping>
 
+    <!-- The GameControl global (Extender/Shared/StartupTimeline.inl polls its movie player): the
+         tail of ecl::LoadStateMovie::Start (bg3_dx11.exe+0x1BA28A0), which loads it and calls
+         ecl::GameControl::ShowMovie (bg3_dx11.exe+0x189EFE0) with the load state's names, playlist
+         name and flags. AllowFail: a patch that moves it costs the timeline's video rows only; the
+         startup playlist is written without it. -->
+    <Mapping Name="ecl::LoadStateMovie::Start" AllowFail="true">
+      0f b6 47 2d // movzx eax, byte ptr [rdi+2Dh]
+      @ref1 48 8b 0d ?? ?? ?? ?? // mov rcx, cs:ecl__gGameControl
+      66 89 44 24 40 // mov [rsp+40h], ax
+      48 8d 44 24 40 // lea rax, [rsp+40h]
+      48 89 44 24 28 // mov [rsp+28h], rax
+      0f b6 47 2c // movzx eax, byte ptr [rdi+2Ch]
+      88 44 24 20 // mov [rsp+20h], al
+      e8 ?? ?? ?? ?? // call ecl::GameControl::ShowMovie
+      48 8b 5c 24 48 // mov rbx, [rsp+48h]
+      c6 47 2e 01 // mov byte ptr [rdi+2Eh], 1
+      <Target Type="Indirect" Offset="@ref1" Symbol="ecl__gGameControl" />
+    </Mapping>
+
+    <!-- The loading screen manager (Extender/Shared/StartupTimeline.inl): in
+         ecl::GameStateStartLoading::Enter (bg3_dx11.exe+0x181CD90, at +0x55), after the two
+         pack-file calls, the manager's global is loaded and the state's progress total (+0x38)
+         stored at its +0x40. Bytes read live (dx11). AllowFail: a patch that moves it costs the
+         timeline's load-state events only. -->
+    <Mapping Name="ecl::GameStateStartLoading::Enter" AllowFail="true">
+      45 33 c0 // xor r8d, r8d
+      48 8b cb // mov rcx, rbx
+      e8 ?? ?? ?? ?? // call
+      48 8b cb // mov rcx, rbx
+      e8 ?? ?? ?? ?? // call
+      @ref1 4c 8b 35 ?? ?? ?? ?? // mov r14, cs:ls__gLoadingScreenManager
+      8b 45 38 // mov eax, [rbp+38h]
+      49 89 46 40 // mov [r14+40h], rax
+      33 ff // xor edi, edi
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:...
+      40 38 78 40 // cmp [rax+40h], dil
+      <Target Type="Indirect" Offset="@ref1" Symbol="ls__gLoadingScreenManager" />
+    </Mapping>
+
+    <!-- Steps of the engine's start, hooked only to mark them in the start's timeline
+         (Extender/Shared/StartupTimeline.h). Prologues, each unique in bg3_dx11.exe of build
+         25605617 and found once in bg3.exe (`gatekit symbols signature`). AllowFail: a patch that
+         moves them costs those timeline rows only. -->
+    <!-- bg3_dx11.exe+0x5878A0: the Toolkit's App::InitGame (slot +0xB0 of App's vtable). -->
+    <Mapping Name="App::InitGame" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
+      48 89 7c 24 20 // mov qword ptr [rsp + 0x20], rdi
+      55 // push rbp
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 c9 // lea rbp, [rsp - 0x37]
+      48 81 ec e0 00 00 00 // sub rsp, 0xe0
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      48 33 c4 // xor rax, rsp
+      48 89 45 27 // mov [rbp + 0x27], rax
+      48 8b f1 // mov rsi, rcx
+      48 8b 0d ?? ?? ?? ?? // mov rcx, cs:...
+      <Target Type="Absolute" Offset="@start" Symbol="App__InitGame" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x586A80: the Toolkit's App::InitializeResourceManager. -->
+    <Mapping Name="App::InitializeResourceManager" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
+      48 89 7c 24 20 // mov qword ptr [rsp + 0x20], rdi
+      55 // push rbp
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 c9 // lea rbp, [rsp - 0x37]
+      48 81 ec a0 00 00 00 // sub rsp, 0xa0
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      48 33 c4 // xor rax, rsp
+      48 89 45 2f // mov [rbp + 0x2f], rax
+      48 89 4d cf // mov [rbp - 0x31], rcx
+      <Target Type="Absolute" Offset="@start" Symbol="App__InitializeResourceManager" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x41091A0: ls::PackedFileManager::LoadPackFiles (the only user of "MinData",
+         as the macOS build's function of that name; called by BaseApp::Start, +0x3AC0C70). -->
+    <Mapping Name="ls::PackedFileManager::LoadPackFiles" AllowFail="true">
+      @start 48 89 5c 24 10 // mov qword ptr [rsp + 0x10], rbx
+      48 89 74 24 18 // mov qword ptr [rsp + 0x18], rsi
+      48 89 7c 24 20 // mov qword ptr [rsp + 0x20], rdi
+      55 // push rbp
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d ac 24 90 fd ff ff // lea rbp, [rsp - 0x270]
+      48 81 ec 70 03 00 00 // sub rsp, 0x370
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      48 33 c4 // xor rax, rsp
+      48 89 85 60 02 00 00 // mov [rbp + 0x260], rax
+      4c 8b e1 // mov r12, rcx
+      <Target Type="Absolute" Offset="@start" Symbol="ls__PackedFileManager__LoadPackFiles" />
+    </Mapping>
+
+    <!-- bg3_dx11.exe+0x412EC50: the Toolkit's ls::TranslatedStringRepository::LoadFromContextFolder. -->
+    <Mapping Name="ls::TranslatedStringRepository::LoadFromContextFolder" AllowFail="true">
+      @start 48 89 5c 24 18 // mov qword ptr [rsp + 0x18], rbx
+      55 // push rbp
+      56 // push rsi
+      57 // push rdi
+      41 54 // push r12
+      41 55 // push r13
+      41 56 // push r14
+      41 57 // push r15
+      48 8d 6c 24 d9 // lea rbp, [rsp - 0x27]
+      48 81 ec 00 01 00 00 // sub rsp, 0x100
+      48 8b 05 ?? ?? ?? ?? // mov rax, cs:__security_cookie
+      48 33 c4 // xor rax, rsp
+      48 89 45 1f // mov [rbp + 0x1f], rax
+      44 88 4c 24 31 // mov [rsp + 0x31], r9b
+      <Target Type="Absolute" Offset="@start" Symbol="ls__TranslatedStringRepository__LoadFromContextFolder" />
+    </Mapping>
+
     <!-- The dice of the roll manager (Lua/Server/RollEvents.inl).
          Prologues; each is unique in bg3_dx11.exe and in bg3.exe of build 25605617
          (dx11 / vulkan RVAs given beside each). AllowFail: a patch that moves them costs the roll events only. -->

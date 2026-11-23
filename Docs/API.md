@@ -48,6 +48,7 @@
 - [Mod Info](#mod-info)
 - [Utils](#utils)
 - [Audio](#audio)
+- [Startup Videos](#startup-videos)
 - [Localization](#loca)
 - [Templates](#templates)
 - [Static Data](#static-data)
@@ -1808,6 +1809,181 @@ Client-side audio control API (banks, events, RTPC, switches, states).
 - `Ext.Audio.PlayExternalSound(objectHandle, pathOrName, resourceName, codec, [volume]): boolean`
 - `Ext.Audio.PauseAllSounds()`
 - `Ext.Audio.ResumeAllSounds()`
+
+<a id="startup-videos"></a>
+## Startup Videos - `Ext.StartupVideos`
+
+The game plays its startup videos (the studio's logo, one clip named `Splash_Logo_Larian`)
+before any mod's Lua exists. A mod changes them with a file, not with Lua: the extender reads the
+declarations of the enabled mods at the game's first `StartLoading` state, composes one list and
+gives it to the game in place of its own playlist. The whole list is one playlist of the game's
+movie player: the videos play in turn on black, the game goes on only after the last, and one key
+press skips the rest of them.
+
+### The declaration: `StartupVideos.json`
+
+A mod puts the file at `Mods/<Folder>/ScriptExtender/StartupVideos.json` (inside its pak, or loose
+under `Data/`), and its videos at `Video/<name>.bk2`: at that moment the game's player looks a
+video up there only, and it plays Bink 2 (`.bk2`) only.
+
+```json
+{
+  "Hide":    ["Splash_Logo_Larian"],
+  "Replace": [{ "Id": "Splash_Logo_Larian", "Video": "MyStudio_Logo" }],
+  "Add":     [{ "Id": "Intro", "Video": "MyMod_Intro", "After": "Splash_Logo_Larian" },
+              { "Id": "Outro", "Video": "MyMod_Outro", "Before": "OtherMod:*" }]
+}
+```
+
+Every part is optional.
+
+- **Ids.** An entry of the game is named by the game's own name, with no colon
+  (`Splash_Logo_Larian`); a bare name always means the game's entry. An entry a mod adds is
+  `<UUID>:<Id>`: the mod's UUID (its `meta.lsx`), stamped by the extender from where the file was
+  found, and the `Id` its `Add` gives - a bare label, without a colon, never `*`.
+- **References** (`Before`, `After`, `Hide`, `Replace`) to a mod's entry always use the full
+  form, also for the mod's own entries. The owner is the mod's UUID (8-4-4-4-12 hex) or its
+  `ModTable` (the name its `ScriptExtender/Config.json` gives, as in `Mods.MyMod`):
+  `MyMod:Intro`, `0a1b2c3d-...:Intro`. `<owner>:*` names every entry of that mod. A `ModTable`
+  that two enabled mods share names neither: the reference is dropped with a warning naming both
+  UUIDs.
+- **`Add`** puts entries into the list: `Video` is the name played (`Video/<Video>.bk2`).
+  Without `Before`/`After` the entries follow the game's, in the mods' load order and then in the
+  order of each file.
+- **`Before` / `After`** (optional, one reference each) mean "somewhere before / after", not
+  "right next to": the list is the load order rearranged as little as the constraints need.
+  `Before: "MyMod:*"` is before every entry of that mod, `After: "MyMod:*"` after all of them. A
+  constraint naming no entry (an unknown id, a mod not enabled or adding nothing) is dropped with
+  a warning. Constraints that form a cycle cannot all hold: the one that closes the cycle - the
+  latest loaded - is dropped with a warning naming the ids.
+- **`Hide`** removes entries from what is played; `"*"` hides every entry of the game and of the
+  mods loaded before, never the mod's own; `"<owner>:*"` hides that mod's entries. A hidden entry
+  still anchors the `Before`/`After` of others.
+- **`Replace`** plays another video in one entry's place (and shows it again if it was hidden).
+- `Hide` and `Replace` are applied mod by mod in load order, `Hide` before `Replace` within one
+  file. Each mod reaches the game's entries, those of the mods loaded before it and its own; the
+  last one wins, and a `Replace` over another mod's `Replace` leaves a warning naming both.
+- Warnings name a mod as `Name (UUID, ModTable X)`.
+- Whether a video can be skipped is not declared: the game makes every startup video skippable.
+
+The player's switch: `"StartupVideos": false` in `ScriptExtenderSettings.json` hides every entry,
+whatever the mods declare; the game then starts with no video.
+
+### Methods (client)
+
+- `Ext.StartupVideos.GetPlaylist()` -> the composition the game's start was given:
+  `Entries` (`{ Id, Video, Source, Mod?, ReplacedBy? }`, in the order played; `Source` is
+  `"Game"` or the UUID of the mod that added the entry, `Mod` and `ReplacedBy` are
+  `{ Uuid, ModTable?, Name, Folder }`), `Warnings`, `Enabled` (the player's switch), `Seen` and
+  `Written` (the extender met the startup playlist and wrote the list into it), `Game` (the game's
+  own entries), and `Mods` (`{ Uuid, ModTable?, Name, Folder, MetaReadable, ConfigReadable,
+  DeclarationFound }` for every enabled mod, in load order).
+- `Ext.StartupVideos.Compose(declarations)` -> `{ Entries, Warnings }`: the same composer on
+  declarations given in Lua, in the order given, over the game's own entries. Each declaration is
+  a table of the file's format with the mod's identity:
+  `{ Uuid = "...", ModTable = "MyMod", Name = "My Mod", Hide = {...}, Replace = {...}, Add = {...} }`.
+  References may also name, by `ModTable`, any mod enabled at the start.
+- `Ext.StartupVideos.Timeline()` -> a list of rows, oldest first, and `Dropped`: every stage of
+  the game's start as the extender saw it from its first moment in the process, so that the
+  start - which runs before any Lua - can be read afterwards. It keeps recording after the start
+  (a level load, a return to the menu) until it is full.
+
+```lua
+local c = Ext.StartupVideos.Compose({
+    { Uuid = "00000000-0000-0000-0000-00000000a001", ModTable = "MyMod", Hide = { "*" },
+      Add = { { Id = "Two", Video = "TWO" }, { Id = "Three", Video = "THREE", After = "MyMod:Two" } } }
+})
+-- c.Entries: { { Id = "00000000-...-00000000a001:Two", Video = "TWO", ... }, { ... Three ... } }
+```
+
+### The timeline's rows
+
+Every row has `Ms` (milliseconds since the process was created), `Side` (`"Extender"`,
+`"Client"` or `"Server"`) and `What`. The other fields depend on `What`:
+
+| `What` | Side | when | fields |
+|---|---|---|---|
+| `ExtenderLoaded` | Extender | the extender's initialization | the counters |
+| `Step` | Extender | a step of the engine's start before the first game state (the list below) | `Name`, `Phase` (`"Begin"`, `"End"`, or none for a single moment); the counters |
+| `FileOpened` | Extender | the engine opened a file through `ls::FileReader`, before the client's first game state; only the first 384 such files get a row | `Name`: the end of its path |
+| `State` | Client, Server | a game state change of that side, announced by its state machine before the new state's `Enter` | `From`, `To` (the state names of `Ext.Enums.ClientGameState` / `ServerGameState`); the counters |
+
+The counters: `IoReadBytes`, `IoReadOps` (what the process has read so far: bytes, operations),
+`CpuMs` (CPU time of all its threads so far) and `FileOpens` (files opened through `ls::FileReader`
+since the extender hooked it, in `BaseApp::BaseApp`).
+
+The `Step` rows, by `Name`; each is the game's function (the Toolkit's or the macOS build's name)
+or the extender's own, and the hook that marks it:
+
+| `Name` | `Phase` | what it is | hook |
+|---|---|---|---|
+| `ScriptExtender::Initialize` | End | the extender's own initialization ends (it runs while the DLL loads) | - |
+| `BaseApp::BaseApp` | - | the engine's application object is being built; the extender's `PostStartup` runs inside it | pre-hook of the extender's `App__Ctor` |
+| `ScriptExtender::PostStartup` | Begin, End | the extender's late initialization (Lua libraries, its engine hooks, `ls::FileReader`'s among them) | - |
+| `App::UpdatePaths` | End | the path roots (data, profile, localization) are set | post-hook of `App__UpdatePaths` |
+| `ls::PackedFileManager::LoadPackFiles` | Begin, End | the game's own `.pak` files are mounted (`Data`, `Localization`, the language's, `Soundbanks`, `Animation`, `MinData`); the mods' are not | own hook |
+| `ls::TranslatedStringRepository::LoadFromContextFolder` | Begin, End | a language's texts are loaded (twice when the language is not English: English first) | own hook |
+| `SDL_CreateWindow` | End | the game's window exists, not yet shown | post-hook of the extender's SDL hook |
+| `App::LoadAndResaveGraphicsSettings` | End | `graphicSettings.lsx` is read (the extender's `App__LoadGraphicSettings`) | post-hook |
+| `App::InitGame` | Begin, End | the game's systems: the data managers, the server (`esv::EocServer`), the client's ECS, the templates, physics, the resource manager (below), and last `ecl::EocClient::Load`, which queues the client's first states | own hook |
+| `App::InitializeResourceManager` | Begin, End | inside `App::InitGame`: the sound engine and its banks (`App::InitialiseSound`), the two Bink managers, the loading hints (`Hints/Hints.lsx`) | own hook |
+| `PlaylistWritten` | Client | the startup list written into the game | `Name`: the entry and how many names it holds |
+| `VideoStarted` / `VideoStopped` | Client | the movie player took a video / stopped playing | `Name` (started): the video and how many still wait |
+| `LoadState` | Client | the loading screen's active load state changed | `Name`: its type as `module+0xRVA` of its virtual table, or `none` |
+| `LoadingScreenShown` / `LoadingScreenHidden` | Client | the loading screen appeared / went | - |
+| `Fade` | Client | the client game state machine's fade phase changed | `From`, `To`: `None`, `FadingOut`, `Black`, `FadingIn` |
+| `UIState` | Client | a state of the interface's state machine appeared or went (a page such as `SplashScreen`, the "press any key" page, or `MainMenu`) | `Name`, `Parent` (the state it hangs under), `Depth` (`Root` is 0), `Change` (`"Entered"` or `"Left"`) |
+
+The counters on two `State` rows give the work done between them. The player, the loading screen
+and the fade are looked at once per client tick and the interface's states once per interface
+update, so their times are good to a frame. The record holds 1024 rows; later ones are dropped and
+counted in `Dropped`.
+
+One start (`--startup-videos`, the game's own clip), abridged:
+
+```
+     Ms  Side      What                 fields (counters: MB read, read operations, CPU ms, files opened)
+  876.1  Extender  ExtenderLoaded                                  0.0 MB, 5, 344, 0
+ 3231.2  Extender  Step                 ScriptExtender::Initialize End, 0.0 MB, 5, 2672, 0
+ 3231.2  Extender  Step                 BaseApp::BaseApp (before the extender)
+ 3484.9  Extender  Step                 ScriptExtender::PostStartup End
+ 3489.8  Extender  Step                 ls::PackedFileManager::LoadPackFiles Begin
+ 3668.6  Extender  Step                 ls::PackedFileManager::LoadPackFiles End    53.3 MB, 530, 3109, 3
+ 3868.9  Extender  Step                 ls::TranslatedStringRepository::LoadFromContextFolder End (English, then the language)
+ 3901.6  Extender  Step                 SDL_CreateWindow End
+ 5009.5  Extender  Step                 App::LoadAndResaveGraphicsSettings End      66.1 MB, 1505, 4516, 159
+ 5009.9  Extender  Step                 App::InitGame Begin
+ 5044.3  Extender  Step                 App::InitializeResourceManager Begin
+ 5047.0  Server    State                Unknown -> Uninitialized   66.2 MB, 1511, 4562, 169
+ 5496.9  Extender  Step                 App::InitializeResourceManager End          306.9 MB, 5623, 5078, 190
+ 5777.8  Extender  Step                 App::InitGame End                           306.9 MB, 5624, 5344, 892
+ 5865.0  Client    State                Unknown -> InitMenu        308.3 MB, 5822, 5906, 1098
+ 6844.3  Client    State                InitMenu -> StartLoading   312.4 MB, 5943, 7922, 1223
+     -- another start, from StartLoading on --
+ 6209.6  Client    State                InitMenu -> StartLoading   312.4 MB, 5920, 7594
+ 6210.7  Client    PlaylistWritten      Splash_Logo_Larian (1 names)
+ 6211.8  Client    LoadingScreenShown
+ 6232.9  Client    UIState              Entered GameRoot/Loading (Depth 2)
+ 6243.7  Client    VideoStarted         Splash_Logo_Larian (queue 0)
+ 6243.7  Client    LoadState            bg3_dx11.exe+0x564C9E0
+ 6247.3  Client    UIState              Entered Root/Movie (Depth 1)
+13077.2  Client    State                StartLoading -> Init       347.8 MB, 6425, 13891
+13077.4  Client    VideoStopped
+13443.8  Client    State                Init -> LoadModule         380.7 MB, 7258, 14406
+26169.4  Client    State                LoadModule -> LoadMenu     481.1 MB, 13830, 47266
+42777.7  Client    State                LoadMenu -> StopLoading    6655.4 MB, 112409, 87234
+42811.1  Client    Fade                 None -> FadingOut
+43344.5  Client    State                StopLoading -> Menu        6657.6 MB, 112444, 88000
+43346.0  Client    LoadingScreenHidden
+43346.0  Client    Fade                 FadingOut -> FadingIn
+43351.9  Client    UIState              Left GameRoot/Loading, Entered GameRoot/Eula
+43415.6  Client    UIState              Left GameRoot/Eula, Entered GameRoot/SplashScreen
+44377.8  Client    Fade                 FadingIn -> None
+44581.4  Client    UIState              Left GameRoot/SplashScreen, Entered GameRoot/MainMenu
+```
+
+`Black` is not seen between two client ticks at the start: the game goes from fading out to
+black to fading in within one update of its state machine.
 
 <a id="loca"></a>
 ## Localization - `Ext.Loca`

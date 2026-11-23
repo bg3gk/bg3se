@@ -63,6 +63,10 @@ struct ExtenderConfig
     // wrong moment put a console on their desktop. On by default, as upstream behaves.
     bool ShiftOpensConsole{ true };
 
+    // The player's switch for the startup videos: off, the game's first StartLoading is given no
+    // video at all, whatever the mods declare (Extender/Client/StartupVideos.inl).
+    bool StartupVideos{ true };
+
 #if defined(OSI_EXTENSION_BUILD)
 #if defined(_DEBUG)
     bool DeveloperMode{ true };

@@ -13,6 +13,8 @@ STATIC_HOOK(gameStateWorkerStart_)
 STATIC_HOOK(gameStateMachineUpdate_)
 
 #include <Extender/Shared/ThreadedExtenderState.inl>
+#include <Extender/Client/StartupVideos.inl>
+#include <Extender/Shared/StartupTimeline.inl>
 
 BEGIN_SE()
 
@@ -148,6 +150,9 @@ void CleanupSanityCheck()
 
 void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 {
+    startup_timeline::RecordWithCounters(startup_timeline::Side::Client, startup_timeline::What::State,
+        (int32_t)fromState, (int32_t)toState);
+
     if (config_.SendCrashReports || !config_.CrashDumpDirectory.empty()) {
         // We need to initialize the crash reporter after the game engine has started,
         // otherwise the game will overwrite the top level exception filter
@@ -216,6 +221,17 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
     }
 
     switch (toState) {
+    case GameState::StartLoading:
+        // The machine has made the state current and calls its Enter only after every listener,
+        // so the startup playlist can still be rewritten here.
+        if (!gExtender->GetLibraryManager().CriticalInitializationFailed()) {
+            auto client = GetStaticSymbols().GetEoCClient();
+            if (client && client->GameStateMachine) {
+                startup_videos::OnStartLoading(client->GameStateMachine->CurrentState);
+            }
+        }
+        break;
+
     case GameState::Init:
         entityHelpers_.Bind();
         ResetExtensionState();
@@ -312,6 +328,7 @@ void ScriptExtender::OnPreUpdate(void* self, GameTime* time)
 void ScriptExtender::OnUpdate(void* self, GameTime* time)
 {
     BEGIN_GUARDED()
+    startup_timeline::PollClient(self);
     // In case we're loaded too late to see LoadModule transition
     BindToThreadPersistent();
     OnUpdateGuarded(self, time);
@@ -372,6 +389,8 @@ void ScriptExtender::ShowVersionNumber()
 
 void ScriptExtender::OnUiPredicatesManagerUpdate(ui::DeferredPredicatesManager*)
 {
+    startup_timeline::PollUi();
+
     // Non-threadsafe peek to check if we need to acquire the Lua state lock.
     // (we need to wait for the main thread to finish processing Lua code if we do)
     if (extensionState_ 

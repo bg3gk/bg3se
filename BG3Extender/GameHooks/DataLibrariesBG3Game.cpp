@@ -135,6 +135,10 @@ namespace bg3se
         SYM_OFF(ls__PathRoots);
         SYM_OFF(App__Ctor);
         SYM_OFF(App__UpdatePaths);
+        SYM_OFF(App__InitGame);
+        SYM_OFF(App__InitializeResourceManager);
+        SYM_OFF(ls__PackedFileManager__LoadPackFiles);
+        SYM_OFF(ls__TranslatedStringRepository__LoadFromContextFolder);
 
         SYM_OFF(ecl__EoCClient);
         SYM_OFF(esv__EoCServer);
@@ -151,6 +155,8 @@ namespace bg3se
         SYM_OFF(ecl__GameStateMachine__Update);
         SYM_OFF(esv__GameStateMachine__Update);
         SYM_OFF(App__LoadGraphicSettings);
+        SYM_OFF(ecl__gGameControl);
+        SYM_OFF(ls__gLoadingScreenManager);
         SYM_OFF(ls__gInputManager);
 
         SYM_OFF(ecs__EntityWorld__Update);

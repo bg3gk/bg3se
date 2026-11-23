@@ -37,6 +37,7 @@ void ApplyConfig(ExtenderConfig& config, Document& root)
     ConfigGet(root, "KeepWindowInBackground", config.KeepWindowInBackground);
     ConfigGet(root, "KeepWindowOffScreen", config.KeepWindowOffScreen);
     ConfigGet(root, "ShiftOpensConsole", config.ShiftOpensConsole);
+    ConfigGet(root, "StartupVideos", config.StartupVideos);
 
     ConfigGet(root, "DebuggerPort", config.DebuggerPort);
     ConfigGet(root, "LuaDebuggerPort", config.LuaDebuggerPort);

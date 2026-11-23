@@ -2,6 +2,7 @@
 #include <Extender/Server/ScriptExtenderServer.h>
 #include <Extender/ScriptExtender.h>
 #include <Lua/Debugger/LuaDebugger.h>
+#include <Extender/Shared/StartupTimeline.h>
 
 #pragma warning(push)
 #pragma warning(disable:4267)
@@ -110,6 +111,9 @@ bool IsLoadingState(GameState state)
 
 void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 {
+    startup_timeline::RecordWithCounters(startup_timeline::Side::Server, startup_timeline::What::State,
+        (int32_t)fromState, (int32_t)toState);
+
 #if defined(DEBUG_SERVER_CLIENT)
         DEBUG("esv::ScriptExtender::OnGameStateChanged(): %s -> %s", 
             GameStateNames[(unsigned)fromState], GameStateNames[(unsigned)toState]);

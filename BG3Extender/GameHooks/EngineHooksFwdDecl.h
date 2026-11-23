@@ -35,6 +35,13 @@ using App__LoadGraphicSettingsProc = void (App*);
 using App__CtorProc = App* (App*);
 using App__UpdatePathsProc = void (App*);
 
+// Steps of the engine's start, hooked only to mark them in the start's timeline
+// (Extender/Shared/StartupTimeline.h).
+using App__InitGameProc = bool (App*);
+using App__InitializeResourceManagerProc = void (App*);
+using PackedFileManager__LoadPackFilesProc = void (void* self, bool a1, bool a2);
+using TranslatedStringRepository__LoadFromContextFolderProc = bool (void* self, Path const* folder, bool fallback, bool a3);
+
 using AppliedMaterial__LoadTextureProc = TextureDescriptor * (AppliedMaterial* self, FixedString const& textureGuid);
 using AppliedMaterial__LoadVirtualTextureProc = void* (AppliedMaterial* self, FixedString const& textureGuid);
 using AppliedMaterial__TryOverrideTexture2DParameterProc = bool (AppliedMaterial* self, FixedString const& param, FixedString const& textureGuid);

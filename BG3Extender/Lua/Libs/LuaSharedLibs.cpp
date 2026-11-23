@@ -34,6 +34,7 @@
 #include <Lua/Libs/ClientIMGUI.inl>
 #include <Lua/Libs/ClientRender.inl>
 #include <Lua/Libs/ClientVisual.inl>
+#include <Lua/Libs/ClientStartupVideos.inl>
 
 BEGIN_NS(ecl::lua)
 
@@ -48,6 +49,7 @@ void RegisterClientLibraries()
     imgui::RegisterIMGUILib();
     render::RegisterRenderLib();
     visual::RegisterVisualLib();
+    startup_videos::RegisterStartupVideosLib();
 }
 
 END_NS()

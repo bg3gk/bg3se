@@ -2,6 +2,7 @@
 #include <Extender/ScriptExtender.h>
 #include <Extender/Client/ExtensionStateClient.h>
 #include <Extender/Client/SDLManager.h>
+#include <Extender/Shared/StartupTimeline.h>
 #include <CoreLib/Wrappers.h>
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
@@ -131,6 +132,7 @@ void SDLManager::SDLCreateWindowHooked(const char* title,
     SDL_Window* window)
 {
     window_ = window;
+    startup_timeline::RecordStep("SDL_CreateWindow", startup_timeline::StepEnd);
 
     // The window exists and has never been shown: SDL creates it without WS_VISIBLE and shows it
     // later. That makes this the one moment at which the window can be told not to be a candidate

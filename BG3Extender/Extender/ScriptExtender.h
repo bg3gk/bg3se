@@ -159,6 +159,15 @@ public:
     WrappableFunction<AppUpdatePathsTag, App__UpdatePathsProc> AppUpdatePaths;
     enum class AppLoadGraphicSettingsTag {};
     WrappableFunction<AppLoadGraphicSettingsTag, App__LoadGraphicSettingsProc> AppLoadGraphicSettings;
+    // Steps of the engine's start, hooked only to mark them in the start's timeline.
+    enum class AppInitGameTag {};
+    WrappableFunction<AppInitGameTag, App__InitGameProc> AppInitGame;
+    enum class AppInitializeResourceManagerTag {};
+    WrappableFunction<AppInitializeResourceManagerTag, App__InitializeResourceManagerProc> AppInitializeResourceManager;
+    enum class LoadPackFilesTag {};
+    WrappableFunction<LoadPackFilesTag, PackedFileManager__LoadPackFilesProc> LoadPackFiles;
+    enum class LoadFromContextFolderTag {};
+    WrappableFunction<LoadFromContextFolderTag, TranslatedStringRepository__LoadFromContextFolderProc> LoadFromContextFolder;
 
 private:
     esv::ScriptExtender server_;
@@ -195,6 +204,14 @@ private:
     void OnCoreLibInit(void * self);
     void OnAppUpdatePaths(App* self);
     void OnAppLoadGraphicSettings(App* self);
+    void OnAppInitGameBegin(App* self);
+    void OnAppInitGameEnd(App* self, bool result);
+    void OnInitializeResourceManagerBegin(App* self);
+    void OnInitializeResourceManagerEnd(App* self);
+    void OnLoadPackFilesBegin(void* self, bool a1, bool a2);
+    void OnLoadPackFilesEnd(void* self, bool a1, bool a2);
+    void OnLoadFromContextFolderBegin(void* self, Path const* folder, bool fallback, bool a3);
+    void OnLoadFromContextFolderEnd(void* self, Path const* folder, bool fallback, bool a3, bool result);
     void HookStateMachineUpdates();
     void OnStatsLoad(stats::RPGStats__LoadProc* wrapped, stats::RPGStats* mgr, Array<STDString>* paths);
     void OnStatsLoadGuarded(stats::RPGStats__LoadProc* wrapped, stats::RPGStats* mgr, Array<STDString>* paths);

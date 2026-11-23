@@ -7,6 +7,7 @@
 #include <Lua/Debugger/LuaDebugMessages.h>
 #include <Extender/Shared/Console.h>
 #include <GameDefinitions/Stats/Cache.h>
+#include <Extender/Shared/StartupTimeline.h>
 #include "Version.h"
 #include "resource.h"
 #include <iomanip>
@@ -37,6 +38,10 @@ void ShutdownCrashReporting();
 decltype(ScriptExtender::CoreLibInit)* decltype(ScriptExtender::CoreLibInit)::gHook;
 decltype(ScriptExtender::AppUpdatePaths)* decltype(ScriptExtender::AppUpdatePaths)::gHook;
 decltype(ScriptExtender::AppLoadGraphicSettings)* decltype(ScriptExtender::AppLoadGraphicSettings)::gHook;
+decltype(ScriptExtender::AppInitGame)* decltype(ScriptExtender::AppInitGame)::gHook;
+decltype(ScriptExtender::AppInitializeResourceManager)* decltype(ScriptExtender::AppInitializeResourceManager)::gHook;
+decltype(ScriptExtender::LoadPackFiles)* decltype(ScriptExtender::LoadPackFiles)::gHook;
+decltype(ScriptExtender::LoadFromContextFolder)* decltype(ScriptExtender::LoadFromContextFolder)::gHook;
 
 std::unique_ptr<ScriptExtender> gExtender;
 
@@ -85,6 +90,7 @@ void ScriptExtender::Initialize()
     }
 
     startTime_ = GetTickCount64();
+    startup_timeline::RecordWithCounters(startup_timeline::Side::Extender, startup_timeline::What::ExtenderLoaded, -1, -1);
 
     if (Libraries.GetGameVersion(gameVersion_)) {
         if (gameVersion_.IsSupported()) {
@@ -135,6 +141,29 @@ void ScriptExtender::Initialize()
         AppLoadGraphicSettings.SetPostHook(&ScriptExtender::OnAppLoadGraphicSettings, this);
     }
 
+    // The engine's start steps the timeline marks (no other use).
+    if (GetStaticSymbols().App__InitGame != nullptr) {
+        AppInitGame.Wrap(GetStaticSymbols().App__InitGame);
+        AppInitGame.SetPrePostHook(&ScriptExtender::OnAppInitGameBegin, &ScriptExtender::OnAppInitGameEnd, this);
+    }
+
+    if (GetStaticSymbols().App__InitializeResourceManager != nullptr) {
+        AppInitializeResourceManager.Wrap(GetStaticSymbols().App__InitializeResourceManager);
+        AppInitializeResourceManager.SetPrePostHook(&ScriptExtender::OnInitializeResourceManagerBegin,
+            &ScriptExtender::OnInitializeResourceManagerEnd, this);
+    }
+
+    if (GetStaticSymbols().ls__PackedFileManager__LoadPackFiles != nullptr) {
+        LoadPackFiles.Wrap(GetStaticSymbols().ls__PackedFileManager__LoadPackFiles);
+        LoadPackFiles.SetPrePostHook(&ScriptExtender::OnLoadPackFilesBegin, &ScriptExtender::OnLoadPackFilesEnd, this);
+    }
+
+    if (GetStaticSymbols().ls__TranslatedStringRepository__LoadFromContextFolder != nullptr) {
+        LoadFromContextFolder.Wrap(GetStaticSymbols().ls__TranslatedStringRepository__LoadFromContextFolder);
+        LoadFromContextFolder.SetPrePostHook(&ScriptExtender::OnLoadFromContextFolderBegin,
+            &ScriptExtender::OnLoadFromContextFolderEnd, this);
+    }
+
     DetourTransactionCommit();
 
 #if USE_OPTICK
@@ -165,6 +194,7 @@ void ScriptExtender::Initialize()
     auto initEnd = std::chrono::high_resolution_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(initEnd - initStart).count();
     DEBUG("Library startup took %lld ms", ms);
+    startup_timeline::RecordStep("ScriptExtender::Initialize", startup_timeline::StepEnd);
 
     auto app = GetStaticSymbols().AppInstance;
     if (app && *app) {
@@ -415,11 +445,56 @@ ecs::EntitySystemHelpersBase* ScriptExtender::GetECS(ecs::EntityWorld* world)
 
 void ScriptExtender::OnCoreLibInit(void * self)
 {
+    // The pre-hook of the symbol App__Ctor, which is BaseApp::BaseApp (the App's base constructor);
+    // called with no object when the App existed before the extender's Initialize.
+    startup_timeline::RecordStep(self != nullptr ? "BaseApp::BaseApp" : "BaseApp::BaseApp (before the extender)",
+        startup_timeline::StepAt);
     PostStartup();
+}
+
+void ScriptExtender::OnAppInitGameBegin(App* self)
+{
+    startup_timeline::RecordStep("App::InitGame", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnAppInitGameEnd(App* self, bool result)
+{
+    startup_timeline::RecordStep("App::InitGame", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnInitializeResourceManagerBegin(App* self)
+{
+    startup_timeline::RecordStep("App::InitializeResourceManager", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnInitializeResourceManagerEnd(App* self)
+{
+    startup_timeline::RecordStep("App::InitializeResourceManager", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnLoadPackFilesBegin(void* self, bool a1, bool a2)
+{
+    startup_timeline::RecordStep("ls::PackedFileManager::LoadPackFiles", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnLoadPackFilesEnd(void* self, bool a1, bool a2)
+{
+    startup_timeline::RecordStep("ls::PackedFileManager::LoadPackFiles", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnLoadFromContextFolderBegin(void* self, Path const* folder, bool fallback, bool a3)
+{
+    startup_timeline::RecordStep("ls::TranslatedStringRepository::LoadFromContextFolder", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnLoadFromContextFolderEnd(void* self, Path const* folder, bool fallback, bool a3, bool result)
+{
+    startup_timeline::RecordStep("ls::TranslatedStringRepository::LoadFromContextFolder", startup_timeline::StepEnd);
 }
 
 void ScriptExtender::OnAppUpdatePaths(App* self)
 {
+    startup_timeline::RecordStep("App::UpdatePaths", startup_timeline::StepEnd);
     if (!config_.CustomProfile.empty() && GetStaticSymbols().ls__PathRoots) {
         auto& gameLocalPath = GetStaticSymbols().ls__PathRoots[4];
         if (gameLocalPath->ends_with("Baldur's Gate 3")) {
@@ -488,6 +563,9 @@ public:
 
 void ScriptExtender::OnAppLoadGraphicSettings(App * self)
 {
+    // The extender's App__LoadGraphicSettings: slot +0xA8 of App's vtable, the Toolkit's
+    // App::LoadAndResaveGraphicsSettings (it reads graphicSettings.lsx).
+    startup_timeline::RecordStep("App::LoadAndResaveGraphicsSettings", startup_timeline::StepEnd);
     HookStateMachineUpdates();
 }
 
@@ -541,6 +619,8 @@ std::optional<STDString> ScriptExtender::GetPathOverride(STDString const & path)
 
 FileReader * ScriptExtender::OnFileReaderCreate(FileReader__CtorProc* next, FileReader * self, Path const& path, unsigned int type, unsigned int unknown)
 {
+    startup_timeline::FileOpened(path.Name.data(), path.Name.size());
+
     if (!pathOverrides_.empty()) {
         std::shared_lock lock(pathOverrideMutex_);
         auto it = pathOverrides_.find(path.Name);
@@ -570,6 +650,7 @@ void ScriptExtender::PostStartup()
     if (postStartupDone_) return;
 
     std::lock_guard _(globalStateLock_);
+    startup_timeline::RecordStep("ScriptExtender::PostStartup", startup_timeline::StepBegin);
     // We need to initialize the function library here, as GlobalAllocator isn't available in Init().
     if (Libraries.PostStartupFindLibraries()) {
         lua::InitObjectProxyPropertyMaps();
@@ -619,6 +700,7 @@ void ScriptExtender::PostStartup()
     HookStateMachineUpdates();
 
     postStartupDone_ = true;
+    startup_timeline::RecordStep("ScriptExtender::PostStartup", startup_timeline::StepEnd);
 }
 
 void ScriptExtender::InitRuntimeLogging()
