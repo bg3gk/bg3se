@@ -540,7 +540,7 @@ namespace bg3se::lua
         return s;
     }
 
-    template <class T> requires !IsByVal<T>
+    template <class T> requires (!IsByVal<T>)
     LuaSerializer& serialize(LuaSerializer& s, T* v)
     {
         MakeObjectRef(s.L, v);

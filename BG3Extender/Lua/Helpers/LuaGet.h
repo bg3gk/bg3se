@@ -248,10 +248,10 @@ inline typename std::optional<T> do_get(lua_State* L, int index, Overload<std::o
     }
 }
 
-template <class T> requires !IsByVal<T> && !std::is_pointer_v<T>
+template <class T> requires (!IsByVal<T>) && (!std::is_pointer_v<T>)
 T do_get(lua_State* L, int index, Overload<T>);
 
-template <class T> requires !IsByVal<T> && std::is_pointer_v<T>
+template <class T> requires (!IsByVal<T>) && std::is_pointer_v<T>
 T do_get(lua_State* L, int index, Overload<T>);
 
 // Overload helper for fetching a parameter for a Lua -> C++ function call
