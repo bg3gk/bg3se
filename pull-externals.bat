@@ -34,9 +34,10 @@ git clone https://github.com/g-truc/glm --branch 1.0.3
 
 rem ##### IMGUI #####
 
-git clone https://github.com/Norbyte/imgui
+git clone https://github.com/Norbyte/imgui || exit /b 1
 cd imgui
-git reset --hard 0c44880d5f783e83d0e086a9dfc5d8caf055051a
+git reset --hard 0c44880d5f783e83d0e086a9dfc5d8caf055051a || exit /b 1
+git apply "%~dp0patches\imgui-dx11-hdr.patch" || exit /b 1
 cd ..
 
 rem ##### LUA #####
