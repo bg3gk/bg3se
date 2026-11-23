@@ -4,9 +4,9 @@
 # - Run by hand (workflow_dispatch): builds BG3Extender `Game Release` x64 and keeps the DLL, its
 #   PDB and their SHA-256 as the run's artifact. Nothing is published.
 # - A pushed tag `BG3GKSE-<major>.<n>` (`<major>` = RES_DLL_MAJOR_VERSION in
-#   BG3Extender/resource.h, `<n>` our own count): the same build, then a release of that name with
+#   BG3Extender/resource.h, `<n>` our own count): the same build, then a draft release with
 #   the DLL, the PDB, SHA256SUMS.txt and `BG3GKSE-<major>.<n>.zip` holding the DLL and the PDB -
-#   the one asset GateKit's `se-release.json` pins and `gatekit se install` fetches.
+#   the asset GateKit pins after the draft's binary passes a game smoke test and is published.
 #
 # The file stays BG3ScriptExtender.dll, the name upstream's loader (BG3Updater) loads; the version
 # resource names the product BG3GKSE.
@@ -130,11 +130,15 @@ jobs:
           name: ${{ github.ref_name }}
           path: dist
 
-      - name: Release
+      - name: Prepare draft release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already has a maintainer-selected package."
+            exit 0
+          fi
           {
             echo "GateKit's build of the Script Extender, from \`${GITHUB_SHA::8}\`."
             echo
@@ -144,5 +148,5 @@ jobs:
             cat dist/SHA256SUMS.txt
             echo '```'
           } > notes.md
-          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md \
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag --title "$TAG" --notes-file notes.md \
             dist/BG3ScriptExtender.dll dist/BG3ScriptExtender.pdb dist/SHA256SUMS.txt "dist/$TAG.zip"

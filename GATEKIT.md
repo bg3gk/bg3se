@@ -627,12 +627,14 @@ gives `x64\Game Release\BG3ScriptExtender.dll` and its PDB. The post-build step 
 where that folder does not exist.
 
 **Releases.** [.github/workflows/bg3gkse.yml](.github/workflows/bg3gkse.yml) builds the same on a
-GitHub Windows runner (`windows-2025`, Visual Studio 2026), with the externals kept in its cache
-until `pull-externals.bat` changes. Run by hand it keeps the build as the run's artifact and
+GitHub Windows runner (`windows-2025`, Visual Studio 2026), with the externals cached by
+`pull-externals.bat` and the ImGui patch. Run by hand it keeps the build as the run's artifact and
 publishes nothing. A pushed tag `BG3GKSE-<major>.<n>` - `<major>` is `RES_DLL_MAJOR_VERSION` in
-[resource.h](BG3Extender/resource.h), `<n>` our own count - makes a release of that name holding
+[resource.h](BG3Extender/resource.h), `<n>` our own count - makes a draft release holding
 `BG3ScriptExtender.dll`, `BG3ScriptExtender.pdb`, `SHA256SUMS.txt` and `BG3GKSE-<major>.<n>.zip`
-(the DLL and the PDB). The run refuses a DLL whose product name is not BG3GKSE. The workflow is
+(the DLL and the PDB). Publish after the packaged DLL starts the game in a GateKit copy and passes
+a headless scenario. Record the upstream commit and the game build in the release notes. The run
+checks that the DLL's product name is BG3GKSE. The workflow is
 ours alone, like the product name, and is never offered upstream.
 
 Before a tag is pushed, on a machine with the game and GateKit's symbol database:
