@@ -86,6 +86,7 @@ private:
     void GameStateWorkerWrapper(void (*wrapped)(void*), void* self);
     void OnPreUpdate(void* self, GameTime* time);
     void OnUpdate(void* self, GameTime* time);
+    void ThrowTimelineEvents();
     void OnUpdateGuarded(void* self, GameTime* time);
     void OnIncLocalProgress(void* self, int progress, char const* state);
     void ShowLoadingProgress();

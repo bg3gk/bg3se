@@ -31,6 +31,14 @@ onto it rather than carrying a long-lived divergence.
 | [Values of the interface](#values-of-the-interface): `Nullable<Bool>` and `TimeSpan` through `Ext.UI` | client | no |
 | [Screenshots, the frame and the window](#screenshots-the-frame-and-the-window): `Ext.ClientRender.Screenshot(path, withOverlay)`, `MirrorEnable`, `SetFrameCap`, `KeepInBackground` | client | no |
 | [A picture from the disk](#a-picture-from-the-disk): `Ext.IMGUI.LoadImageFile` | client | no |
+| [Startup videos](Docs/API.md#startup-videos): a mod's `ScriptExtender/StartupVideos.json` hides, replaces and adds the videos the game plays at start, composed with every other mod's; `Ext.StartupVideos.GetPlaylist`, `Compose`, and `Timeline` (every stage of the start with its time, recorded natively before Lua exists: both sides' states with the process's IO and CPU counters, the videos, the loading screen, the client's screen fades and the interface's states up to the "press any key" page; and after the start: the loading screen's progress, the hints it draws and its wallpapers - the slideshow's shuffled set as `gui::LSImageSequence::OnLoaded` makes it, each image as the slideshow's clock shows it, the single images of the other looks - every client timeline's playback state - the main menu's camera descent among them - through the menu, later loads and a session) | client | no |
+| [The mods' interface on the first loading screen](Docs/API.md#the-mods-interface-on-the-first-loading-screen): the game's own merge of the mods' interface (`ui::ModManager::RegisterMods`, the texture metadata, `gui::GameUI::ResetModdedLibs`, `ui::StateMachine::ApplyMods`) run once more at the first `StartLoading`, with the game's module list (the very set the game's own merge gets later), before the loading screen's widget is made - a mod's `BusyElement`, styles and `Loading` pages are on the very first loading screen; an `EarlyModInterface` timeline row for it and for the game's own merge; the wallpaper rows follow every live slideshow and single image, each with its widget (`Owner`, `OwnerData`, `Visible`) | client | no |
+| [Loading hints](Docs/API.md#loading-hints): each loaded module's `Public/<Folder>/Hints/Hints.lsx` (the game's format) is loaded by the game's own `ls::FileFormatIO::LoadFile` and composed into the game's hint list - new keys appended, a known key replaced in place, the later mod winning with a warning; composed again when the game reloads its modules after a change of the mod list (the game's file loaded anew, every file of the new list), so a disabled mod's hints go and an enabled one's come; `Ext.Hints.GetComposition` | client | no |
+| [The game's module list](Docs/API.md#which-modules) for every early reader (startup videos, hints, the early interface merge): at the first `StartLoading` the game's own resolver (`ls::ModManager::LoadModFromSettings`) is called once, and the readers read the load-ordered modules it leaves - the list the game then loads, dependencies and the game's own modules included, in its order (fallback: `modsettings.lsx`'s order, said so); a `ModuleList` timeline row at that moment and at each client `LoadModule`'s end; `Ext.StartupVideos.GetModuleLists` | client | no |
+| [The game's mod list](Docs/API.md#mods): `Ext.Mod.GetList` (the settings in order, the modules the game loads with why - enabled, a dependency, the game's own - and the available ones, each with its dependencies and dependants), `Ext.Mod.Pending` (the manager's byte: whether the next session's start loads the modules again, and what changes), `Ext.Mod.SetEnabled` and `SetOrder` through the game's own mod manager calls (`ecl::ModManagerClient::AddMod`, `RemoveMod`: settings saved, list resolved, modules loaded at the next session's start); main menu only | client | no |
+| [A save from the command line without the main menu](Docs/API.md#a-save-from-the-command-line-without-the-main-menu): with `DirectSaveLoad` (off by default), once the game's `Init` has queued the save's load (`-loadSaveGame`, `-continueGame`) behind the main menu's states, those states (`LoadMenu`, `StopLoading`, `Menu`) are taken out of the client's queue; the save is loaded by the game's own start of a save, ~17 s sooner; a `Step` timeline row says what was done | client | no |
+| [Command-line values in any alphabet](Docs/API.md#command-line-values-in-any-alphabet): a value the game reads through `ls::ArgumentString::GetValue` is given in UTF-8 from the wide command line when that is all it changes - a save folder named in any alphabet is found by `-loadSaveGame` (`WideCommandLine`) | both | no |
+| `Ext.Debug.ReadValue(address, "FixedString")`: a FixedString's text from its 4-byte index (read only: `WriteValue` and `Freeze` refuse it) | both | yes |
 | [Fixed](#fixed): `GenomeVariant` values larger than a pointer | both | - |
 | [Settings this fork adds](#settings-this-fork-adds) | - | - |
 
@@ -162,6 +170,14 @@ end
   the names of `GameHooks/DataLibrariesBG3Game.cpp`). A name whose pattern was not found in the
   running executable answers `nil` and says so.
 - `Ext.Debug.GetSymbolNames()` -> `{ { Name, Found, Source = "extender" | "registry" } }`, sorted.
+- `Ext.Debug.PinTreasure([seed])` -> `{ Installed, Pinned, Seed, Calls, Keyed, Unkeyed }`: with a
+  seed, every treasure table rolled from then on is seeded from it and the entity's UUID (the
+  switch `TreasurePin`); without one, the game's shared sequence again. Developer mode. W3 round 6.
+- `Ext.Debug.MemoryMap([top])` -> `{ Totals = { Private, Mapped, Image = { Committed, Reserved } },
+  Allocations = { { Base, CommittedMB, ReservedMB, Regions, Protect, Heap } }, Heaps,
+  PrivateAllocations }`: the address space walked with `VirtualQuery`, in MB, the `top` (40)
+  largest committed private allocations by allocation base (`Heap` when the base is a process
+  heap) - what a memory map tool shows, from inside. Developer mode. W3 round 6.
 
 **From native code**, no developer mode: three plain C entries of the DLL.
 
@@ -249,6 +265,16 @@ Developer mode.
 With a counter on every function of the executable of 64 bytes or more (about 176,000) a client
 tick takes about a fifth longer; putting them on stalls the game for about a minute.
 
+A function is in a record when it ran, whatever the ring lost: the counter marks its function as
+seen besides writing the call into the ring, so `F` lines are complete and only the counts of the
+calls and the pairs can fall short (`L`).
+
+**The start, before any Lua.** The setting `CoverageAtStart` names a file of the executable's
+function starts, one hexadecimal offset a line. The counters go on as soon as the extender has
+started - its own hooks in place, the engine not yet started - which delays the start by the time
+they take; at every state the client enters, up to `Menu`, the counts so far are saved beside the
+file as `<file>.<NN>-<state>.txt` and started again. The counters stay on after the menu.
+
 ## The memory instrument
 
 For finding who writes a field and holding a value fixed while a mechanic is studied. Developer
@@ -257,7 +283,9 @@ mode, both sides.
 - The address of a component's field for an entity, from the extender's own type information
   (`GetFieldAddress`); conversion both ways between an absolute address and `module+0xRVA`
   (`ModuleFromAddress`, `AddressFromModule`); a bounds-checked read and write of a typed value
-  (`ReadValue`, `WriteValue`, a write refused on a code page).
+  (`ReadValue`, `WriteValue`, a write refused on a code page). `ReadValue` also reads a
+  `"FixedString"`: the text of the index there, through the game's lookup under a guard (nil for
+  an index the table does not hold).
 - **Who writes a field**: a hardware watchpoint (`WatchWrite`) on up to four addresses, armed on
   every thread through the debug registers, caught by a vectored handler that records the writing
   instruction and a short return chain into a ring buffer (`ReadWatchHits`), resuming at once. A
@@ -516,20 +544,112 @@ In `ScriptExtenderSettings.json`, beside upstream's:
 | `KeepWindowInBackground` | false | Refuses the game's attempts to bring its window forward |
 | `KeepWindowOffScreen` | false | Puts the window where no screen reaches when it is created |
 | `ShiftOpensConsole` | true | Holding Shift at start opens the console |
+| `StartupVideos` | true | Off, the game starts with no startup video, whatever the mods declare |
+| `ModHints` | true | Off, the loading screen's hint list stays as the game's own file gives it, whatever the mods ship |
+| `EarlyModInterface` | true | Off, the mods' interface is merged only at the game's own time (the end of `LoadModule`), and the first loading screen is the game's alone |
+| `DirectSaveLoad` | false | On, a save the command line asks for (`-loadSaveGame`, `-continueGame`) is loaded without the main menu: the menu's states the game queued at its start are taken out once its `Init` has queued the save's load. A combination the game does not make by itself: nothing of the menu runs before the first session |
+| `WideCommandLine` | true | Off, the game reads its command-line values in the system's ANSI code page only (a non-ASCII save name is not found) |
 | `CrashDumpDirectory` | empty | Folder for crash dumps, `<pid>-<yyyymmdd>-<hhmmss>.dmp` and a `.txt` with the faulting `module+0xRVA`; when set, crash reporting is on even with `SendCrashReports` off |
+| `CoverageAtStart` | empty | Developer mode: a file of the executable's function starts; coverage counters from the extender's start, a record at every state the client enters up to the main menu ([Coverage](#coverage)) |
 | `LaunchCrashReporter` | true | Starts the reporter window after a dump |
+| `FastLoadClientFrames` | false | On, the client's frame caps are lifted from its `StartLoading` until it is in `Running`/`Menu`, then put back (a load's states advance once per frame) |
+| `FastLoadServerTick` | false | On, the server worker's tick period (+0x90, 33333 us) is set to 0 while the server is in a loading state and put back at `Running` |
+| `FastLoadStreamingWait` | false | On, `PrepareRunning` ends at its first update: its `ls::StreamingPoller` (0.5 s least, 20 s most) is set to 0; textures go on streaming in `Running` |
+| `FastLoadFades` | false | On, `GlobalSwitches.FadeSpeed` (0.5 s) is set to 0: the state machine's screen fades around a load are instant (so are the game's other fades that read it) |
+| `FastLoadLuaGC` | false | On, the game's own embedded Lua 5.3 (the AI behaviour scripts of `ls::anubis::System`) has its collector held on the server's thread while the server is in a loading state: its step (`unplaced::luaC_step`) sets the debt to -24000 bytes instead of collecting, as Lua does for a stopped collector; it collects as the game's once the server leaves the loading states (Basic_Level_A: the server's LoadSession 2.95 -> 2.30 s) |
+| `RenderCut` | false | On, the main thread's frame (`ls::RenderThread::Update`) is wrapped: with `Ext.StartupVideos.RenderCut(1)` (or `RenderCutSkip`) the render frames of `ls::RenderFrameSystem` are turned off before each update (enabled byte +0x42F0), so nothing is recorded, drawn or presented while the update does the rest (its waits for the client, window messages, dispatched tasks, resources, render commands); `RenderCut(0)` draws again, `RenderCut(N)` draws one update in N. `RenderCut()` reads the counters (frames, the client's and server's ticks, each thread's CPU, memory). A picture (`shot`) needs drawing on |
+| `RenderCutSkip` | false | With `RenderCut`, nothing is drawn from the start |
+| `FastLoadStreamingGate` | false | With `FastLoadStreamingWait`, only `PrepareRunning`'s least wait is cut and its most wait kept: the state still waits for the root level's start dialogue to be ready (`ecl::GameStatePrepareRunning::Update`'s query of `eoc::ServerRootLevelStartDialogComponent` without `ecl::ClientRootLevelStartDialogReadyComponent`), which a most wait of 0 passes at once - the story's arrival then lands after `LevelGameplayStarted` (W3 round 5) |
+| `RenderCutSkipPaceUs` | 0 | With `RenderCut`, a skipped update (nothing drawn) is paced: the main thread sleeps on a high-resolution waitable timer until this many microseconds after the update began, instead of looping straight into the next one; a drawn update is never paced. Measured (W3 round 7, a start of Basic_Level_A with nothing drawn from the process start): 33,896 skipped updates by Running unpaced, 2,530 at 4000 us; the process's CPU by Running 71.2 -> 36.7 s, Running 18.7 -> 17.3 s. `Ext.StartupVideos.RenderCut()` reads `SkipPaceUs`, `PacedSleeps`, `PacedSleptMs` |
+| `RenderCutSkipPaceStartOnly` | false | Ends pacing at the client's first `Running` when `RenderCutSkipPaceUs` is set. The timeline records `RenderCut pace off` and in-session loads keep their unpaced timing. |
+| `ExitWitness` | false | On `ExitProcess` or self-termination through `TerminateProcess`, writes `exit-<pid>.txt` in `LogDirectory` with the exit code, callers, recent exceptions and startup timeline events. This includes exits through the game's unhandled-exception filter. Fail-fast and external termination bypass those calls. |
+| `LargeAllocTraceMB` | 0 | Measuring only: kernel32's `VirtualAlloc` wrapped from the extender's start; a call of at least this many MB is written into the start's timeline as `Step` rows - the size, type, protection and address, then up to 8 return addresses as `module+0xRVA` (the first 64 such calls). W3 round 7 |
+| `RenderCutFromRunning` | false | With `RenderCut`, nothing is drawn from the client's first `Running` on: the start is drawn. With nothing drawn from the process start the interface's view model of the host (`gui::VMCharacter`) never gets `IsPlayableCharacter` nor its player, `gui::VMPlayerCharacterProperties::SetActiveDialogue` is never reached, and a dialogue's window shows nothing (the server's dialogue waits on it): W3 round 5 |
+| `TreasurePin` | false | On, `esv::inventory::TreasureGenerationSystem::GenerateTreasure` (a provisional pattern, bg3_dx11 only) gets a wrapper, inert until `Ext.Debug.PinTreasure(seed)`: then each treasure table rolled first seeds the server's saved random (`esv::EocServer` +0xB8, the one `ls::Random` every treasure table draws from, seeded from a millisecond clock at the server's start) from the seed and the entity's UUID, so an entity's loot no longer depends on the order a level's setup makes its treasure requests in. A cheat for differential checks; `Ext.Debug.PinTreasure()` takes it off. W3 round 6 |
+| `IdleSleep` | false | On, the game threads' tick wait (`unplaced::TickWait`: the server's worker, the client's game thread), which spins out the rest of a tick (QueryPerformanceCounter, SwitchToThread, queued worker jobs, a tight spin for the last millisecond), first sleeps on a high-resolution waitable timer until 1.5 ms before the wait's end when the wait is longer than 3 ms; the game's own wait does the rest and keeps its carry, so ticks end when the game's would. An idle game kept open stops burning a core per thread. `Ext.StartupVideos.Headless()` reads the counters |
+| `StubFileExtensions` | "" | Measuring a headless game: a comma-separated list of extensions (`.dds,.wem`); the engine's opens (`ls::FileReader`) of a path ending in one are given a path that does not exist, so the game takes its own fallback for a missing file. Counted by `Ext.StartupVideos.Headless()`. Measured (W3 round 4): `.bshd` (shaders) missing - the process ends at the start; `.dds` (textures) missing - it ends in SwapLevel: the game has no fallback for either |
+| `StubFileTarget` | "" | With `StubFileExtensions`: the path a stubbed open gets instead of a missing one - one small valid file of the class (a 64x64 engine texture for `.dds`), so the game gets a valid object |
+| `LoadTrace`, `LoadTraceSampleMs` | false, 5 | Measuring: every file opened (`ls::FileReader`) and read (`ReadFile`), memory/IO/thread CPU at every game state, a sampling profiler of the game's threads; written out by `Ext.StartupVideos.LoadTraceDump(path, sinceMs)` (Extender/Shared/LoadTrace.h). Costs ~150 MB and a little CPU |
 
-## Upstreaming
+## Upstreaming, and our own build
 
-These are improvements to Norbyte's work, and belong back in it where he wants them. Nothing
-here has been offered upstream yet; when it is, it will be as ordinary pull requests against
-`Norbyte/bg3se`, one subject at a time, with the evidence for each change.
+These are improvements to Norbyte's work, and belong back in it where he wants them. Whether he
+takes a change is his decision, so the fork is kept ready for both ways at once:
+
+- **Upstream**: each addition is offered as its own pull request against `Norbyte/bg3se`, one
+  subject at a time, with the evidence for each change. An addition is therefore one separable
+  unit: its own files where it can (`Extender/Client/StartupVideos.*`, `ModHints.*`,
+  `EarlyModUI.*`, `GameModules.*`, `Extender/Shared/StartupTimeline.*`, `Lua/Libs/DebugCover.inl`,
+  ...), its own player's switch in the settings below (off gives the game as it is), its own
+  section on this page and in [Docs/API.md](Docs/API.md), and its own commits. Taking one needs
+  none of the others, except where its section says so (the early readers share
+  `GameModules`).
+- **Our own build**: the same additions, all together, released from `gatekit-v34` as a build of
+  its own named **BG3GKSE** (the release, its archive and the DLL's product name; the file stays
+  `BG3ScriptExtender.dll`, the name upstream's loader loads, so it replaces upstream's one for one).
+  The product name in [BG3Extender.rc](BG3Extender/BG3Extender.rc) and the release workflow
+  (`.github/workflows/bg3gkse.yml`, "Building") are ours
+  alone and are never offered upstream (GateKit's `se-release.json`; `gatekit se install` fetches it). It does not wait for
+  upstream. An addition upstream takes becomes upstream's at the next rebase, and the difference
+  shrinks.
+- **Nothing here needs GateKit to be built.** The mappings of the game's functions that GateKit's
+  registry writes stand in [BinaryMappings.xml](BG3Extender/GameHooks/BinaryMappings.xml) as
+  ordinary lines, each after a comment `<!-- code:<id>; places -->` naming the registry's id and
+  the function's place in each executable: a pattern of the function's start found once in every
+  executable. `gatekit registry mappings sync <BinaryMappings.xml> --check` says whether they are
+  still as the registry has them (a check before a build), and without `--check` writes them
+  again after the registry moved to a new build of the game. A mapping whose pattern is not at a
+  function's start, or that finds a global through an instruction (`@ref`), is written by hand and
+  has no such comment.
+
+A player installs one DLL either way: this fork's `BG3ScriptExtender.dll` in place of
+upstream's, through the same loader. GateKit's own mod is for driving and testing the game and is
+never needed to play; a mod that uses an addition here is an ordinary mod, and on upstream's
+extender its files are simply not read.
 
 ## Building
 
-As upstream: Visual Studio with the C++ toolchain, `BG3Tools.sln`, the `Game Release`
+As upstream: Visual Studio 2026 with the C++ toolchain (v145), `BG3Tools.sln`, the `Game Release`
 configuration. GateKit users do not build it - `gatekit se install` fetches a release. A build
 folder holds the DLL, its PDB and, for GateKit, `RegistryMappings.xml` (above).
+
+The build needs nothing beyond the externals `pull-externals.bat` fetches and builds (run once,
+from an x64 Native Tools prompt): `stb_image.h`'s folder is among the project's include paths, and
+the Abseil and utf8_range libraries libprotobuf-lite links against are taken from protobuf's own
+build by folder. From the repository's root, with no `CL` or `LINK` in the environment:
+
+```
+msbuild BG3Tools.sln -t:BG3Extender -p:Configuration="Game Release" -p:Platform=x64 -m
+```
+
+gives `x64\Game Release\BG3ScriptExtender.dll` and its PDB. The post-build step copies the DLL into
+`GameBinDir` (`-p:GameBinDir=<the game's bin>`; upstream's own path by default) and is skipped
+where that folder does not exist.
+
+**Releases.** [.github/workflows/bg3gkse.yml](.github/workflows/bg3gkse.yml) builds the same on a
+GitHub Windows runner (`windows-2025`, Visual Studio 2026), with the externals kept in its cache
+until `pull-externals.bat` changes. Run by hand it keeps the build as the run's artifact and
+publishes nothing. A pushed tag `BG3GKSE-<major>.<n>` - `<major>` is `RES_DLL_MAJOR_VERSION` in
+[resource.h](BG3Extender/resource.h), `<n>` our own count - makes a release of that name holding
+`BG3ScriptExtender.dll`, `BG3ScriptExtender.pdb`, `SHA256SUMS.txt` and `BG3GKSE-<major>.<n>.zip`
+(the DLL and the PDB). The run refuses a DLL whose product name is not BG3GKSE. The workflow is
+ours alone, like the product name, and is never offered upstream.
+
+Before a tag is pushed, on a machine with the game and GateKit's symbol database:
+
+```
+gatekit registry mappings sync BG3Extender/GameHooks/BinaryMappings.xml --check
+```
+
+It cannot run on the runner: it finds each marked mapping's pattern again in the game's
+executables through the symbol database, and neither the game nor that database (built from the
+game's files) may be put on a public machine. `RegistryMappings.xml` is not in the release for the
+same reason (`registry mappings write` scans the executables); `gatekit se install <folder>`
+copies it from a build folder that has one.
+
+GateKit takes a release by its pin: `se-release.json` in GateKit names `bg3gk/bg3se`, the tag, the
+zip and the zip's SHA-256 from `SHA256SUMS.txt`; `gatekit se install` with no folder fetches that
+zip and checks the hash.
 
 The builds, newest first; each is normal mode, `Game Release` x64:
 

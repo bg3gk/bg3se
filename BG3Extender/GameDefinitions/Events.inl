@@ -34,3 +34,7 @@ EVENT_NS(BeforeRoll, BeforeRoll, esv::lua, BeforeRollEventParams, Server, false,
 EVENT_NS(Roll, Roll, esv::lua, RollEventParams, Server, false, lua::RestrictionFlag::None)
 EVENT_NS(RollDie, RollDie, esv::lua, RollDieEventParams, Server, false, lua::RestrictionFlag::None)
 EVENT_NS(RollAdjusted, RollAdjusted, esv::lua, RollAdjustedEventParams, Server, false, lua::RestrictionFlag::None)
+EVENT_NS(ModulesReloaded, ModulesReloaded, ecl::lua, ModulesReloadedEventParams, Client, false, lua::RestrictionFlag::None)
+EVENT_NS(TimelinePlayback, TimelinePlayback, ecl::lua, TimelinePlaybackEventParams, Client, false, lua::RestrictionFlag::None)
+EVENT_NS(LoadingScreen, LoadingScreen, ecl::lua, LoadingScreenEventParams, Client, false, lua::RestrictionFlag::None)
+EVENT_NS(UIStateChanged, UIStateChanged, ecl::lua, UIStateChangedEventParams, Client, false, lua::RestrictionFlag::None)

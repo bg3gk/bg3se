@@ -4,6 +4,7 @@
 #include <Lua/Shared/LuaModule.h>
 #include <Lua/Shared/LuaMethodCallHelpers.h>
 #include <Lua/Osiris/FunctionProxy.h>
+#include <Extender/Shared/Headless.h>   // GateKit: Ext.Debug.PinTreasure (DebugProbe.inl)
 #include <Lua/Libs/Debug.inl>
 #include <Lua/Libs/Entity.inl>
 #include <Lua/Libs/IO.inl>
@@ -34,6 +35,9 @@
 #include <Lua/Libs/ClientIMGUI.inl>
 #include <Lua/Libs/ClientRender.inl>
 #include <Lua/Libs/ClientVisual.inl>
+#include <Lua/Libs/ClientStartupVideos.inl>
+#include <Lua/Libs/ClientHints.inl>
+#include <Lua/Libs/ClientMod.inl>
 
 BEGIN_NS(ecl::lua)
 
@@ -48,6 +52,9 @@ void RegisterClientLibraries()
     imgui::RegisterIMGUILib();
     render::RegisterRenderLib();
     visual::RegisterVisualLib();
+    startup_videos::RegisterStartupVideosLib();
+    hints::RegisterHintsLib();
+    mod::RegisterClientModLib();
 }
 
 END_NS()

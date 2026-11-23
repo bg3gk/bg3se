@@ -7,6 +7,11 @@
 #include <Lua/Debugger/LuaDebugMessages.h>
 #include <Extender/Shared/Console.h>
 #include <GameDefinitions/Stats/Cache.h>
+#include <Extender/Shared/StartupTimeline.h>
+#include <Extender/Client/EarlyModUI.h>
+#include <Extender/Client/ModHints.h>
+#include <Extender/Client/DirectSaveLoad.h>
+#include <Extender/Shared/FastLoad.h>
 #include "Version.h"
 #include "resource.h"
 #include <iomanip>
@@ -22,11 +27,20 @@
 #include <Extender/Shared/UserVariables.inl>
 #include <Extender/Shared/UseActions.inl>
 #include <Extender/Shared/VirtualTextures.inl>
+#include <Extender/Shared/LoadTrace.inl>
+#include <Extender/Shared/RenderCut.inl>   // GateKit: render skip, Lua collector held during a load
+#include <Extender/Shared/Headless.inl>    // GateKit: tick waits slept, resource classes stubbed
 #if USE_OPTICK
 #include <optick_server.h>
 #endif
 
 #undef DEBUG_SERVER_CLIENT
+
+namespace bg3se::lua::debug
+{
+    // Lua/Libs/DebugCover.inl
+    void CoverAtStartBegin();
+}
 
 namespace bg3se
 {
@@ -37,6 +51,14 @@ void ShutdownCrashReporting();
 decltype(ScriptExtender::CoreLibInit)* decltype(ScriptExtender::CoreLibInit)::gHook;
 decltype(ScriptExtender::AppUpdatePaths)* decltype(ScriptExtender::AppUpdatePaths)::gHook;
 decltype(ScriptExtender::AppLoadGraphicSettings)* decltype(ScriptExtender::AppLoadGraphicSettings)::gHook;
+decltype(ScriptExtender::AppInitGame)* decltype(ScriptExtender::AppInitGame)::gHook;
+decltype(ScriptExtender::AppInitializeResourceManager)* decltype(ScriptExtender::AppInitializeResourceManager)::gHook;
+decltype(ScriptExtender::LoadPackFiles)* decltype(ScriptExtender::LoadPackFiles)::gHook;
+decltype(ScriptExtender::LoadFromContextFolder)* decltype(ScriptExtender::LoadFromContextFolder)::gHook;
+decltype(ScriptExtender::AdvanceHint)* decltype(ScriptExtender::AdvanceHint)::gHook;
+decltype(ScriptExtender::ImageSequenceLoaded)* decltype(ScriptExtender::ImageSequenceLoaded)::gHook;
+decltype(ScriptExtender::GameUIUpdate)* decltype(ScriptExtender::GameUIUpdate)::gHook;
+decltype(ScriptExtender::ArgumentGetValue)* decltype(ScriptExtender::ArgumentGetValue)::gHook;
 
 std::unique_ptr<ScriptExtender> gExtender;
 
@@ -85,6 +107,15 @@ void ScriptExtender::Initialize()
     }
 
     startTime_ = GetTickCount64();
+    startup_timeline::RecordWithCounters(startup_timeline::Side::Extender, startup_timeline::What::ExtenderLoaded, -1, -1);
+
+    // GateKit: the load's trace, measuring only (the switch LoadTrace, off by default).
+    if (config_.LoadTrace) {
+        load_trace::Install(config_.LoadTraceSampleMs);
+    }
+    // GateKit: fast loads for automated runs (each switch off by default).
+    fast_load::Configure(config_.FastLoadClientFrames, config_.FastLoadServerTick,
+        config_.FastLoadStreamingWait, config_.FastLoadFades, config_.FastLoadStreamingGate);
 
     if (Libraries.GetGameVersion(gameVersion_)) {
         if (gameVersion_.IsSupported()) {
@@ -135,6 +166,62 @@ void ScriptExtender::Initialize()
         AppLoadGraphicSettings.SetPostHook(&ScriptExtender::OnAppLoadGraphicSettings, this);
     }
 
+    // The engine's start steps the timeline marks (no other use).
+    if (GetStaticSymbols().App__InitGame != nullptr) {
+        AppInitGame.Wrap(GetStaticSymbols().App__InitGame);
+        AppInitGame.SetPrePostHook(&ScriptExtender::OnAppInitGameBegin, &ScriptExtender::OnAppInitGameEnd, this);
+    }
+
+    if (GetStaticSymbols().App__InitializeResourceManager != nullptr) {
+        AppInitializeResourceManager.Wrap(GetStaticSymbols().App__InitializeResourceManager);
+        AppInitializeResourceManager.SetPrePostHook(&ScriptExtender::OnInitializeResourceManagerBegin,
+            &ScriptExtender::OnInitializeResourceManagerEnd, this);
+    }
+
+    if (GetStaticSymbols().ls__PackedFileManager__LoadPackFiles != nullptr) {
+        LoadPackFiles.Wrap(GetStaticSymbols().ls__PackedFileManager__LoadPackFiles);
+        LoadPackFiles.SetPrePostHook(&ScriptExtender::OnLoadPackFilesBegin, &ScriptExtender::OnLoadPackFilesEnd, this);
+    }
+
+    if (GetStaticSymbols().ls__TranslatedStringRepository__LoadFromContextFolder != nullptr) {
+        LoadFromContextFolder.Wrap(GetStaticSymbols().ls__TranslatedStringRepository__LoadFromContextFolder);
+        LoadFromContextFolder.SetPrePostHook(&ScriptExtender::OnLoadFromContextFolderBegin,
+            &ScriptExtender::OnLoadFromContextFolderEnd, this);
+    }
+
+    if (GetStaticSymbols().gui__DCLoadingScreen__OnAdvanceHintCommand != nullptr) {
+        AdvanceHint.Wrap(GetStaticSymbols().gui__DCLoadingScreen__OnAdvanceHintCommand);
+        AdvanceHint.SetPrePostHook(&ScriptExtender::OnAdvanceHintBegin, &ScriptExtender::OnAdvanceHintEnd, this);
+    }
+
+    if (GetStaticSymbols().gui__LSImageSequence__OnLoaded != nullptr) {
+        ImageSequenceLoaded.Wrap(GetStaticSymbols().gui__LSImageSequence__OnLoaded);
+        ImageSequenceLoaded.SetPostHook(&ScriptExtender::OnImageSequenceLoaded, this);
+    }
+
+    if (config_.EarlyModInterface && GetStaticSymbols().gui__GameUI__UpdateFromUI != nullptr) {
+        GameUIUpdate.Wrap(GetStaticSymbols().gui__GameUI__UpdateFromUI);
+        GameUIUpdate.SetPreHook(&ScriptExtender::OnGameUIUpdate, this);
+    }
+
+    if (config_.WideCommandLine && GetStaticSymbols().ls__ArgumentString__GetValue != nullptr) {
+        ArgumentGetValue.Wrap(GetStaticSymbols().ls__ArgumentString__GetValue);
+        ArgumentGetValue.SetPostHook(&ScriptExtender::OnArgumentGetValue, this);
+    }
+
+    // GateKit: the render thread's frame and the game's Lua collector (RenderCut.h), each only when
+    // its switch is on (off by default).
+    render_cut::Install(config_.RenderCut, config_.RenderCutSkip, config_.FastLoadLuaGC, config_.RenderCutFromRunning,
+        config_.RenderCutSkipPaceUs, config_.RenderCutSkipPaceStartOnly);
+    // GateKit: the tick waits slept and resource classes stubbed (Headless.h), off by default.
+    headless::Install(config_.IdleSleep, config_.StubFileExtensions);
+    // GateKit: the treasure generation's wrapper, inert until pinned (Headless.h), off by default.
+    headless::InstallTreasurePin(config_.TreasurePin);
+    // GateKit (W3 round 7), measuring: VirtualAlloc calls of at least N MB named by their callers.
+    headless::InstallLargeAllocTrace(config_.LargeAllocTraceMB);
+    // Record self-termination when exit diagnostics are enabled.
+    headless::InstallExitWitness(config_.ExitWitness, config_.LogDirectory);
+
     DetourTransactionCommit();
 
 #if USE_OPTICK
@@ -165,6 +252,9 @@ void ScriptExtender::Initialize()
     auto initEnd = std::chrono::high_resolution_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(initEnd - initStart).count();
     DEBUG("Library startup took %lld ms", ms);
+    startup_timeline::RecordStep("ScriptExtender::Initialize", startup_timeline::StepEnd);
+    // the extender's own hooks are in place: the start's coverage counters go on now, before the engine starts
+    lua::debug::CoverAtStartBegin();
 
     auto app = GetStaticSymbols().AppInstance;
     if (app && *app) {
@@ -415,11 +505,83 @@ ecs::EntitySystemHelpersBase* ScriptExtender::GetECS(ecs::EntityWorld* world)
 
 void ScriptExtender::OnCoreLibInit(void * self)
 {
+    // The pre-hook of the symbol App__Ctor, which is BaseApp::BaseApp (the App's base constructor);
+    // called with no object when the App existed before the extender's Initialize.
+    startup_timeline::RecordStep(self != nullptr ? "BaseApp::BaseApp" : "BaseApp::BaseApp (before the extender)",
+        startup_timeline::StepAt);
     PostStartup();
+}
+
+void ScriptExtender::OnAppInitGameBegin(App* self)
+{
+    startup_timeline::RecordStep("App::InitGame", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnAppInitGameEnd(App* self, bool result)
+{
+    startup_timeline::RecordStep("App::InitGame", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnInitializeResourceManagerBegin(App* self)
+{
+    startup_timeline::RecordStep("App::InitializeResourceManager", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnInitializeResourceManagerEnd(App* self)
+{
+    startup_timeline::RecordStep("App::InitializeResourceManager", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnLoadPackFilesBegin(void* self, bool a1, bool a2)
+{
+    startup_timeline::RecordStep("ls::PackedFileManager::LoadPackFiles", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnLoadPackFilesEnd(void* self, bool a1, bool a2)
+{
+    startup_timeline::RecordStep("ls::PackedFileManager::LoadPackFiles", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnLoadFromContextFolderBegin(void* self, Path const* folder, bool fallback, bool a3)
+{
+    startup_timeline::RecordStep("ls::TranslatedStringRepository::LoadFromContextFolder", startup_timeline::StepBegin);
+}
+
+void ScriptExtender::OnLoadFromContextFolderEnd(void* self, Path const* folder, bool fallback, bool a3, bool result)
+{
+    startup_timeline::RecordStep("ls::TranslatedStringRepository::LoadFromContextFolder", startup_timeline::StepEnd);
+}
+
+void ScriptExtender::OnAdvanceHintBegin(void* self)
+{
+    // A composition of the hints made at a reload goes into the list before this draw reads it.
+    ecl::mod_hints::OnInterfaceThread();
+    startup_timeline::BeforeAdvanceHint(self);
+}
+
+void ScriptExtender::OnAdvanceHintEnd(void* self)
+{
+    startup_timeline::AfterAdvanceHint(self);
+}
+
+void ScriptExtender::OnImageSequenceLoaded(void* self, void* a1, void* a2)
+{
+    startup_timeline::AfterImageSequenceLoaded(self);
+}
+
+void ScriptExtender::OnGameUIUpdate(void* self, void* time)
+{
+    ecl::early_mod_ui::BeforeGameUIUpdate(self);
+}
+
+void ScriptExtender::OnArgumentGetValue(void* self, char const* key, STDString* value, bool found)
+{
+    ecl::direct_save_load::OnArgumentValue(key, value, found);
 }
 
 void ScriptExtender::OnAppUpdatePaths(App* self)
 {
+    startup_timeline::RecordStep("App::UpdatePaths", startup_timeline::StepEnd);
     if (!config_.CustomProfile.empty() && GetStaticSymbols().ls__PathRoots) {
         auto& gameLocalPath = GetStaticSymbols().ls__PathRoots[4];
         if (gameLocalPath->ends_with("Baldur's Gate 3")) {
@@ -488,6 +650,9 @@ public:
 
 void ScriptExtender::OnAppLoadGraphicSettings(App * self)
 {
+    // The extender's App__LoadGraphicSettings: slot +0xA8 of App's vtable, the Toolkit's
+    // App::LoadAndResaveGraphicsSettings (it reads graphicSettings.lsx).
+    startup_timeline::RecordStep("App::LoadAndResaveGraphicsSettings", startup_timeline::StepEnd);
     HookStateMachineUpdates();
 }
 
@@ -541,6 +706,8 @@ std::optional<STDString> ScriptExtender::GetPathOverride(STDString const & path)
 
 FileReader * ScriptExtender::OnFileReaderCreate(FileReader__CtorProc* next, FileReader * self, Path const& path, unsigned int type, unsigned int unknown)
 {
+    startup_timeline::FileOpened(path.Name.data(), path.Name.size());
+
     if (!pathOverrides_.empty()) {
         std::shared_lock lock(pathOverrideMutex_);
         auto it = pathOverrides_.find(path.Name);
@@ -561,7 +728,31 @@ FileReader * ScriptExtender::OnFileReaderCreate(FileReader__CtorProc* next, File
         statLoadOrderHelper_.OnStatFileOpened(path);
     }
 
+    // GateKit: a stubbed resource class (the switches StubFileExtensions and StubFileTarget,
+    // Headless.h): the open gets the stand-in file, or finds no file, as for a missing one.
+    if (headless::Stubbed(path.Name.data(), path.Name.size())
+        && (config_.StubFileTarget.empty() || path.Name.find(config_.StubFileTarget.c_str()) == STDString::npos)) {
+        Path stub;
+        if (config_.StubFileTarget.empty()) {
+            stub.Name = path.Name;
+            stub.Name += ".gatekit-stub";
+        } else {
+            stub.Name = config_.StubFileTarget.c_str();
+        }
+#if !defined(OSI_EOCAPP)
+        stub.Unknown = path->Unknown;
+#endif
+        return next(self, stub, type, unknown);
+    }
+
     DisableCrashReporting _;
+    // GateKit: the load's trace (the switch LoadTrace): the open's time, size and thread.
+    if (load_trace::Enabled()) {
+        auto began = load_trace::FileReaderBegin();
+        auto reader = next(self, path, type, unknown);
+        load_trace::FileReaderEnd(began, path.Name.data(), path.Name.size(), type, unknown, self->FileSize, self->IsLoaded);
+        return reader;
+    }
     return next(self, path, type, unknown);
 }
 
@@ -570,6 +761,7 @@ void ScriptExtender::PostStartup()
     if (postStartupDone_) return;
 
     std::lock_guard _(globalStateLock_);
+    startup_timeline::RecordStep("ScriptExtender::PostStartup", startup_timeline::StepBegin);
     // We need to initialize the function library here, as GlobalAllocator isn't available in Init().
     if (Libraries.PostStartupFindLibraries()) {
         lua::InitObjectProxyPropertyMaps();
@@ -619,6 +811,7 @@ void ScriptExtender::PostStartup()
     HookStateMachineUpdates();
 
     postStartupDone_ = true;
+    startup_timeline::RecordStep("ScriptExtender::PostStartup", startup_timeline::StepEnd);
 }
 
 void ScriptExtender::InitRuntimeLogging()

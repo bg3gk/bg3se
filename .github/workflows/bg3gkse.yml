@@ -1,0 +1,138 @@
+# BG3GKSE: GateKit's own build of the Script Extender (GATEKIT.md, "Upstreaming, and our own
+# build"). This workflow is ours alone and is never offered upstream.
+#
+# - Run by hand (workflow_dispatch): builds BG3Extender `Game Release` x64 and keeps the DLL, its
+#   PDB and their SHA-256 as the run's artifact. Nothing is published.
+# - A pushed tag `BG3GKSE-<major>.<n>` (`<major>` = RES_DLL_MAJOR_VERSION in
+#   BG3Extender/resource.h, `<n>` our own count): the same build, then a release of that name with
+#   the DLL, the PDB, SHA256SUMS.txt and `BG3GKSE-<major>.<n>.zip` holding the DLL and the PDB -
+#   the one asset GateKit's `se-release.json` pins and `gatekit se install` fetches.
+#
+# The file stays BG3ScriptExtender.dll, the name upstream's loader (BG3Updater) loads; the version
+# resource names the product BG3GKSE.
+#
+# Not run here: `gatekit registry mappings sync BG3Extender/GameHooks/BinaryMappings.xml --check`.
+# It finds each marked mapping's pattern again in the game's executables through GateKit's symbol
+# database, and neither the game nor that database (built from the game's files) may be put on a
+# public runner. It is run on a machine with the game before a tag is pushed (GATEKIT.md,
+# "Building").
+
+name: BG3GKSE
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['BG3GKSE-*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bg3gkse-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # windows-2025 carries Visual Studio 2026 (toolset v145, which BG3Extender.vcxproj names)
+    # since GitHub's image migration of June 2026.
+    runs-on: windows-2025
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $major = (Select-String -Path BG3Extender/resource.h -Pattern '#define RES_DLL_MAJOR_VERSION\s+(\d+)').Matches[0].Groups[1].Value
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $tag = "${{ github.ref_name }}"
+            if ($tag -notmatch "^BG3GKSE-$major\.\d+$") {
+              Write-Error "tag $tag is not BG3GKSE-$major.<n>: its major must be RES_DLL_MAJOR_VERSION ($major)"
+              exit 1
+            }
+            $name = $tag
+          } else {
+            # a build by hand is no release: its name says the commit
+            $name = "BG3GKSE-$major-dev-" + "${{ github.sha }}".Substring(0, 8)
+          }
+          "name=$name" >> $env:GITHUB_OUTPUT
+
+      # The x64 developer environment: pull-externals.bat needs it (nmake, msbuild, cmake).
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # The externals are fetched and built by upstream's own script and kept between runs; a new
+      # pull-externals.bat starts them afresh.
+      - name: Externals from the cache
+        id: externals
+        uses: actions/cache@v4
+        with:
+          path: |
+            External
+            !External/README.md
+            !External/VulkanLib
+          key: externals-${{ runner.os }}-${{ hashFiles('pull-externals.bat') }}-1
+
+      - name: Fetch and build the externals
+        if: steps.externals.outputs.cache-hit != 'true'
+        shell: cmd
+        run: call pull-externals.bat
+
+      # The 64-bit tools: the whole-program link is too big for the 32-bit linker's incremental
+      # code generation.
+      - name: Build BG3Extender
+        shell: cmd
+        run: msbuild BG3Tools.sln -t:BG3Extender -p:Configuration="Game Release" -p:Platform=x64 -p:PreferredToolArchitecture=x64 -m -v:m -nologo
+
+      - name: Gather the build
+        id: gather
+        shell: pwsh
+        run: |
+          $name = "${{ steps.version.outputs.name }}"
+          $out = New-Item -ItemType Directory -Force -Path dist
+          Copy-Item "x64/Game Release/BG3ScriptExtender.dll", "x64/Game Release/BG3ScriptExtender.pdb" $out
+          $product = (Get-Item "$out/BG3ScriptExtender.dll").VersionInfo.ProductName
+          if ($product -ne "BG3GKSE") { Write-Error "the DLL's product name is '$product', not BG3GKSE"; exit 1 }
+          Compress-Archive -Path "$out/BG3ScriptExtender.dll", "$out/BG3ScriptExtender.pdb" -DestinationPath "$out/$name.zip"
+          $sums = Get-ChildItem $out -File | Sort-Object Name | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
+          }
+          $sums | Set-Content -Encoding ascii "$out/SHA256SUMS.txt"
+          $sums | Write-Output
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.name }}
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.ref_name }}
+          path: dist
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          {
+            echo "GateKit's build of the Script Extender, from \`${GITHUB_SHA::8}\`."
+            echo
+            echo "The file is \`BG3ScriptExtender.dll\`, the name upstream's loader loads; its version resource names the product BG3GKSE. \`$TAG.zip\` holds the DLL and its PDB: the asset GateKit's \`se-release.json\` pins and \`gatekit se install\` fetches."
+            echo
+            echo '```'
+            cat dist/SHA256SUMS.txt
+            echo '```'
+          } > notes.md
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md \
+            dist/BG3ScriptExtender.dll dist/BG3ScriptExtender.pdb dist/SHA256SUMS.txt "dist/$TAG.zip"

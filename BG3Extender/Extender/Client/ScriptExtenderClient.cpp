@@ -13,6 +13,21 @@ STATIC_HOOK(gameStateWorkerStart_)
 STATIC_HOOK(gameStateMachineUpdate_)
 
 #include <Extender/Shared/ThreadedExtenderState.inl>
+#include <Extender/Client/GameModules.inl>
+#include <Extender/Client/StartupVideos.inl>
+#include <Extender/Client/ModHints.inl>
+#include <Extender/Client/EarlyModUI.inl>
+#include <Extender/Client/DirectSaveLoad.inl>
+#include <Extender/Shared/StartupTimeline.inl>
+#include <Extender/Shared/LoadTrace.h>
+#include <Extender/Shared/FastLoad.inl>
+#include <Extender/Shared/RenderCut.h>
+
+namespace bg3se::lua::debug
+{
+    // Lua/Libs/DebugCover.inl
+    void CoverAtStartState(char const* state);
+}
 
 BEGIN_SE()
 
@@ -148,6 +163,23 @@ void CleanupSanityCheck()
 
 void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 {
+    startup_timeline::RecordWithCounters(startup_timeline::Side::Client, startup_timeline::What::State,
+        (int32_t)fromState, (int32_t)toState);
+    // GateKit: the load's trace (the switch LoadTrace).
+    load_trace::Role("ecl state");
+    load_trace::OnState(1, (int32_t)fromState, (int32_t)toState);
+    fast_load::OnClientState((int32_t)fromState, (int32_t)toState);   // GateKit: fast loads
+    render_cut::OnClientState((int32_t)fromState, (int32_t)toState);  // GateKit: RenderCutFromRunning
+    if ((std::size_t)toState < std::size(GameStateNames)) {
+        lua::debug::CoverAtStartState(GameStateNames[(std::size_t)toState]);
+    }
+
+    // A save asked for on the command line: the menu's states out of the queue when the game's
+    // Init has queued the save's load behind them (the switch DirectSaveLoad).
+    if (!gExtender->GetLibraryManager().CriticalInitializationFailed()) {
+        direct_save_load::OnGameStateChanged(fromState, toState);
+    }
+
     if (config_.SendCrashReports || !config_.CrashDumpDirectory.empty()) {
         // We need to initialize the crash reporter after the game engine has started,
         // otherwise the game will overwrite the top level exception filter
@@ -197,6 +229,21 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
         gExtender->GetVirtualTextureHelpers().Load();
         ShowVersionNumber();
         LoadExtensionState(ExtensionStateContext::Game);
+        // The modules the game loaded: after a change of the mod list, the hints follow them.
+        if (!gExtender->GetLibraryManager().CriticalInitializationFailed()) {
+            auto loaded = game_modules::OnModuleLoaded();
+            mod_hints::OnModuleLoaded(loaded);
+            // Ext.Events.ModulesReloaded: the game loaded another set of modules than at its
+            // previous load (not at the first one: there is no previous load to differ from)
+            static game_modules::ModuleList previousLoad;
+            if (!previousLoad.Empty() && !loaded.SameModules(previousLoad) && extensionState_) {
+                ecl::lua::ModulesReloadedEventParams params;
+                for (auto const& m : previousLoad.Modules) params.Previous.push_back(m.Uuid);
+                for (auto const& m : loaded.Modules) params.Current.push_back(m.Uuid);
+                extensionState_->ThrowEvent<ModulesReloadedEvent>(params);
+            }
+            previousLoad = loaded;
+        }
         break;
 
     // Initialize client state when exiting from a game and returning to menu
@@ -216,6 +263,26 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
     }
 
     switch (toState) {
+    case GameState::StartLoading:
+        // The machine has made the state current and calls its Enter only after every listener,
+        // so the startup playlist can still be rewritten here.
+        if (!gExtender->GetLibraryManager().CriticalInitializationFailed()) {
+            // The list the game will load, resolved once by the game's own resolver; every early
+            // reader below reads it.
+            game_modules::OnStartLoading();
+            auto client = GetStaticSymbols().GetEoCClient();
+            if (client && client->GameStateMachine) {
+                startup_videos::OnStartLoading(client->GameStateMachine->CurrentState);
+            }
+            // The mods' hints, once: the mod list is known and their files reachable, and the
+            // loading screen draws its first hint only after this state.
+            mod_hints::OnStartLoading();
+            // The mods' interface, once: taken here, merged on the interface's next update,
+            // before the loading screen's widget is made.
+            early_mod_ui::OnStartLoading();
+        }
+        break;
+
     case GameState::Init:
         entityHelpers_.Bind();
         ResetExtensionState();
@@ -288,6 +355,7 @@ void ScriptExtender::OnGameStateChanged(GameState fromState, GameState toState)
 void ScriptExtender::GameStateWorkerWrapper(void (*wrapped)(void*), void* self)
 {
     ContextGuard _(ContextType::Client);
+    load_trace::Role("ecl worker");   // GateKit: the load's trace
     wrapped(self);
 }
 
@@ -309,9 +377,67 @@ void ScriptExtender::OnPreUpdate(void* self, GameTime* time)
 #endif
 }
 
+// The start's timeline's rows of the game's own changes, recorded since the last update, thrown to
+// the client's Lua as events (on the client's thread, where its Lua runs): Ext.Events.TimelinePlayback,
+// LoadingScreen and UIStateChanged. Rows recorded while no Lua state exists are not thrown.
+void ScriptExtender::ThrowTimelineEvents()
+{
+    static uint32_t seen = 0;
+    auto count = startup_timeline::Count();
+    if (!extensionState_) {
+        seen = count;
+        return;
+    }
+    for (; seen < count; seen++) {
+        if (!startup_timeline::IsReady(seen)) break;    // filled later, on another thread
+        auto const& e = startup_timeline::Get(seen);
+        if (e.EventSide != startup_timeline::Side::Client) continue;
+        switch (e.Kind) {
+        case startup_timeline::What::TimelinePlayback: {
+            ecl::lua::TimelinePlaybackEventParams params;
+            params.Timeline = e.Name;
+            params.Type = e.Parent;
+            params.From = e.From;
+            params.To = e.To;
+            extensionState_->ThrowEvent<TimelinePlaybackEvent>(params);
+            break;
+        }
+        case startup_timeline::What::LoadingScreenShown:
+        case startup_timeline::What::LoadingScreenHidden: {
+            ecl::lua::LoadingScreenEventParams params;
+            params.Visible = e.Kind == startup_timeline::What::LoadingScreenShown;
+            extensionState_->ThrowEvent<LoadingScreenEvent>(params);
+            break;
+        }
+        case startup_timeline::What::UIState: {
+            ecl::lua::UIStateChangedEventParams params;
+            params.State = e.Name;
+            params.Parent = e.Parent;
+            params.Depth = e.From;
+            params.Entered = e.To == 1;
+            extensionState_->ThrowEvent<UIStateChangedEvent>(params);
+            break;
+        }
+        default:
+            break;
+        }
+    }
+}
+
 void ScriptExtender::OnUpdate(void* self, GameTime* time)
 {
     BEGIN_GUARDED()
+    load_trace::Role("ecl update");   // GateKit: the load's trace
+    render_cut::OnClientTick();       // GateKit: the client's ticks counted (RenderCut.h)
+    if (load_trace::Enabled() || fast_load::Any()) {
+        auto clientState = GetStaticSymbols().GetClientState();
+        bool preparing = clientState && *clientState == GameState::PrepareRunning;
+        // the trace reads the poller before a fast load cuts it
+        load_trace::OnClientUpdate(self, preparing);
+        fast_load::OnClientUpdate(self, preparing);
+    }
+    startup_timeline::PollClient(self);
+    ThrowTimelineEvents();
     // In case we're loaded too late to see LoadModule transition
     BindToThreadPersistent();
     OnUpdateGuarded(self, time);
@@ -372,6 +498,10 @@ void ScriptExtender::ShowVersionNumber()
 
 void ScriptExtender::OnUiPredicatesManagerUpdate(ui::DeferredPredicatesManager*)
 {
+    startup_timeline::PollUi();
+    // The interface's thread: a reload's composition of the hints goes into the game's list here.
+    mod_hints::OnInterfaceThread();
+
     // Non-threadsafe peek to check if we need to acquire the Lua state lock.
     // (we need to wait for the main thread to finish processing Lua code if we do)
     if (extensionState_ 

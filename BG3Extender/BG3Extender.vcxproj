@@ -42,7 +42,24 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Game Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <!-- Where the post-build step copies the DLL; skipped when the folder does not exist (a build
+         machine without the game). -p:GameBinDir=... points it at another installation. -->
+    <GameBinDir Condition="'$(GameBinDir)'==''">D:\Apps\Steam\steamapps\common\Baldurs Gate 3\bin</GameBinDir>
+    <!-- protobuf-build's configuration whose libraries this one links -->
+    <ProtobufLibConfig Condition="'$(Configuration)'=='Game Debug'">Debug</ProtobufLibConfig>
+    <ProtobufLibConfig Condition="'$(Configuration)'!='Game Debug'">Release</ProtobufLibConfig>
+  </PropertyGroup>
+  <ItemGroup Label="Abseil and utf8_range, which libprotobuf-lite links against">
+    <!-- protobuf builds them as part of libprotobuf-lite (pull-externals.bat); their set changes
+         with protobuf's version, so they are taken by folder rather than listed by name. -->
+    <Library Include="$(MSBuildThisFileDirectory)..\External\protobuf-build\_deps\absl-build\absl\**\$(ProtobufLibConfig)\*.lib">
+      <Visible>false</Visible>
+    </Library>
+    <Library Include="$(MSBuildThisFileDirectory)..\External\protobuf-build\third_party\utf8_range\$(ProtobufLibConfig)\*.lib">
+      <Visible>false</Visible>
+    </Library>
+  </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>BG3ScriptExtender</TargetName>
@@ -60,7 +77,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>ENABLE_SDL;ENABLE_IMGUI;ENABLE_UI;NS_STATIC_LIBRARY;_SILENCE_CXX20_IS_POD_DEPRECATION_WARNING;_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS;GOOGLE_PROTOBUF_NO_RTTI;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;_DEBUG;_WINDOWS;_USRDLL;OSI_EOCAPP;OSIINTERFACE_EXPORTS;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)External\protobuf-build\_deps\absl-src;$(SolutionDir)External\protobuf\third_party\utf8_range;$(SolutionDir)External\protobuf\src;$(SolutionDir)External\glm;$(SolutionDir)External\Detours\include;$(SolutionDir)External\lua\src;$(SolutionDir)External\rapidjson\include;$(SolutionDir)External\NoesisGUI-NativeSDK-win-3.1.7-Indie\Include;$(SolutionDir)External\Vulkan\Include;$(SolutionDir)External\SDL\include;$(SolutionDir)External\imgui;$(SolutionDir)External\optick\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)External\protobuf-build\_deps\absl-src;$(SolutionDir)External\protobuf\third_party\utf8_range;$(SolutionDir)External\protobuf\src;$(SolutionDir)External\glm;$(SolutionDir)External\Detours\include;$(SolutionDir)External\lua\src;$(SolutionDir)External\rapidjson\include;$(SolutionDir)External\NoesisGUI-NativeSDK-win-3.1.7-Indie\Include;$(SolutionDir)External\Vulkan\Include;$(SolutionDir)External\SDL\include;$(SolutionDir)External\imgui;$(SolutionDir)External\optick\src;$(SolutionDir)External\stb</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4251;5030</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -79,7 +96,7 @@
       <DelayLoadDLLs>vulkan-1.dll;d3dcompiler_47.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetPath)" "D:\Apps\Steam\steamapps\common\Baldurs Gate 3\bin\BG3ScriptExtender.dll"</Command>
+      <Command>if exist "$(GameBinDir)\" copy /Y "$(TargetPath)" "$(GameBinDir)\BG3ScriptExtender.dll"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>python make_enumerations.py
@@ -100,7 +117,7 @@ $(SolutionDir)x64\Debug\ResourceBundler.exe "$(ProjectDir)LuaScripts" "$(Project
       <PreprocessorDefinitions>ENABLE_SDL;ENABLE_IMGUI;ENABLE_UI;NS_STATIC_LIBRARY;_SILENCE_CXX20_IS_POD_DEPRECATION_WARNING;_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;NDEBUG;_WINDOWS;_USRDLL;OSI_EOCAPP;OSIINTERFACE_EXPORTS;OSI_EXTENSION_BUILD;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)External\protobuf-build\_deps\absl-src;$(SolutionDir)External\protobuf\third_party\utf8_range;$(SolutionDir)External\protobuf\src;$(SolutionDir)External\glm;$(SolutionDir)External\Detours\include;$(SolutionDir)External\lua\src;$(SolutionDir)External\rapidjson\include;$(SolutionDir)External\NoesisGUI-NativeSDK-win-3.1.7-Indie\Include;$(SolutionDir)External\Vulkan\Include;$(SolutionDir)External\SDL\include;$(SolutionDir)External\imgui;$(SolutionDir)External\optick\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)External\protobuf-build\_deps\absl-src;$(SolutionDir)External\protobuf\third_party\utf8_range;$(SolutionDir)External\protobuf\src;$(SolutionDir)External\glm;$(SolutionDir)External\Detours\include;$(SolutionDir)External\lua\src;$(SolutionDir)External\rapidjson\include;$(SolutionDir)External\NoesisGUI-NativeSDK-win-3.1.7-Indie\Include;$(SolutionDir)External\Vulkan\Include;$(SolutionDir)External\SDL\include;$(SolutionDir)External\imgui;$(SolutionDir)External\optick\src;$(SolutionDir)External\stb</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4251;5030</DisableSpecificWarnings>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
@@ -130,7 +147,7 @@ $(SolutionDir)x64\Release\ResourceBundler.exe "$(ProjectDir)LuaScripts" "$(Proje
 </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetPath)" "D:\Apps\Steam\steamapps\common\Baldurs Gate 3\bin\BG3ScriptExtender.dll"</Command>
+      <Command>if exist "$(GameBinDir)\" copy /Y "$(TargetPath)" "$(GameBinDir)\BG3ScriptExtender.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -40,6 +40,43 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     STDString** ls__PathRoots{ nullptr };
     App__CtorProc* App__Ctor{ nullptr };
     App__UpdatePathsProc* App__UpdatePaths{ nullptr };
+    // Steps of the engine's start, marked in the start's timeline (Extender/Shared/StartupTimeline.h).
+    App__InitGameProc* App__InitGame{ nullptr };
+    App__InitializeResourceManagerProc* App__InitializeResourceManager{ nullptr };
+    PackedFileManager__LoadPackFilesProc* ls__PackedFileManager__LoadPackFiles{ nullptr };
+    TranslatedStringRepository__LoadFromContextFolderProc* ls__TranslatedStringRepository__LoadFromContextFolder{ nullptr };
+    // The game's read of a command-line argument's value (Extender/Client/DirectSaveLoad.h).
+    ArgumentString__GetValueProc* ls__ArgumentString__GetValue{ nullptr };
+    // GateKit, switches off by default (Extender/Shared/RenderCut.h): the render thread's frame and
+    // the game's Lua collector step.
+    RenderThread__UpdateProc* ls__RenderThread__Update{ nullptr };
+    LuaC_StepProc* lua__luaC_step{ nullptr };
+    // GateKit, switch off by default (Extender/Shared/Headless.h): the game threads' tick wait.
+    TickWaitProc* unplaced__TickWait{ nullptr };
+    // GateKit, switch TreasurePin off by default (Extender/Shared/Headless.h): a treasure table rolled.
+    GenerateTreasureProc* esv__inventory__TreasureGenerationSystem__GenerateTreasure{ nullptr };
+    // The hint list and the game's file loader (Extender/Client/ModHints.inl), both found where
+    // App::InitializeResourceManager loads Hints/Hints.lsx: ecl::HintManager::m_ptr and
+    // ls::FileFormatIO::LoadFile.
+    void** ecl__HintManager{ nullptr };
+    FileFormatIO__LoadFileProc* ls__FileFormatIO__LoadFile{ nullptr };
+    // The loading screen's draw of a hint (the start's timeline, HintShown rows).
+    DCLoadingScreen__OnAdvanceHintCommandProc* gui__DCLoadingScreen__OnAdvanceHintCommand{ nullptr };
+    // The loading screen's slideshow made ready (the start's timeline, WallpaperSet rows).
+    LSImageSequence__OnLoadedProc* gui__LSImageSequence__OnLoaded{ nullptr };
+    // The interface's per-frame update and its mods' merge block (Extender/Client/EarlyModUI.h).
+    GameUI__UpdateFromUIProc* gui__GameUI__UpdateFromUI{ nullptr };
+    UIModManager__RegisterModsProc* ui__ModManager__RegisterMods{ nullptr };
+    TextureProvider__LoadTextureMetadataInternalProc* ui__TextureProvider__LoadTextureMetadataInternal{ nullptr };
+    GUI__GetApplicationResourcesProc* Noesis__GUI__GetApplicationResources{ nullptr };
+    ResourceDictionary__GetMergedDictionariesProc* Noesis__ResourceDictionary__GetMergedDictionaries{ nullptr };
+    GameUI__ResetModdedLibsProc* gui__GameUI__ResetModdedLibs{ nullptr };
+    UIStateMachine__ApplyModsProc* ui__StateMachine__ApplyMods{ nullptr };
+    // The game's resolver of the mod list into the modules it loads (Extender/Client/GameModules.h).
+    ModManager__LoadModFromSettingsProc* ls__ModManager__LoadModFromSettings{ nullptr };
+    // The game's mod manager's enable and disable (Lua/Libs/ClientMod.inl, Ext.Mod.SetEnabled).
+    ModManagerClient__AddModProc* ecl__ModManagerClient__AddMod{ nullptr };
+    ModManagerClient__RemoveModProc* ecl__ModManagerClient__RemoveMod{ nullptr };
 
     ecl::EoCClient** ecl__EoCClient{ nullptr };
     esv::EoCServer** esv__EoCServer{ nullptr };
@@ -58,6 +95,12 @@ struct StaticSymbols : Noncopyable<StaticSymbols>
     ecl::GameStateMachine__UpdateProc* ecl__GameStateMachine__Update{ nullptr };
     esv::GameStateMachine__UpdateProc* esv__GameStateMachine__Update{ nullptr };
     App__LoadGraphicSettingsProc* App__LoadGraphicSettings{ nullptr };
+    // The GameControl global (its movie player is polled by Extender/Shared/StartupTimeline.inl),
+    // found through ecl::LoadStateMovie::Start, which loads it before calling ShowMovie.
+    void** ecl__gGameControl{ nullptr };
+    // The loading screen manager (Extender/Shared/StartupTimeline.inl), found through
+    // ecl::GameStateStartLoading::Enter, which hands it the progress total and its load states.
+    void** ls__gLoadingScreenManager{ nullptr };
     input::InputManager** ls__gInputManager{ nullptr };
 
     ecs::EntityWorld__UpdateProc* ecs__EntityWorld__Update{ nullptr };

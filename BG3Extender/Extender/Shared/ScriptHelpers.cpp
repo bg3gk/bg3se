@@ -134,6 +134,28 @@ bool SaveExternalFile(std::string_view path, PathRootType root, StringView conte
 
     if (!CreateParentDirectoryRecursive(*absolutePath)) return false;
 
+    if (!append) {
+        // GateKit: a whole file is written beside its place and put there in one step, so that a
+        // reader never sees it empty or cut short (a file read while it is written in place can be).
+        // When the place cannot be replaced (a reader holds it open without sharing its deletion),
+        // the file is written in place as before.
+        wchar_t suffix[48];
+        swprintf(suffix, std::size(suffix), L".%lu-%lu.tmp", GetCurrentProcessId(), GetCurrentThreadId());
+        STDWString temporary = *absolutePath;
+        temporary += suffix;
+        {
+            std::ofstream t(temporary.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
+            if (t.good()) {
+                t.write(contents.data(), contents.length());
+                t.close();
+                if (!t.fail() && MoveFileExW(temporary.c_str(), absolutePath->c_str(), MOVEFILE_REPLACE_EXISTING)) {
+                    return true;
+                }
+            }
+        }
+        DeleteFileW(temporary.c_str());
+    }
+
     std::ofstream f(absolutePath->c_str(), std::ios::out | std::ios::binary | (append ? std::ios::app : 0));
     if (!f.good()) {
         OsiError("Could not open file for writing: '" << path << "'");

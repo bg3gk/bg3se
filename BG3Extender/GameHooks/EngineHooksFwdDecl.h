@@ -16,6 +16,7 @@ struct AttackDesc;
 struct FileReader;
 struct AiGrid;
 struct Visual;
+struct ModuleShortDesc;
 
 using CoreLibInitProc = void (void*);
 
@@ -34,6 +35,60 @@ using Visual__UpdateBlendshapeWeightsFromSkeletonProc = void(Visual* self);
 using App__LoadGraphicSettingsProc = void (App*);
 using App__CtorProc = App* (App*);
 using App__UpdatePathsProc = void (App*);
+
+// Steps of the engine's start, hooked only to mark them in the start's timeline
+// (Extender/Shared/StartupTimeline.h).
+using App__InitGameProc = bool (App*);
+using App__InitializeResourceManagerProc = void (App*);
+using PackedFileManager__LoadPackFilesProc = void (void* self, bool a1, bool a2);
+using TranslatedStringRepository__LoadFromContextFolderProc = bool (void* self, Path const* folder, bool fallback, bool a3);
+
+// The value after a key in the game's command-line arguments (ls::ArgumentString, the narrow
+// WinMain command line split): copied into `value`; true when the key is there
+// (Extender/Client/DirectSaveLoad.h gives it in UTF-8).
+using ArgumentString__GetValueProc = bool (void* self, char const* key, STDString* value);
+
+// GateKit (Extender/Shared/RenderCut.h, switches off by default): one frame of the render thread
+// (the main thread), and one step of the game's embedded Lua 5.3 collector (lua_State*).
+using RenderThread__UpdateProc = void (void* self);
+using LuaC_StepProc = void (void* L);
+// GateKit (Extender/Shared/Headless.h, switch off by default): the wait at the end of a game
+// thread's tick (the tick's clock object, microseconds less to wait).
+using TickWaitProc = void (void* clock, int64_t lessUs);
+// GateKit (Extender/Shared/Headless.h, switch TreasurePin off by default): a treasure table rolled
+// for an entity (the system, its world view, the entity, the finder, the table's FixedString, the
+// finder's level, a flag, the map the made items go into).
+using GenerateTreasureProc = bool (void* self, void* view, uint64_t* entity, uint64_t* finder, int32_t* table,
+    int32_t level, uint8_t flag, int64_t out);
+
+// The game's load of one data file into an ls::FileFormatIO object (Extender/Client/ModHints.inl
+// loads the mods' hint files with it).
+using FileFormatIO__LoadFileProc = bool (void* self, Path const* path);
+// The loading screen's draw of a hint (wrapped for the start's timeline only).
+using DCLoadingScreen__OnAdvanceHintCommandProc = void (void* self);
+// The loading screen's slideshow control made ready: it shuffles its images and builds its
+// storyboard (wrapped for the start's timeline only). The two arguments after the control are
+// passed through untouched.
+using LSImageSequence__OnLoadedProc = void (void* self, void* a1, void* a2);
+// The interface's per-frame update and the functions of its mods' merge block
+// (Extender/Client/EarlyModUI.h runs that block at the first StartLoading). `time` is the frame's
+// time (a double first), passed through untouched.
+using GameUI__UpdateFromUIProc = void (void* self, void* time);
+// ui::ModManager::RegisterMods(ObjectSet<ls::Module> const&): an ObjectSet is laid out as Array.
+using UIModManager__RegisterModsProc = bool (void* self, Array<Module> const* modules);
+using TextureProvider__LoadTextureMetadataInternalProc = void (void* self, void* modData);
+using GUI__GetApplicationResourcesProc = void* ();
+using ResourceDictionary__GetMergedDictionariesProc = void* (void* self);
+using GameUI__ResetModdedLibsProc = void (void* self, void* mergedDictionaries);
+using UIStateMachine__ApplyModsProc = void (void* self, uint32_t flags);
+// ls::ModManager::LoadModFromSettings: the manager's settings (modsettings.lsx) resolved into its
+// active module and its load-ordered modules (Extender/Client/GameModules.h).
+using ModManager__LoadModFromSettingsProc = bool (ModManager* self);
+// The client's mod manager's enable and disable, as the game's mod manager page calls them
+// (Lua/Libs/ClientMod.inl): each changes the settings, then saves modsettings.lsx and resolves the
+// list again (ecl::ModManagerClient::SaveSettingsAndReload).
+using ModManagerClient__AddModProc = void (ModManager* self, ModuleShortDesc const* mod);
+using ModManagerClient__RemoveModProc = void (ModManager* self, FixedString const* uuid);
 
 using AppliedMaterial__LoadTextureProc = TextureDescriptor * (AppliedMaterial* self, FixedString const& textureGuid);
 using AppliedMaterial__LoadVirtualTextureProc = void* (AppliedMaterial* self, FixedString const& textureGuid);

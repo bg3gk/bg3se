@@ -395,17 +395,36 @@ struct ScalarType
 {
     char const* Name;
     uint32_t Size;
-    enum { Signed, Unsigned, Float, Bool } Repr;
+    enum { Signed, Unsigned, Float, Bool, StringIndex } Repr;
 };
 
+// "FixedString" reads the 4-byte index of the game's global string table and returns its text
+// (the empty string for the null index), through the game's own lookup.
 static constexpr ScalarType ScalarTypes[] = {
     { "int8", 1, ScalarType::Signed }, { "uint8", 1, ScalarType::Unsigned },
     { "int16", 2, ScalarType::Signed }, { "uint16", 2, ScalarType::Unsigned },
     { "int32", 4, ScalarType::Signed }, { "uint32", 4, ScalarType::Unsigned },
     { "int64", 8, ScalarType::Signed }, { "uint64", 8, ScalarType::Unsigned },
     { "float", 4, ScalarType::Float }, { "double", 8, ScalarType::Float },
-    { "bool", 1, ScalarType::Bool },
+    { "bool", 1, ScalarType::Bool }, { "FixedString", 4, ScalarType::StringIndex },
 };
+
+// The text of a FixedString index through the game's lookup, guarded: an index that is not one
+// of the table's makes the lookup fault, and that is a false here, not a crash. The text must be
+// readable for its whole length.
+static bool LookUpFixedString(uint32_t index, char const*& text, std::size_t& length)
+{
+    __try {
+        FixedStringBase fs;
+        fs.Index = index;
+        auto sv = fs.GetStringView();
+        text = sv.data();
+        length = sv.size();
+        return text != nullptr;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
 
 static ScalarType const* FindScalarType(StringView name)
 {
@@ -591,6 +610,22 @@ UserReturn ReadValue(lua_State* L, int64_t address, STDString type)
     case ScalarType::Bool:
         lua_pushboolean(L, *ptr != 0);
         break;
+    case ScalarType::StringIndex:
+    {
+        auto index = *(uint32_t const*)ptr;
+        if (index == FixedStringId::NullIndex) {
+            lua_pushstring(L, "");
+            break;
+        }
+        char const* text{ nullptr };
+        std::size_t length{ 0 };
+        if (!LookUpFixedString(index, text, length) || (length > 0 && !IsReadableRange((uint8_t const*)text, length))) {
+            lua_pushnil(L);
+            break;
+        }
+        lua_pushlstring(L, text, length);
+        break;
+    }
     case ScalarType::Float:
         if (scalar->Size == 4) lua_pushnumber(L, (lua_Number)*(float const*)ptr);
         else lua_pushnumber(L, (lua_Number)*(double const*)ptr);
@@ -670,8 +705,9 @@ bool WriteValue(lua_State* L, int64_t address, STDString type)
         return 0;
     }
     auto scalar = FindScalarType(type);
-    if (scalar == nullptr) {
-        luaL_error(L, "WriteValue: unknown scalar type '%s'", type.c_str());
+    if (scalar == nullptr || scalar->Repr == ScalarType::StringIndex) {
+        // A FixedString is read only: writing an index would bypass the string table's references.
+        luaL_error(L, "WriteValue: unknown or read-only scalar type '%s'", type.c_str());
         return false;
     }
 
@@ -1280,8 +1316,8 @@ UserReturn HoldValue(lua_State* L, int64_t address, STDString type)
         return 0;
     }
     auto scalar = FindScalarType(type);
-    if (scalar == nullptr) {
-        return luaL_error(L, "Freeze: unknown scalar type '%s'", type.c_str());
+    if (scalar == nullptr || scalar->Repr == ScalarType::StringIndex) {
+        return luaL_error(L, "Freeze: unknown or read-only scalar type '%s'", type.c_str());
     }
 
     std::lock_guard _(gInstrumentMutex);
@@ -1602,6 +1638,8 @@ void RegisterDebugLib()
     MODULE_FUNCTION(CallProbeTest)
     MODULE_FUNCTION(GetObjectAddress)
     MODULE_FUNCTION(GetSymbolAddress)
+    MODULE_FUNCTION(PinTreasure)
+    MODULE_FUNCTION(MemoryMap)
     MODULE_FUNCTION(GetSymbolNames)
     MODULE_FUNCTION(GetPropertyAddress)
     MODULE_FUNCTION(GetElementAddress)

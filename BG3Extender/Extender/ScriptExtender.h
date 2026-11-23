@@ -159,6 +159,29 @@ public:
     WrappableFunction<AppUpdatePathsTag, App__UpdatePathsProc> AppUpdatePaths;
     enum class AppLoadGraphicSettingsTag {};
     WrappableFunction<AppLoadGraphicSettingsTag, App__LoadGraphicSettingsProc> AppLoadGraphicSettings;
+    // Steps of the engine's start, hooked only to mark them in the start's timeline.
+    enum class AppInitGameTag {};
+    WrappableFunction<AppInitGameTag, App__InitGameProc> AppInitGame;
+    enum class AppInitializeResourceManagerTag {};
+    WrappableFunction<AppInitializeResourceManagerTag, App__InitializeResourceManagerProc> AppInitializeResourceManager;
+    enum class LoadPackFilesTag {};
+    WrappableFunction<LoadPackFilesTag, PackedFileManager__LoadPackFilesProc> LoadPackFiles;
+    enum class LoadFromContextFolderTag {};
+    WrappableFunction<LoadFromContextFolderTag, TranslatedStringRepository__LoadFromContextFolderProc> LoadFromContextFolder;
+    // The loading screen's draw of a hint, wrapped only for the timeline's HintShown rows.
+    enum class AdvanceHintTag {};
+    WrappableFunction<AdvanceHintTag, DCLoadingScreen__OnAdvanceHintCommandProc> AdvanceHint;
+    // The loading screen's slideshow made ready, wrapped only for the timeline's WallpaperSet rows.
+    enum class ImageSequenceLoadedTag {};
+    WrappableFunction<ImageSequenceLoadedTag, LSImageSequence__OnLoadedProc> ImageSequenceLoaded;
+    // The interface's per-frame update: the mods' interface merged before the first loading screen
+    // (Extender/Client/EarlyModUI.h).
+    enum class GameUIUpdateTag {};
+    WrappableFunction<GameUIUpdateTag, GameUI__UpdateFromUIProc> GameUIUpdate;
+    // The game's read of a command-line argument's value: given in UTF-8 from the wide command
+    // line (Extender/Client/DirectSaveLoad.h, the switch WideCommandLine).
+    enum class ArgumentGetValueTag {};
+    WrappableFunction<ArgumentGetValueTag, ArgumentString__GetValueProc> ArgumentGetValue;
 
 private:
     esv::ScriptExtender server_;
@@ -195,6 +218,19 @@ private:
     void OnCoreLibInit(void * self);
     void OnAppUpdatePaths(App* self);
     void OnAppLoadGraphicSettings(App* self);
+    void OnAppInitGameBegin(App* self);
+    void OnAppInitGameEnd(App* self, bool result);
+    void OnInitializeResourceManagerBegin(App* self);
+    void OnInitializeResourceManagerEnd(App* self);
+    void OnLoadPackFilesBegin(void* self, bool a1, bool a2);
+    void OnLoadPackFilesEnd(void* self, bool a1, bool a2);
+    void OnLoadFromContextFolderBegin(void* self, Path const* folder, bool fallback, bool a3);
+    void OnLoadFromContextFolderEnd(void* self, Path const* folder, bool fallback, bool a3, bool result);
+    void OnAdvanceHintBegin(void* self);
+    void OnAdvanceHintEnd(void* self);
+    void OnImageSequenceLoaded(void* self, void* a1, void* a2);
+    void OnGameUIUpdate(void* self, void* time);
+    void OnArgumentGetValue(void* self, char const* key, STDString* value, bool found);
     void HookStateMachineUpdates();
     void OnStatsLoad(stats::RPGStats__LoadProc* wrapped, stats::RPGStats* mgr, Array<STDString>* paths);
     void OnStatsLoadGuarded(stats::RPGStats__LoadProc* wrapped, stats::RPGStats* mgr, Array<STDString>* paths);
