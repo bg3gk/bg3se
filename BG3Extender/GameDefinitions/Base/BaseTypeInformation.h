@@ -367,7 +367,7 @@ inline StaticTypeInformation& GetStaticTypeInfoInternal(Overload<T>) requires Is
 }
 
 template <class T>
-StaticTypeInformation& GetStaticTypeInfoInternal(Overload<T>) requires !IsStruct<T> && !IsEnum<T> && !IsBitfield<T> && !IsEvent<T>
+StaticTypeInformation& GetStaticTypeInfoInternal(Overload<T>) requires (!IsStruct<T>) && (!IsEnum<T>) && (!IsBitfield<T>) && (!IsEvent<T>)
 {
     static StaticTypeInformation info{ nullptr, MakeDeferredTypeInitializer(Overload<T>{}) };
     return info;

@@ -2,7 +2,7 @@
 
 BEGIN_NS(lua)
 
-template <class T> requires !IsByVal<T> && !std::is_pointer_v<T>
+template <class T> requires (!IsByVal<T>) && (!std::is_pointer_v<T>)
 T do_get(lua_State* L, int index, Overload<T>)
 {
     T val{};
@@ -10,7 +10,7 @@ T do_get(lua_State* L, int index, Overload<T>)
     return val;
 }
 
-template <class T> requires !IsByVal<T> && std::is_pointer_v<T>
+template <class T> requires (!IsByVal<T>) && std::is_pointer_v<T>
 T do_get(lua_State* L, int index, Overload<T>)
 {
     using TVal = std::remove_pointer_t<T>;

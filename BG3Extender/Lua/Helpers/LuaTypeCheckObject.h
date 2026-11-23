@@ -23,7 +23,7 @@ typename bool do_typecheck(lua_State* L, int index, Overload<std::variant<Args..
     return do_typecheck_variant<std::variant<Args...>, 0>(L, index);
 }
 
-template <class T> requires !IsByVal<T> && !std::is_pointer_v<T>
+template <class T> requires (!IsByVal<T>) && (!std::is_pointer_v<T>)
 bool do_typecheck(lua_State* L, int index, Overload<T>)
 {
     if constexpr (IsArray<T> || IsSet<T> || IsMap<T>) {
@@ -35,7 +35,7 @@ bool do_typecheck(lua_State* L, int index, Overload<T>)
     }
 }
 
-template <class T> requires !IsByVal<T>&& std::is_pointer_v<T>
+template <class T> requires (!IsByVal<T>) && std::is_pointer_v<T>
 bool do_typecheck(lua_State* L, int index, Overload<T>)
 {
     using TVal = std::remove_pointer_t<T>;
